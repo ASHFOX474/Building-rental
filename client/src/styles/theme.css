@@ -1,0 +1,44 @@
+/* "Terracotta & Chuna" (পোড়ামাটি ও চুন) palette — see docs/public_page_specification.txt §2.2 */
+:root {
+  --bg-chuna: #faf7f2;
+  --surface-sand: #f0ebe1;
+  --surface-white: #ffffff;
+  --ink: #1f2421;
+  --text-muted: #5c5852;
+  --terracotta: #c85a32;
+
+  --available: #2d6a4f;
+  --available-bg: #e8f5e9;
+  --occupied: #8c857b;
+  --occupied-bg: #e6e1d6;
+  --ochre: #d97706;
+
+  /* Admin ledger status colours */
+  --late: #b45309;
+  --late-bg: #fef3c7;
+  --unpaid: #b91c1c;
+  --unpaid-bg: #fee2e2;
+
+  --font-heading: 'Hind Siliguri', sans-serif;
+  --font-body: 'Noto Sans Bengali', sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-chuna);
+  color: var(--ink);
+  font-family: var(--font-body);
+  line-height: 1.6;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-heading);
+}

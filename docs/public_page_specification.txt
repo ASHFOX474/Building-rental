@@ -1,0 +1,158 @@
+================================================================================
+PROJECT SPECIFICATION: PUBLIC TO-LET SHOWCASE WEBSITE (PART 1 OF 2)
+================================================================================
+
+1. PROJECT OVERVIEW & CONTEXT
+-----------------------------
+- Purpose: A public-facing residential building "To-Let" (Flat Rental Showcase) website for a single building located in Noakhali, Bangladesh (e.g., Maijdee/Chowmuhani context).
+- Target Audience: Prospective tenants in Noakhali (families, bank/NGO officers, university faculty/students) browsing primarily on mobile devices and desktops.
+- Access Level: 100% Public (No login or registration required for visitors). Tenants DO NOT pay rent or log in through this website. It is strictly for checking flat availability, viewing floor maps, watching Google Drive walkthrough videos/photos, and contacting the owner/caretaker.
+- Primary Language of UI: Bangla (বাংলা) - All headings, numbers, badges, buttons, and descriptions on the UI must be written in natural, clean, user-friendly Bangla.
+- Building Structure: Currently a 5-storied residential building (e.g., 2 units per floor: Unit A and Unit B), but architected dynamically as an array of floors so the owner can easily scale up (6th, 7th story) or hide/remove stories from the Admin Panel without code changes.
+- Media Hosting Strategy: All flat walkthrough videos and room-by-room photos are stored in the owner's Google Drive (15GB free storage) and streamed/previewed directly inside the website using Google Drive embed players and thumbnail endpoints.
+
+================================================================================
+2. DESIGN PHILOSOPHY, COLOR PALETTE & TYPOGRAPHY
+================================================================================
+
+2.1 Anti-AI Aesthetic Rule (CRITICAL)
+-------------------------------------
+- STRICTLY FORBIDDEN: Do NOT use dark-mode neon themes, cyberpunk aesthetics, purple/blue AI gradients, glowing glassmorphism, or generic corporate SaaS templates.
+- REQUIRED VIBE: Warm, sunlit, grounded Bangladeshi architectural aesthetic—feeling like stepping into a clean, well-maintained residential home or looking at an architectural print brochure.
+
+2.2 Color Palette: "Terracotta & Chuna" (পোড়ামাটি ও চুন)
+---------------------------------------------------------
+- Primary Background (90% of screen): Warm Limestone / Chuna Off-White (`#FAF7F2`)
+- Secondary Surface / Cards / Containers: Soft Sand / Unbleached Paper (`#F0EBE1`)
+- Card Inner Surface (High Contrast): Crisp Warm White (`#FFFFFF`)
+- Primary Text & Hand-Drawn Borders: Deep Charcoal / Ink (`#1F2421`)
+- Secondary / Muted Text: Warm Slate Gray (`#5C5852`)
+- Primary Accent (Buttons, Pointer Lines, Roof, Highlights): Burnt Terracotta Brick (`#C85A32`)
+- "To-Let / Available" Status Badge: Deep Botanical Leaf Green (`#2D6A4F`) with soft green tint background (`#E8F5E9`)
+- "Occupied / Rented" Status Badge: Muted Warm Gray (`#8C857B`) with subtle sand background (`#E6E1D6`)
+- Warning / Special Highlight: Warm Ochre / Amber (`#D97706`)
+
+2.3 Typography (Bangla)
+-----------------------
+- Headings, Floor Numbers & Rent Amounts: `Hind Siliguri` (Bold / Semi-Bold) or `Mina` from Google Fonts.
+- Body Copy, Badges & Details: `Noto Sans Bengali` or `Baloo Da 2` (400, 500, 600 weights).
+- Number Formatting: All numbers on the public UI must use Bangla numerals (`১, ২, ৩, ৪, ৫`, `৳ ১০,৫০০`).
+
+================================================================================
+3. COMPLETE 3-STEP USER JOURNEY & PAGE ARCHITECTURE
+================================================================================
+
+The public website follows an intuitive, zero-clutter 3-view flow (can be built as a Single-Page Application with smooth view transitions or 3 distinct routes):
+
+  [VIEW 1: Home Page (Hand-Drawn Building Array)]
+         │
+         ▼ (User clicks a floor that has an available flat)
+  [VIEW 2: Architectural Floor Map / Blueprint View]
+         │
+         ▼ (User clicks "ছবি এবং ভিডিও দেখুন" on the available flat)
+  [VIEW 3: Categorized Room-by-Room Media & Full Flat Details Page]
+
+--------------------------------------------------------------------------------
+VIEW 1: HOME PAGE — THE HAND-DRAWN BUILDING ARRAY (হাতের আঁকা ভবন ভিউ)
+--------------------------------------------------------------------------------
+Instead of standard property cards, the centerpiece of the Home Page is a charming, architectural/hand-drawn style representation of the building stacked dynamically from the top floor down to the ground floor.
+
+A. Header Section:
+   - Building Name in bold Bangla (e.g., "স্বপ্ননীড় ভবন — মাইজদী, নোয়াখালী")
+   - Short 1-line subtitle highlighting key building perks (e.g., "নিরাপদ আবাসিক পরিবেশ • ২৪ ঘণ্টা পানি ও সিসিটিভি নিরাপত্তা • বর্ষায় জলাবদ্ধতামুক্ত রাস্তা")
+   - Quick Filter Toggle: `[ 🔘 শুধু খালি ফ্ল্যাট দেখুন ]` (Highlights only available units).
+
+B. Dynamic Building Stack (The Array Visualization):
+   - Top Element: A hand-drawn/SVG style architectural roof & water tank illustration in Terracotta (`#C85A32`) and Charcoal (`#1F2421`) strokes.
+   - Floor Rows (Dynamic Array): Rendered from highest active floor (`৫ম তলা`) down to lowest (`১ম তলা`). If the owner adds a 6th floor in the Admin Panel, a new row automatically stacks under the roof.
+   - Left Label per Row: Floor indicator badge (`৫ম তলা`, `৪র্থ তলা`, `৩য় তলা`, `২য় তলা`, `১ম তলা`).
+   - Flat Boxes inside each Floor Row: Each floor row acts as a horizontal array of boxes representing the units on that floor (e.g., left box = `ফ্ল্যাট ৩এ`, right box = `ফ্ল্যাট ৩বি`).
+   - Styling: Sketch-style / architectural 2px solid borders (`#1F2421`), slight organic feel.
+
+C. Content Inside Each Flat Box on Home Page (Strictly 3 Core Items to Avoid Clutter):
+   1. Flat Number: e.g., `ফ্ল্যাট ৩এ`
+   2. Availability Status & Month:
+      - If Open (To-Let): Green badge `🟢 ভাড়া হবে (জানুয়ারি থেকে)`
+      - If Occupied: Muted badge `⚪ ভাড়া হয়ে গেছে`
+   3. Monthly Rent Amount (shown on available flats or all flats per owner setting): e.g., `৳ ১০,৫০০ / মাস`
+
+D. The "ক্লিক করুন" (Click Here) Callout Marker:
+   - Whenever a floor has at least one flat open for rent (`is_to_let = true`), display an eye-catching hand-drawn style pointer line/arrow in Terracotta (`#C85A32`) pointing directly to that floor row with a pulsing badge:
+     `<─── ক্লিক করুন (খালি আছে!)`
+   - Clicking anywhere on that available flat box or floor row navigates the user to **View 2 (Floor Map View)** for that specific floor.
+
+E. Bottom Section of Home Page (Location & Contact):
+   - Directly underneath the building foundation/ground floor:
+   - Left Card: **Location & Local Landmarks (ঠিকানা ও লোকেশন)**
+     - Local navigation context (e.g., "মেইন রোড / মসজিদ থেকে ২ মিনিটের হাঁটা পথ, মাইজদী কোর্ট থেকে রিকশায় ৫ মিনিট")
+     - Embedded Google Map iframe or interactive map card.
+   - Right Card: **Direct Contact (যোগাযোগ)**
+     - Owner / Caretaker phone number with 1-tap `কল করুন` (`tel:`) button.
+     - 1-tap `হোয়াটসঅ্যাপে মেসেজ দিন` (`https://wa.me/...`) button with pre-filled Bangla inquiry text.
+
+--------------------------------------------------------------------------------
+VIEW 2: FLOOR MAP / ARCHITECTURAL BLUEPRINT VIEW (ফ্লোর ম্যাপ ভিউ)
+--------------------------------------------------------------------------------
+When a visitor clicks a floor from View 1 (e.g., `৩য় তলা`), they transition to a top-down architectural floorplate blueprint of that story.
+
+A. Reusable Master Blueprint Concept:
+   - Since all floors in the building share nearly the same structural layout, a single clean SVG/CSS top-down architectural floor blueprint is reused dynamically for any selected floor.
+   - The system injects the selected floor's title (`৩য় তলার ফ্লোর ম্যাপ`) and maps the data for Unit A (`৩এ`) and Unit B (`৩বি`) into the blueprint zones.
+
+B. Spatial Orientation & Blueprint Elements:
+   - Compass Indicator: Clearly shows `উত্তর (North)`, `দক্ষিণ (South - দখিনা বাতাস)`, `পূর্ব (East)`, `পশ্চিম (West)` and which side faces the main road (`সামনের রাস্তা`).
+   - Common Areas: Visually marks the central `সিঁড়ি ঘর (Staircase)` and corridor.
+   - Unit Outlines: Shows the spatial division of Unit A (e.g., South-Facing) and Unit B, with subtle architectural room partition lines inside the blueprint.
+
+C. Interactive Flat Overlay on the Blueprint:
+   - On Occupied Unit (e.g., `ফ্ল্যাট ৩বি`): Muted sand overlay, label `ফ্ল্যাট ৩বি — ভাড়া হয়ে গেছে`.
+   - On Available Unit (e.g., `ফ্ল্যাট ৩এ`): Highlighted in warm green/terracotta border with:
+     1. Big Title on the Flat Space: **`ভাড়া হবে (ফ্ল্যাট ৩এ)`**
+     2. Quick Spatial Summary (so they know if it fits their family before opening media):
+        - `৩টি বেডরুম • ২টি ওয়াশরুম • ২টি বারান্দা`
+        - `দক্ষিণ-পূর্ব মুখী (প্রচুর আলো-বাতাস)`
+        - `শুধুমাত্র ফ্যামিলি`
+     3. Primary Action Button/Link on the Map:
+        **`[ 🎥 ছবি এবং ভিডিও দেখুন ➔ ]`** (Click to watch photos & video).
+   - Also includes a Floor Switcher bar at the top (`১ম | ২য় | ৩য় | ৪র্থ | ৫ম`) and a `[ ⬅ হোম পেজে ফিরে যান ]` button.
+
+--------------------------------------------------------------------------------
+VIEW 3: CATEGORIZED ROOM-BY-ROOM MEDIA & FULL DETAILS PAGE (রুম অনুযায়ী ছবি, ভিডিও ও বিস্তারিত)
+--------------------------------------------------------------------------------
+Clicking `"ছবি এবং ভিডিও দেখুন"` on the Floor Map opens the dedicated page for that specific flat (e.g., `ফ্ল্যাট ৩এ`).
+
+A. Top "At-a-Glance" Specification Ribbon (এক নজরে ফ্ল্যাটের তথ্য):
+   - Horizontal strip of clean Chuna-Sand (`#F0EBE1`) pill badges with icons right below the flat header:
+     - `🛏️ ৩টি বেডরুম`
+     - `🚿 ২টি ওয়াশরুম (১টি হাই-কমোড)`
+     - `☀️ ২টি বারান্দা (দক্ষিণমুখী)`
+     - `🔥 সিলিন্ডার গ্যাস / লাইনের গ্যাস` (Dynamic based on flat data)
+     - `⚡ প্রিপেইড বিদ্যুৎ মিটার`
+     - `💧 আয়রনমুক্ত সার্বক্ষণিক পানি`
+     - `🔋 আইপিএস (IPS) লাইন রেডি`
+
+B. Hero Walkthrough Video Section (পুরো ফ্ল্যাটের ভিডিও ট্যুর):
+   - Prominent 16:9 video player at the top of the media feed.
+   - Embeds the flat's main walkthrough video directly from Google Drive using:
+     `<iframe src="https://drive.google.com/file/d/{DRIVE_VIDEO_ID}/preview" allow="autoplay" allowfullscreen></iframe>`
+
+C. Admin-Organized Categorized Room Media Sections (রুম অনুযায়ী সাজানো ছবি ও ভিডিও):
+   - Below the main video, media is grouped into distinct, titled sections **in the exact order and with the exact custom titles configured by the Admin**.
+   - Example Section 1: **`মাস্টার বেডরুম ও এটাচড বাথরুম` (Master Bedroom & Attached Bath)**
+     - Optional 1-line Bangla description set by admin (e.g., *"দক্ষিণমুখী জানালা, সাথে বারান্দা এবং হাই-কমোড এটাচড বাথরুম।"*)
+     - Grid of high-resolution photos (and/or room clip) fetched from Google Drive using:
+       `https://lh3.googleusercontent.com/d/{DRIVE_FILE_ID}` or `https://drive.google.com/thumbnail?id={DRIVE_FILE_ID}&sz=w1200`
+     - Clicking any photo opens a clean full-screen Lightbox zoom view.
+   - Example Section 2: **`ড্রয়িং ও ডাইনিং রুম` (Drawing & Dining)** -> Photos/Videos underneath.
+   - Example Section 3: **`রান্নাঘর (Kitchen)`** -> Photos/Videos underneath.
+   - Example Section 4: **`২য় ও ৩য় বেডরুম এবং কমন বাথরুম`** -> Photos/Videos underneath.
+
+D. The "Rent & Terms" Architectural Receipt Box (ভাড়ার হিসাব ও শর্তাবলী):
+   - Positioned as a sticky sidebar card on desktop (or right below the main video on mobile):
+     - মাসিক মূল ভাড়া (Base Rent): `৳ ১০,০০০`
+     - পানি ও সার্ভিস চার্জ (Service Charge): `৳ ৫০০`
+     - **মোট মাসিক পেমেন্ট (Total Monthly):** `৳ ১০,৫০০` *(বিদ্যুৎ ও গ্যাস বিল নিজস্ব ব্যবহারের ওপর)*
+     - অগ্রিম জামানত (Advance Deposit): `২ মাসের ভাড়া`
+     - কোন মাস থেকে পাওয়া যাবে (Available From): `পহেলা জানুয়ারি, ২০২৭`
+     - ভাড়াটিয়ার ধরন (Tenant Type): `শুধুমাত্র ফ্যামিলি`
+     - Direct CTA Buttons: `[ 📞 সরাসরি কল করুন ]` and `[ 💬 হোয়াটসঅ্যাপে কথা বলুন ]` (pre-filled with the exact flat number, e.g., *"আসসালামু আলাইকুম, আমি ওয়েবসাইটে ফ্ল্যাট ৩এ-এর ভিডিও দেখেছি, এটি কি এখনো ভাড়া হবে?"*).

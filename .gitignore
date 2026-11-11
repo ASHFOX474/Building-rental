@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Builds
+dist/
+build/
+
+# Environment & secrets (Google OAuth tokens, DB passwords, PIN hash)
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# Temporary uploads before they are sent to Google Drive
+server/uploads/

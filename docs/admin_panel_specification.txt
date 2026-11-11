@@ -1,0 +1,146 @@
+================================================================================
+PROJECT SPECIFICATION: ELDERLY-FRIENDLY OWNER ADMIN PANEL (PART 2 OF 2)
+================================================================================
+
+1. SYSTEM OVERVIEW & CORE PURPOSE
+---------------------------------
+- Purpose: A strictly private, internal building management, rent tracking, income calculation, and To-Let media publishing dashboard for the building owner and his elderly parents.
+- Strict Privacy Rule: Tenants NEVER log into this system and NEVER make online payments through the website. Tenants pay the owner/parents in real life (via Cash, bKash, Nagad, or Bank), and the owner/parents manually record the payment on their phone/computer in 1-2 taps.
+- Primary Users: The building owner and his aging parents. Therefore, the UI must be extraordinarily simple, forgiving, high-contrast, and completely free of complex jargon or tiny controls.
+- Language of UI: 100% Simple, Everyday Bangla (সহজ বাংলা) — styled like a traditional Bangladeshi "বাড়িভাড়ার লাল খাতা" (Digital Rent Ledger).
+
+================================================================================
+2. ELDERLY-FRIENDLY UX RULES & COLOR THEME
+================================================================================
+
+2.1 Visual Theme: "Terracotta & Chuna" (High-Contrast Accessibility Mode)
+-------------------------------------------------------------------------
+- Matches the public site's warm Terracotta (`#C85A32`) and Limestone Off-White (`#FAF7F2`) palette, but optimized for older eyes:
+  - Minimum Body Font Size: `18px` to `20px` (Headings `24px` to `32px`).
+  - Buttons: Extra-large touch targets (minimum `52px` height) with clear icons + Bangla labels.
+  - Status Color Coding (Unmistakable at a glance):
+    - 🟢 Paid on Time (সময়মতো পরিশোধিত): Deep Forest Green (`#2D6A4F` border/badge, `#E8F5E9` surface)
+    - 🟡 Paid Late or Partial Payment (দেরিতে / আংশিক পরিশোধ): Warm Amber (`#B45309` border/badge, `#FEF3C7` surface)
+    - 🔴 Unpaid / Overdue (ভাড়া বাকি আছে): Clear Brick Red (`#B91C1C` border/badge, `#FEE2E2` surface)
+
+2.2 Zero-Navigation Confusion (Only 3 Top-Level Tabs)
+-----------------------------------------------------
+- No hidden hamburger menus, no nested dropdown trees, and no complicated analytics charts.
+- Only 3 large, persistent top tabs:
+  1. `[ 📖 ভাড়ার খাতা ও আয় ]` (Monthly Rent Ledger & Building Income - Default Home Tab)
+  2. `[ 🏠 টু-লেট ও ছবি আপলোড ]` (To-Let Switch & Room-by-Room Direct Google Drive Uploader)
+  3. `[ 🏢 বিল্ডিংয়ের তলা ও ফ্ল্যাট ]` (Dynamic Story/Floor Add-Remove & Unit Setup)
+
+2.3 Hassle-Free Authentication (4-Digit PIN Pad)
+------------------------------------------------
+- Instead of making elderly parents type long email addresses and complex passwords on a mobile keyboard, the Admin login screen displays a large ATM/bKash-style **4-Digit Bangla Number Pad (`১ ২ ৩ ৪ ৫ ৬ ৭ ৮ ৯ ০`)**.
+- Entering the secret PIN (with a "30-day Remember Device" token) unlocks the dashboard immediately.
+
+================================================================================
+3. DETAILED FEATURE SPECIFICATIONS BY TAB
+================================================================================
+
+--------------------------------------------------------------------------------
+TAB 1: MONTHLY RENT LEDGER & INCOME TRACKER (ভাড়ার খাতা ও আয়ের হিসাব)
+--------------------------------------------------------------------------------
+This tab answers two questions immediately: "Who hasn't paid rent this month?" and "How much total income has the building generated?"
+
+A. Month & Year Selector Bar (মাসের নাম নির্বাচন):
+   - Large `< পূর্বের মাস` | **`নভেম্বর ২০২৬`** | `পরের মাস >` selector at the top.
+
+B. Top Financial Summary Card (এই মাসের আয়ের হিসাব):
+   - Displays 3 big, unmistakable Bangla boxes for the selected month:
+     1. **মোট পাওয়ার কথা (Total Expected Rent):** Sum of rent from all occupied flats (e.g., `৳ ১,০৫,০০০`).
+     2. **এই পর্যন্ত জমা হয়েছে (Total Collected):** Sum of payments received so far (e.g., `🟢 ৳ ৭৩,৫০০`).
+     3. **এখনো বাকি আছে (Total Uncollected / Due):** Remaining amount to collect (e.g., `🔴 ৳ ৩১,৫০০`).
+   - Also includes an optional Yearly/Total Income view toggle (`বার্ষিক মোট আয় দেখুন`).
+
+C. One-Tap Defaulter Filter:
+   - A giant toggle button right below the summary card:
+     **`[ 🔴 শুধু যাদের ভাড়া বাকি আছে তাদের দেখুন (৩টি ফ্ল্যাট) ]`**
+   - Tapping this hides all paid flats and shows only the tenants who still owe money.
+
+D. Flat-by-Flat Rent Cards (Grouped by Floor):
+   - Each occupied flat shows:
+     - Flat Number & Floor (`ফ্ল্যাট ২এ — ২য় তলা`)
+     - Renter Name & Phone (`জনাব করিম সাহেব` + 1-tap `[ 📞 কল দিন ]` button)
+     - Expected Monthly Rent (`৳ ১০,৫০০`) & Due Date (e.g., `১০ই নভেম্বর`)
+     - Current Status Badge:
+       - `🔴 ভাড়া বাকি (UNPAID)`
+       - `🟢 সময়মতো দিয়েছে (PAID ON TIME - ৫ই নভেম্বর)`
+       - `🟡 দেরিতে দিয়েছে (PAID LATE - ১৮ই নভেম্বর)`
+       - `🟡 আংশিক দিয়েছে (PARTIAL - ৳৬,০০০ দিয়েছে, ৳৪,৫০০ বাকি)`
+
+E. 1-Click "Record Payment" Modal (`[ ✅ ভাড়া পেয়েছি ]`):
+   - When a parent clicks `[ ✅ ভাড়া পেয়েছি ]` on an unpaid flat, a simple 3-step popup opens:
+     1. **কীভাবে টাকা দিয়েছে? (Payment Method):** 3 big buttons: `[ 💵 নগদ ক্যাশ ]`, `[ 📱 বিকাশ / নগদ ]`, `[ 🏦 ব্যাংক ]`.
+     2. **কত টাকা দিয়েছে? (Amount):** Defaults to full rent (`৳ ১০,৫০০`), with an easy option to enter a partial amount (`আংশিক জমা`) if the tenant pays in installments.
+     3. **কোন তারিখে দিয়েছে? (Payment Date):** Defaults to Today (`আজকের তারিখ`).
+        - *Automatic On-Time vs. Late Logic:* The system compares `payment_date` against the flat's `due_date` (e.g., the 10th of the month). If `payment_date <= due_date`, it automatically marks `paid_on_time = true` (🟢 সময়মতো). If `payment_date > due_date`, it marks `paid_on_time = false` (🟡 দেরিতে পরিশোধ).
+     4. Confirmation prompt to prevent accidental taps: *"আপনি কি নিশ্চিত ফ্ল্যাট ২এ-এর ভাড়া জমা করতে চান? [ হ্যাঁ, সেভ করুন ] [ না ]"*
+
+--------------------------------------------------------------------------------
+TAB 2: TO-LET MANAGER & DIRECT GOOGLE DRIVE MEDIA UPLOADER (টু-লেট ও ছবি আপলোড)
+--------------------------------------------------------------------------------
+Allows the owner/parents to change a flat's availability status, edit flat details, and organize room-by-room photos and videos that upload directly to Google Drive.
+
+A. Flat Selector Grid:
+   - Simple big buttons for each flat (`১এ`, `১বি`, `২এ`, `২বি`, `৩এ`, `৩বি`, `৪এ`, `৪বি`, `৫এ`, `৫বি`).
+
+B. Availability & Basic Info Controls (For Selected Flat):
+   1. **ফ্ল্যাটটি কি ভাড়া হবে? (To-Let Toggle):**
+      - Giant 2-state switch: **`[ 🟢 হ্যাঁ, ভাড়া হবে (To-Let ON) ]`** vs **`[ ⚪ না, ভাড়া হয়ে গেছে (Occupied) ]`**
+      - Toggling this ON immediately activates the `"<-- ক্লিক করুন"` pointer on the Public Home Page and unlocks the flat on the Floor Map!
+   2. **কোন মাস থেকে খালি হবে? (Available From Month):**
+      - Simple dropdown: `জানুয়ারি`, `ফেব্রুয়ারি`, `মার্চ`...
+   3. **ভাড়া ও ফ্ল্যাটের বিবরণ (Rent & Specs Editor):**
+      - Monthly Rent (`মাসিক ভাড়া`), Service Charge (`সার্ভিস চার্জ`), Advance (`অগ্রিম`), Bedrooms (`বেডরুম সংখ্যা`), Washrooms (`ওয়াশরুম`), Balconies (`বারান্দা`), Facing (`কোন মুখী - যেমন: দক্ষিণ মুখী`), Gas Type (`সিলিন্ডার গ্যাস / লাইনের গ্যাস`), Meter Type (`প্রিপেইড মিটার`), Tenant Preference (`শুধুমাত্র ফ্যামিলি`).
+   4. **বর্তমান ভাড়াটিয়ার তথ্য (Private Tenant Info - Hidden from Public):**
+      - Renter Name (`ভাড়াটিয়ার নাম`), Phone Number (`মোবাইল নম্বর`), Move-in Date (`ওঠার তারিখ`), Advance Paid (`জমা দেওয়া অগ্রিম`).
+
+C. Room-by-Room Media Organizer & Direct Google Drive Uploader:
+   - The admin can organize photos and videos under custom Bangla room titles, and the Public Page (View 3) will render them in that exact order.
+   - **1-Tap Preset Room Title Chips (No typing required for parents!):**
+     Clicking any chip creates a new media section immediately:
+     - `[ + পুরো ফ্ল্যাটের ভিডিও (Full Video Tour) ]`
+     - `[ + মাস্টার বেডরুম ও বাথরুম ]`
+     - `[ + ড্রয়িং ও ডাইনিং রুম ]`
+     - `[ + ২য় ও ৩য় বেডরুম ]`
+     - `[ + রান্নাঘর ও বারান্দা ]`
+     - `[ + নিজের ইচ্ছেমতো নাম লিখুন... ]` (Custom title input)
+   - **Inside Each Created Room Section:**
+     - Section Title + Optional 1-line note + `[ ⬆️ উপরে নিন ]` `[ ⬇️ নিচে নামান ]` buttons to reorder sections.
+     - **Direct File Upload Dropzone (`[ 📷 ফোন বা কম্পিউটার থেকে ছবি/ভিডিও আপলোড করুন ]`):**
+       - Admin selects photos/videos directly from their phone gallery or PC.
+       - **Backend Google Drive API Integration:** The Node.js backend receives the file (or uses a Google Drive Resumable Upload session for large videos) and uploads it directly into the owner's Google Drive folder using OAuth2 Refresh Token credentials.
+       - The backend automatically sets the Google Drive file permission to `role: 'reader', type: 'anyone'` and saves the returned `drive_file_id` into PostgreSQL under that room section.
+       - Also includes a fallback input field where the admin can paste an existing Google Drive link if a file is already in their Drive.
+
+--------------------------------------------------------------------------------
+TAB 3: DYNAMIC BUILDING STORY & FLAT MANAGER (বিল্ডিংয়ের তলা ও ফ্ল্যাট নিয়ন্ত্রণ)
+--------------------------------------------------------------------------------
+Fulfils the requirement that the building is currently 5 stories but can be scaled up (6th, 7th story) or reduced/hidden anytime without touching code.
+
+A. Current Building Structure List:
+   - Shows all current floors in order (`৫ম তলা`, `৪র্থ তলা`, `৩য় তলা`, `২য় তলা`, `১ম তলা`).
+
+B. Dynamic Actions:
+   1. **`[ ➕ নতুন তলা যোগ করুন (Add New Story - e.g., ৬ষ্ঠ তলা) ]`:**
+      - Clicking this adds the next floor number (`৬ষ্ঠ তলা`), automatically creates default units (e.g., `৬এ`, `৬বি`) linked to the master floor blueprint, and stacks the new story on the Public Home Page building illustration.
+   2. **`[ 👁️ ওয়েবসাইটে দেখান / লুকিয়ে রাখুন (Show/Hide Story or Flat) ]`:**
+      - Allows the owner to hide a specific floor (for example, if the family lives on the 2nd floor and doesn't want it listed publicly) or reduce the visible stories without losing historical rent data.
+   3. **`[ 🗑️ সর্বশেষ তলা মুছে ফেলুন (Remove Top Story) ]`:**
+      - Protected by a clear Bangla confirmation dialog so parents never tap it by mistake.
+
+================================================================================
+4. RECOMMENDED DATABASE & BACKEND ARCHITECTURE FOR IMPLEMENTATION
+================================================================================
+- Frontend: HTML5, CSS3 (Custom Terracotta & Chuna variables), Vanilla JS or React.
+- Backend: Node.js + Express.js.
+- Database: PostgreSQL with 5 core tables:
+  1. `floors` (`id`, `floor_number`, `floor_name_bn`, `is_visible_public`)
+  2. `flats` (`id`, `floor_id`, `unit_position` ['A'|'B'], `flat_code_bn`, `is_to_let`, `available_from_bn`, `rent_amount`, `service_charge`, `bedrooms`, `washrooms`, `balconies`, `facing_bn`, `gas_type_bn`, `meter_type_bn`, `tenant_type_bn`, `renter_name`, `renter_phone`, `due_day_of_month`)
+  3. `flat_media_sections` (`id`, `flat_id`, `section_title_bn`, `section_caption_bn`, `sort_order`)
+  4. `flat_media_items` (`id`, `section_id`, `media_type` ['image'|'video'], `drive_file_id`, `sort_order`)
+  5. `rent_payments` (`id`, `flat_id`, `billing_month` ['YYYY-MM'], `expected_amount`, `paid_amount`, `due_date`, `payment_date`, `paid_on_time`, `status` ['PAID'|'LATE'|'PARTIAL'|'UNPAID'], `payment_method` ['Cash'|'bKash'|'Bank'], `notes`)
+- Media Storage: Google Drive API v3 (OAuth2 Refresh Token linked to a dedicated free 15GB Gmail account for the building).
