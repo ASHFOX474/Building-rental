@@ -1,6 +1,6 @@
 # Building Rental Management (মনি লজ)
 
-A two-part system for a single residential building in Maijdee, Noakhali:
+A two-part system for a single residential building — **মনি লজ (Moni Lodge)**, Noakhali:
 
 1. **Public To-Let Showcase** — Bangla, no login. Hand-drawn building view → floor blueprint → room-by-room photos/videos (Google Drive) + rent details.
 2. **Owner Admin Panel** — elderly-friendly, 4-digit PIN. Rent ledger & income, To-Let switch + Drive uploader, dynamic floors/flats.

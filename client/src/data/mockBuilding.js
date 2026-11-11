@@ -12,8 +12,8 @@
 //   'owner'     -> landlord's own flat (বাড়িওয়ালা), never for rent
 
 export const building = {
-  name: 'স্বপ্ননীড় ভবন',
-  area: 'মাইজদী, নোয়াখালী',
+  name: 'মনি লজ',
+  area: 'নোয়াখালী',
   perks: [
     'নিরাপদ আবাসিক পরিবেশ',
     '২৪ ঘণ্টা পানি ও সিসিটিভি নিরাপত্তা',
@@ -23,22 +23,20 @@ export const building = {
   showRentOnOccupied: true,
 
   location: {
-    addressBn: 'হাউজিং এস্টেট রোড, মাইজদী কোর্ট, নোয়াখালী',
+    addressBn: 'জহিরুল হক মিয়ার গ্যারেজ, জান্নাত প্লাজার পাশে।',
     landmarksBn: [
-      'মেইন রোডের মসজিদ থেকে ২ মিনিটের হাঁটা পথ',
-      'মাইজদী কোর্ট থেকে রিকশায় ৫ মিনিট',
-      'নোয়াখালী জেনারেল হাসপাতাল থেকে ১০ মিনিট',
+      'আলিপুরের দিকে রাস্তা ধরে মাত্র ৩–৪ মিনিট হাঁটার দূরত্বে।',
+      'মারকাজুল হেকমাহ ইন্টারন্যাশনাল মাদ্রাসার পাশে।',
     ],
-    // Plain Google Maps embed (no API key needed). TODO: replace with the exact pin.
-    mapEmbedUrl: 'https://www.google.com/maps?q=Maijdee+Court,+Noakhali&output=embed',
-    mapLinkUrl: 'https://maps.google.com/?q=Maijdee+Court,+Noakhali',
+    // Plain Google Maps embed (no API key needed), pinned via the Plus Code of "Moni Lodge".
+    mapEmbedUrl: 'https://www.google.com/maps?q=Moni+Lodge,+V34V%2B4RG,+Noakhali&output=embed',
+    mapLinkUrl: 'https://maps.app.goo.gl/ftChnHJmQ6modLxo9',
   },
 
   contact: {
     personBn: 'বাড়িওয়ালা / কেয়ারটেকার',
-    // TODO: replace with the real numbers.
-    phone: '01700000000',
-    whatsapp: '8801700000000',
+    phone: '01815023898',
+    whatsapp: '8801815023898',
   },
 };
 
