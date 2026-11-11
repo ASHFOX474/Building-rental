@@ -1,0 +1,366 @@
+/* ==========================================================================
+   Hand-drawn building (Home Page)
+   Layout: [left margin] [building body] [right margin], one grid row per floor
+   ========================================================================== */
+
+.bldg {
+  --gutter: clamp(84px, 17vw, 172px); /* side margins that hold the callouts */
+  --row-h: 132px; /* height of one story */
+  --wall: 3px;
+  width: 100%;
+  max-width: 940px;
+  margin: 0 auto;
+  padding-inline: 8px;
+}
+
+/* ---------- Roof & ground ---------- */
+.roof {
+  display: block;
+  width: calc(100% - 2 * var(--gutter));
+  max-height: 110px;
+  margin: 0 auto -4px; /* sit right on top of the frame */
+}
+
+.ground {
+  display: block;
+  width: calc(100% - 2 * var(--gutter) + 72px);
+  height: 30px;
+  margin: -4px auto 0;
+}
+
+/* ---------- Grid ---------- */
+.bldg__grid {
+  display: grid;
+  grid-template-columns: var(--gutter) minmax(0, 1fr) var(--gutter);
+  grid-template-rows: repeat(var(--floors), var(--row-h));
+}
+
+/* Second, faint pencil line slightly off the main wall -> sketch feel */
+.bldg__sketch {
+  grid-column: 2;
+  grid-row: 1 / -1;
+  margin: -6px -4px -3px -7px;
+  border: 1.5px solid rgba(31, 36, 33, 0.28);
+  border-radius: 31px 26px 32px 27px / 27px 32px 26px 31px;
+  transform: rotate(-0.35deg);
+  pointer-events: none;
+}
+
+.bldg__body {
+  grid-column: 2;
+  grid-row: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--surface-white);
+  border: var(--wall) solid var(--ink);
+  border-radius: 28px 30px 27px 29px / 29px 27px 30px 28px; /* ~28px, slightly organic */
+  box-shadow: 6px 8px 0 rgba(200, 90, 50, 0.1);
+}
+
+/* ---------- Floors & units ---------- */
+.floor {
+  display: flex;
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+.floor + .floor {
+  border-top: 1.5px solid var(--ink);
+}
+
+.unit {
+  position: relative;
+  flex-grow: 0;
+  flex-shrink: 0; /* width comes from inline flex-basis = widthPct */
+  min-width: 0;
+  display: flex;
+  container-type: inline-size;
+  color: var(--ink);
+  text-decoration: none;
+  transition: opacity 0.25s, filter 0.25s, background-color 0.2s;
+}
+
+.unit + .unit {
+  border-left: 1.5px solid var(--ink);
+}
+
+.unit__inner {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  width: 100%;
+  padding: 10px clamp(8px, 6cqi, 16px);
+}
+
+.unit__id {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: clamp(16px, 12cqi, 24px);
+  line-height: 1.15;
+}
+
+.unit__rent,
+.unit__from {
+  font-size: clamp(11px, 7.2cqi, 15px);
+  line-height: 1.35;
+}
+
+/* State 2: occupied */
+.unit--occupied {
+  background: #fdfbf7;
+}
+
+.unit--occupied .unit__id,
+.unit--occupied .unit__rent {
+  color: var(--text-muted);
+}
+
+.unit__taken {
+  align-self: flex-start;
+  margin-top: 4px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--occupied-bg);
+  color: #6f685f;
+  font-size: clamp(10px, 6.6cqi, 13px);
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+/* Very narrow cells (e.g. D2/E2 on phones): keep only the essentials */
+@container (max-width: 92px) {
+  .unit__taken {
+    white-space: normal;
+    padding: 1px 6px;
+    border-radius: 8px;
+  }
+}
+
+/* State 1: owner (বাড়িওয়ালা) */
+.unit--owner {
+  background-color: var(--surface-sand);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent 0 11px,
+    rgba(31, 36, 33, 0.05) 11px 12px
+  );
+}
+
+.unit--owner .unit__inner {
+  align-items: center;
+}
+
+.unit--owner .unit__id {
+  position: absolute;
+  top: 10px;
+  left: clamp(8px, 6cqi, 16px);
+  color: var(--text-muted);
+}
+
+.unit__owner {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: clamp(18px, 10cqi, 32px);
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+}
+
+/* State 3: available / To-Let */
+.unit--available {
+  background: linear-gradient(160deg, #ffffff 0%, var(--available-bg) 100%);
+  box-shadow: inset 0 0 0 3px var(--available);
+  cursor: pointer;
+}
+
+.unit--available .unit__id {
+  color: var(--available);
+}
+
+.unit--available .unit__rent strong {
+  font-family: var(--font-heading);
+  color: var(--terracotta);
+  font-size: 1.08em;
+}
+
+.unit--available .unit__from strong {
+  color: var(--available);
+}
+
+.unit--available:hover {
+  background: var(--available-bg);
+}
+
+.unit--available:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 3px var(--available), inset 0 0 0 6px var(--terracotta);
+}
+
+.unit--dimmed {
+  opacity: 0.32;
+  filter: grayscale(0.5);
+}
+
+/* Compact "ক্লিক করুন" badge: only shown on narrow phones (see media query) */
+.unit__badge {
+  display: none;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--terracotta);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.6;
+  white-space: nowrap;
+  animation: badge-pulse 1.8s ease-in-out infinite;
+}
+
+/* ---------- "ক্লিক করুন" elbow callouts ---------- */
+.callout {
+  position: relative;
+  display: block;
+  color: var(--terracotta);
+  text-decoration: none;
+}
+
+.callout--left {
+  grid-column: 1;
+  animation: nudge-right 1.8s ease-in-out infinite;
+}
+
+.callout--right {
+  grid-column: 3;
+  animation: nudge-left 1.8s ease-in-out infinite;
+}
+
+.callout__line {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+}
+
+.callout__line line {
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+
+/* The SVG is drawn for the left side; mirror it for the right */
+.callout--right .callout__line {
+  transform: scaleX(-1);
+}
+
+.callout__label {
+  position: absolute;
+  bottom: 67%;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Galada', var(--font-heading);
+  font-size: clamp(15px, 2.3vw, 23px);
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.callout--left .callout__label {
+  left: 2%;
+}
+
+.callout--right .callout__label {
+  right: 2%;
+  flex-direction: row-reverse;
+}
+
+.callout:hover,
+.callout:focus-visible {
+  color: #a8441f;
+  outline: none;
+}
+
+.callout:focus-visible .callout__label {
+  text-decoration: underline;
+}
+
+.callout__dot {
+  position: relative;
+  width: 9px;
+  height: 9px;
+  flex: none;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.callout__dot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  animation: ring 1.8s ease-out infinite;
+}
+
+@keyframes ring {
+  from { transform: scale(1); opacity: 0.8; }
+  to { transform: scale(2.8); opacity: 0; }
+}
+
+@keyframes nudge-right {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(4px); }
+}
+
+@keyframes nudge-left {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(-4px); }
+}
+
+@keyframes badge-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(200, 90, 50, 0.45); }
+  50% { box-shadow: 0 0 0 5px rgba(200, 90, 50, 0); }
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 760px) {
+  .bldg {
+    --row-h: 118px;
+  }
+}
+
+/* Narrow phones: no room for side margins -> callouts become in-cell badges */
+@media (max-width: 560px) {
+  .bldg {
+    --gutter: 0px;
+    --row-h: 112px;
+    padding-inline: 4px;
+  }
+
+  .callout {
+    display: none;
+  }
+
+  .unit__badge {
+    display: inline-block;
+  }
+
+  .unit--available .unit__inner {
+    justify-content: flex-end;
+    padding-bottom: 12px;
+  }
+
+  .ground {
+    width: calc(100% + 8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .callout,
+  .callout__dot::after,
+  .unit__badge {
+    animation: none;
+  }
+}
