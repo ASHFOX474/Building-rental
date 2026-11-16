@@ -1,6 +1,7 @@
 /* ==========================================================================
    Page 2: Interactive Architectural Floor Map View (Terracotta & Chuna)
-   Clean, single-box layout with integrated directional edges and embedded CTA.
+   Infused with Bangladeshi Heritage Alpana, Kantajew Terracotta Corner Motifs,
+   Puthichitro Double-Ruled Frame, and Whispering Nature Flourishes.
    ========================================================================== */
 
 .fmap-page {
@@ -10,7 +11,7 @@
   margin: 0 auto;
 }
 
-/* ---------- Simplified Header ---------- */
+/* ---------- Header & Top Floor Switcher Bar ---------- */
 .fmap-header {
   position: relative;
   text-align: center;
@@ -23,7 +24,34 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
+}
+
+.fmap-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 42px;
+  padding: 6px 15px;
+  border: 1.8px solid var(--ink);
+  border-radius: 12px;
+  background: var(--surface-white);
+  color: var(--ink);
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 15px;
+  text-decoration: none;
+  box-shadow: 2px 2px 0 var(--ink);
+  transition: transform 0.12s, background-color 0.15s;
+}
+
+.fmap-back-btn:hover {
+  background: var(--surface-sand);
+}
+
+.fmap-back-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 var(--ink);
 }
 
 /* Top Floor Switcher Bar */
@@ -71,38 +99,31 @@
   background: var(--terracotta);
 }
 
-.fmap-back-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 42px;
-  padding: 6px 15px;
-  border: 1.8px solid var(--ink);
-  border-radius: 12px;
-  background: var(--surface-white);
-  color: var(--ink);
-  font-family: var(--font-heading);
-  font-weight: 700;
-  font-size: 15px;
-  text-decoration: none;
-  box-shadow: 2px 2px 0 var(--ink);
-  transition: transform 0.12s, background-color 0.15s;
-}
-
-.fmap-back-btn:hover {
-  background: var(--surface-sand);
-}
-
-.fmap-back-btn:active {
-  transform: translate(1px, 1px);
-  box-shadow: 1px 1px 0 var(--ink);
-}
-
 .fmap-header__title {
-  margin: 0 0 12px;
+  margin: 0;
   font-size: clamp(24px, 4vw, 34px);
-  line-height: 1.25;
+  line-height: 1.22;
   color: var(--ink);
+}
+
+/* Ornamental Alpana Title Divider (~~~ ❖ ~~~) */
+.fmap-title-divider {
+  display: flex;
+  justify-content: center;
+  margin: 4px auto 10px;
+}
+
+.fmap-title-divider__svg {
+  width: 230px;
+  height: 20px;
+  opacity: 0.72;
+  transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.fmap-header:hover .fmap-title-divider__svg {
+  opacity: 0.92;
+  transform: scaleX(1.03);
 }
 
 /* 3-Pill Legend */
@@ -178,24 +199,203 @@
 }
 
 /* ==========================================================================
-   Single Consolidated Floor Map Box (.fmap-box)
-   All 4 directional texts + the blueprint SVG sit directly inside this ONE box
-   with NO nested boxes, NO road lane graphics, and NO compass rose.
+   Single Consolidated Royal Deed / Blueprint Box (.fmap-box)
+   Antique Double-Line "Puthichitro" Frame + 4 Corner Alpana Motifs
    ========================================================================== */
 
 .fmap-box {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 16px 18px;
-  border: 2px solid var(--ink);
-  border-radius: 20px;
-  background: var(--surface-sand);
+  padding: 20px 24px;
+  /* Outer thicker terracotta-ink line of the Puthichitro double border */
+  border: 2.2px solid #b5532e;
+  border-radius: 18px;
+  background: radial-gradient(
+    ellipse at center,
+    #faf7f2 0%,
+    #f2ece1 100%
+  );
+  box-shadow: 0 4px 18px rgba(31, 36, 33, 0.05);
+  transition: box-shadow 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    border-color 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
+.fmap-box:hover {
+  border-color: var(--terracotta);
+  box-shadow: 0 8px 26px rgba(200, 90, 50, 0.09);
+}
+
+/* Inner thin Puthichitro rule with 4 corner junction florets (❖) */
+.fmap-box__puthi-inner {
+  position: absolute;
+  inset: 6px;
+  border: 1px solid rgba(200, 90, 50, 0.34);
+  border-radius: 13px;
+  pointer-events: none;
+  z-index: 1;
+  transition: border-color 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.fmap-box:hover .fmap-box__puthi-inner {
+  border-color: rgba(200, 90, 50, 0.5);
+}
+
+.puthi-junction {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3ede2;
+  color: var(--terracotta);
+  font-size: 9px;
+  line-height: 1;
+  opacity: 0.55;
+  transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.puthi-junction--tl {
+  top: -7px;
+  left: -7px;
+}
+
+.puthi-junction--tr {
+  top: -7px;
+  right: -7px;
+}
+
+.puthi-junction--bl {
+  bottom: -7px;
+  left: -7px;
+}
+
+.puthi-junction--br {
+  bottom: -7px;
+  right: -7px;
+}
+
+.fmap-box:hover .puthi-junction {
+  opacity: 0.8;
+}
+
+/* ==========================================================================
+   4 L-Shaped Ornamental Corner Motifs (Kantajew Terracotta & Alpana)
+   Max 46x46px, idle opacity 0.25, natural dawn reveal + ambient hover breath
+   ========================================================================== */
+
+.alpana-corner {
+  position: absolute;
+  width: 46px;
+  height: 46px;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0.25;
+  --tx: 0px;
+  --ty: 0px;
+  --rot: 0deg;
+  --sc: 1;
+  transform: translate(var(--tx), var(--ty)) rotate(var(--rot)) scale(var(--sc));
+  transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  animation: alpana-dawn-reveal 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.15s both;
+}
+
+.alpana-corner__svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.alpana-corner--tl {
+  top: 10px;
+  left: 10px;
+  --rot: 0deg;
+}
+
+.alpana-corner--tr {
+  top: 10px;
+  right: 10px;
+  --rot: 90deg;
+}
+
+.alpana-corner--bl {
+  bottom: 10px;
+  left: 10px;
+  --rot: -90deg;
+}
+
+.alpana-corner--br {
+  bottom: 10px;
+  right: 10px;
+  --rot: 180deg;
+}
+
+/* Ambient Focus Hover: breathe to 0.35 opacity & expand ~2px into corners */
+.fmap-box:hover .alpana-corner--tl {
+  opacity: 0.35;
+  --tx: -2px;
+  --ty: -2px;
+}
+
+.fmap-box:hover .alpana-corner--tr {
+  opacity: 0.38;
+  --tx: 2px;
+  --ty: -2px;
+}
+
+.fmap-box:hover .alpana-corner--bl {
+  opacity: 0.35;
+  --tx: -2px;
+  --ty: 2px;
+}
+
+.fmap-box:hover .alpana-corner--br {
+  opacity: 0.38;
+  --tx: 2px;
+  --ty: 2px;
+}
+
+/* Unit Highlight: right corners near Unit B2 gently pulse to guide the eye */
+.fmap-box--has-available .alpana-corner--tr .alpana-corner__svg,
+.fmap-box--has-available .alpana-corner--br .alpana-corner__svg {
+  animation: alpana-unit-pulse 4.2s ease-in-out 1.4s infinite;
+}
+
+@keyframes alpana-dawn-reveal {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) rotate(var(--rot)) scale(0.96);
+  }
+  100% {
+    opacity: 0.25;
+    transform: translate(var(--tx), var(--ty)) rotate(var(--rot)) scale(1);
+  }
+}
+
+@keyframes alpana-unit-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    filter: drop-shadow(0 0 0 rgba(200, 90, 50, 0));
+  }
+  50% {
+    opacity: 1.35;
+    filter: drop-shadow(0 0 3px rgba(200, 90, 50, 0.32));
+  }
+}
+
+/* ==========================================================================
+   Grid Layout & Whispering Nature Motifs in Edge Margin Text
+   ========================================================================== */
+
 .fmap-box__middle {
+  position: relative;
+  z-index: 2;
   display: grid;
-  grid-template-columns: 112px minmax(0, 1fr) 136px;
+  grid-template-columns: 118px minmax(0, 1fr) 142px;
   gap: 8px;
   align-items: center;
 }
@@ -205,8 +405,14 @@
   min-width: 0;
 }
 
-/* Integrated Directional Edge Labels (Plain text inside the same box — no borders) */
+/* Integrated Directional Edge Labels */
 .fmap-box__edge {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
   color: var(--ink);
   font-family: var(--font-heading);
   font-size: 15px;
@@ -226,13 +432,62 @@
 }
 
 .fmap-box__edge--left {
+  flex-direction: column;
+  gap: 6px;
   color: #8a5600;
   padding: 0 4px;
 }
 
 .fmap-box__edge--right {
+  flex-direction: column;
+  gap: 6px;
   color: var(--available);
   padding: 0 4px;
+}
+
+/* Hand-Drawn Whispering Nature Motifs */
+.nature-motif {
+  flex-shrink: 0;
+  opacity: 0.38;
+  transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.fmap-box:hover .nature-motif {
+  opacity: 0.56;
+}
+
+.nature-motif--foliage {
+  width: 50px;
+  height: 16px;
+  color: var(--available);
+}
+
+.nature-motif--flip {
+  transform: scaleX(-1);
+}
+
+.fmap-box:hover .nature-motif--foliage:not(.nature-motif--flip) {
+  transform: translateX(-2px);
+}
+
+.fmap-box:hover .nature-motif--foliage.nature-motif--flip {
+  transform: scaleX(-1) translateX(-2px);
+}
+
+.nature-motif--breeze {
+  width: 68px;
+  height: 18px;
+  color: #b4690e;
+}
+
+.fmap-box:hover .nature-motif--breeze {
+  transform: translateX(3px);
+}
+
+.nature-motif--flourish {
+  width: 44px;
+  height: 12px;
+  color: var(--terracotta);
 }
 
 /* ==========================================================================
@@ -275,6 +530,7 @@
 
   .fmap-box__edge--left,
   .fmap-box__edge--right {
+    flex-direction: row;
     padding: 2px 8px;
   }
 }
@@ -285,11 +541,31 @@
   }
 
   .fmap-box {
-    padding: 12px 10px;
+    padding: 16px 12px;
+  }
+
+  .alpana-corner {
+    width: 36px;
+    height: 36px;
+  }
+
+  .nature-motif--foliage,
+  .nature-motif--flourish {
+    display: none;
   }
 
   .fmap-legend__pill {
     font-size: 12.5px;
     padding: 4px 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .alpana-corner,
+  .alpana-corner__svg,
+  .nature-motif,
+  .fmap-title-divider__svg {
+    animation: none !important;
+    transition: none !important;
   }
 }
