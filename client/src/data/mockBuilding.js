@@ -41,8 +41,8 @@ export const building = {
 
   // Surrounding environment context for the architectural floor map (Top = West)
   surroundings: {
-    westTopBn: '⬅️ পশ্চিম দিক — 🌳 আমাদের নিজস্ব খালি জায়গা (খোলামেলা পরিবেশ)',
-    eastBottomBn: '🛣️ সামনের রাস্তা (পূর্ব দিক) — রাস্তার বিপরীত পাশে ভবন',
+    westTopBn: '⬅️ পশ্চিম দিক — আমাদের নিজস্ব খালি জায়গা (খোলামেলা পরিবেশ)',
+    eastBottomBn: '🛣️ সামনের রাস্তা (পূর্ব দিক) — রাস্তার ওপারে ভবন',
     northRightBn: '🛣️ উত্তর পাশের রাস্তা ও খোলা প্লট (কোনো বিল্ডিং নেই — প্রচুর আলো-বাতাস 🍃)',
     southLeftBn: '☀️ দক্ষিণ দিক (দক্ষিণা বাতাস)',
   },

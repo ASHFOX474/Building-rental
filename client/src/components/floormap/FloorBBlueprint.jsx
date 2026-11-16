@@ -1,37 +1,26 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { formatTaka, monthBn } from '../../lib/bangla.js';
 
 /**
  * Exact architectural floorplate for Row B (2nd Floor / ২য় তলা: Units B1 & B2)
  * reconstructed directly from the building's AutoCAD blueprint.
  *
- * Orientation:
- *   TOP    = West  (পশ্চিম — আমাদের নিজস্ব খালি জায়গা)
- *   BOTTOM = East  (পূর্ব — সামনের রাস্তা)
- *   RIGHT  = North (উত্তর — উত্তর পাশের রাস্তা ও খোলা প্লট)
- *   LEFT   = South (দক্ষিণ — দক্ষিণা বাতাস)
- *
- * Unit B1 (Left + Top-Center-Right L-shape): Owner's residence (বাড়িওয়ালা)
- * Unit B2 (Right + Bottom-Right): Tenant unit (ভাড়াটিয়ার ইউনিট)
+ * - Unit B1 (Left L-shape): Muted sand fill (#EAE3D5), faint internal walls
+ *   (opacity: 0.3), and gentle centered overlay text without any outer box.
+ * - Unit B2 (Right): Outlined in deep Terracotta (#C85A32), with the primary
+ *   "🎥 ছবি এবং ভিডিও দেখুন ➔" button embedded directly inside the center of
+ *   the Drawing & Dining Room.
  */
-export default function FloorBBlueprint({ floor, selectedUnitId, demoToLet }) {
+export default function FloorBBlueprint({ floor }) {
   const navigate = useNavigate();
   const [b2Hovered, setB2Hovered] = useState(false);
-  const [cardMinimized, setCardMinimized] = useState(false);
+  const [btnHovered, setBtnHovered] = useState(false);
 
-  const unitB1 = floor.units.find((u) => u.id === 'B1') || { id: 'B1', status: 'owner' };
-  const rawB2 = floor.units.find((u) => u.id === 'B2') || {
-    id: 'B2',
-    status: 'occupied',
-    rent: 10500,
-    availableFrom: 'june',
-  };
+  const rawB2 = floor.units.find((u) => u.id === 'B2') || { id: 'B2' };
 
-  const isToLet = demoToLet || rawB2.status === 'available';
-  const b2AccentColor = isToLet ? '#2D6A4F' : '#C85A32';
-  const b2FillColor = isToLet ? '#F3FAF5' : '#FFFDF9';
-  const b2VerandaFill = isToLet ? '#E2F2E8' : '#F6ECE3';
+  const b2AccentColor = '#C85A32';
+  const b2FillColor = '#FFFDF9';
+  const b2VerandaFill = '#F6ECE3';
 
   const handleOpenMedia = (e) => {
     if (e) e.stopPropagation();
@@ -80,66 +69,43 @@ export default function FloorBBlueprint({ floor, selectedUnitId, demoToLet }) {
     <div className="bp-stage">
       <svg
         className="bp-svg"
-        viewBox="65 30 870 545"
+        viewBox="88 46 824 512"
         role="img"
         aria-label="২য় তলার (ফ্লোর B) স্থাপত্য ফ্লোর ম্যাপ: বাম পাশে ইউনিট B1 (বাড়িওয়ালা) এবং ডান পাশে ইউনিট B2 (ভাড়াটিয়ার ইউনিট)"
       >
         <defs>
-          {/* Subtle architectural grid pattern for blueprint canvas */}
-          <pattern id="bp-grid" width="24" height="24" patternUnits="userSpaceOnUse">
-            <path
-              d="M 24 0 L 0 0 0 24"
-              fill="none"
-              stroke="rgba(31, 36, 33, 0.055)"
-              strokeWidth="0.8"
-            />
-          </pattern>
-
-          {/* Subtle diagonal hatch for Owner Unit B1 */}
-          <pattern id="owner-hatch" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(-35)">
-            <line x1="0" y1="0" x2="0" y2="14" stroke="rgba(31, 36, 33, 0.06)" strokeWidth="2" />
-          </pattern>
-
           {/* Soft drop shadow for interactive B2 unit */}
           <filter id="b2-glow" x="-6%" y="-6%" width="112%" height="114%">
             <feDropShadow
               dx="0"
-              dy="4"
-              stdDeviation={b2Hovered || selectedUnitId === 'B2' ? '7' : '3'}
+              dy="3"
+              stdDeviation={b2Hovered ? '6' : '2.5'}
               floodColor={b2AccentColor}
-              floodOpacity={b2Hovered || selectedUnitId === 'B2' ? '0.28' : '0.14'}
+              floodOpacity={b2Hovered ? '0.22' : '0.1'}
             />
           </filter>
         </defs>
 
-        {/* Blueprint grid background */}
-        <rect x="65" y="30" width="870" height="545" fill="url(#bp-grid)" rx="14" />
-
         {/* ===================================================================
             1. LEFT L-SHAPED UNIT: B1 (OWNER'S UNIT / বাড়িওয়ালা)
-               Rendered with muted sand fill (#EAE3D5) and faint watermark
-               internal walls & labels (opacity: 0.34) per specification.
+               Muted sand fill (#EAE3D5) and faint watermark internal walls
+               & labels (opacity: 0.3), with gentle centered overlay text
+               (NO outer box around the text).
            =================================================================== */}
         <g className="bp-unit bp-unit--owner" aria-label="ইউনিট B1 — বাড়িওয়ালা (মালিকের নিজস্ব বাসভবন)">
-          {/* Base Sand Fill + Subtle Hatch */}
+          {/* Base Sand Fill */}
           <polygon points={b1PolygonPoints} fill="#EAE3D5" />
-          <polygon points={b1PolygonPoints} fill="url(#owner-hatch)" />
 
-          {/* Internal Room Walls & Labels of B1 (faint watermark opacity) */}
-          <g className="bp-b1-internals" opacity="0.33" stroke="#1F2421" fill="none">
+          {/* Internal Room Walls & Labels of B1 (faint watermark opacity: 0.3) */}
+          <g className="bp-b1-internals" opacity="0.3" stroke="#1F2421" fill="none">
             {/* Far-Left Top Veranda (100..158, 60..128) & Bathroom (100..158, 128..212) */}
             <rect x="100" y="60" width="58" height="68" fill="#DFD7C6" strokeWidth="1.6" />
-            <rect x="100" y="128" width="58" height="84" fill="#E5DECFE0" strokeWidth="1.6" />
-            {/* Door ticks on x=158 */}
+            <rect x="100" y="128" width="58" height="84" fill="#E5DECF" strokeWidth="1.6" />
             <rect x="155" y="102" width="6" height="22" fill="#EAE3D5" strokeWidth="1" />
             <rect x="155" y="182" width="6" height="24" fill="#EAE3D5" strokeWidth="1" />
 
             {/* Top-Left Bedroom (158..286, 60..212) with angled bottom-right doorway */}
-            <path
-              d="M 158,60 L 286,60 L 286,188 L 225,212 L 158,212 Z"
-              strokeWidth="1.8"
-            />
-            {/* Chamfered door double-line (225,212 -> 286,188) */}
+            <path d="M 158,60 L 286,60 L 286,188 L 225,212 L 158,212 Z" strokeWidth="1.8" />
             <line x1="227" y1="215" x2="285" y2="192" strokeWidth="1.2" />
 
             {/* Top-Left-Center Veranda (286..340, 60..104) & Bathroom (340..432, 60..104) */}
@@ -158,15 +124,11 @@ export default function FloorBBlueprint({ floor, selectedUnitId, demoToLet }) {
             <path d="M 432,110 L 570,110 L 570,240 L 432,240" strokeWidth="1.8" />
 
             {/* Top-Right of Blue Zone (B1's 4th Bedroom + Bathroom + Veranda: 570..735, 60..204) */}
-            {/* Bathroom (570..660, 60..118) */}
             <rect x="570" y="60" width="90" height="58" fill="#E5DECF" strokeWidth="1.6" />
             <rect x="632" y="115" width="22" height="5" fill="#EAE3D5" strokeWidth="1" />
-            {/* Veranda (660..735, 60..102) */}
             <rect x="660" y="60" width="75" height="42" fill="#DFD7C6" strokeWidth="1.6" />
             <rect x="662" y="99" width="24" height="5" fill="#EAE3D5" strokeWidth="1" />
-            {/* 4th Bedroom (570..735, 118/102..204) */}
             <path d="M 570,118 L 660,118 L 660,102 L 735,102 L 735,204 L 570,204 Z" strokeWidth="1.8" />
-            {/* Door on left wall of 4th bedroom (x=570) */}
             <rect x="567" y="164" width="6" height="32" fill="#EAE3D5" strokeWidth="1" />
 
             {/* Middle-Left Common Toilet (100..185, 212..308) */}
@@ -202,7 +164,7 @@ export default function FloorBBlueprint({ floor, selectedUnitId, demoToLet }) {
               <text x="142" y="256" fontSize="11.5" fontWeight="600">কমন</text>
               <text x="142" y="272" fontSize="11.5" fontWeight="600">টয়লেট</text>
 
-              <text x="316" y="278" fontSize="15" fontWeight="700">ড্রয়িং ও ডাইনিং</text>
+              <text x="310" y="264" fontSize="14.5" fontWeight="700">ড্রয়িং ও ডাইনিং</text>
 
               <text x="183" y="434" fontSize="13.5" fontWeight="700">বেডরুম</text>
               <text x="183" y="527" fontSize="11.5" fontWeight="600">বারান্দা</text>
@@ -214,43 +176,30 @@ export default function FloorBBlueprint({ floor, selectedUnitId, demoToLet }) {
           <polygon
             points={b1PolygonPoints}
             fill="none"
-            stroke="#6E675F"
-            strokeWidth="3.2"
+            stroke="#7A736A"
+            strokeWidth="2.8"
             strokeLinejoin="round"
           />
 
-          {/* B1 Entry Doorways from Stairs (matching blue entry lines in CAD) */}
-          <line x1="432" y1="258" x2="432" y2="306" stroke="#8C857B" strokeWidth="4" strokeDasharray="5 4" />
-          <line x1="518" y1="240" x2="558" y2="240" stroke="#8C857B" strokeWidth="4" strokeDasharray="5 4" />
+          {/* B1 Entry Doorways from Stairs */}
+          <line x1="432" y1="258" x2="432" y2="306" stroke="#8C857B" strokeWidth="3.5" strokeDasharray="5 4" />
+          <line x1="518" y1="240" x2="558" y2="240" stroke="#8C857B" strokeWidth="3.5" strokeDasharray="5 4" />
 
-          {/* Prominent Warm Centered Overlay Badge on B1 */}
-          <g className="bp-owner-badge" transform="translate(308, 326)">
-            <rect
-              x="-126"
-              y="-38"
-              width="252"
-              height="76"
-              rx="16"
-              fill="#FAF7F2"
-              stroke="#1F2421"
-              strokeWidth="2.2"
-            />
-            <rect
-              x="-120"
-              y="-32"
-              width="240"
-              height="64"
-              rx="12"
-              fill="#F0EBE1"
-              stroke="#8C857B"
-              strokeWidth="1"
-              strokeDasharray="4 3"
-            />
-            <text x="0" y="-4" textAnchor="middle" fill="#1F2421" fontSize="18" fontWeight="700" fontFamily="var(--font-heading)">
-              🏠 {unitB1.ownerLabelBn || 'ইউনিট B1 — বাড়িওয়ালা'}
-            </text>
-            <text x="0" y="18" textAnchor="middle" fill="#5C5852" fontSize="13" fontWeight="600">
-              {unitB1.ownerSubtextBn || '(মালিকের নিজস্ব বাসভবন)'}
+          {/* Gentle Centered Overlay Text on B1 (NO outer box border!) */}
+          <g className="bp-owner-text" transform="translate(310, 322)">
+            <text
+              x="0"
+              y="0"
+              textAnchor="middle"
+              fill="#3E3A35"
+              stroke="#EAE3D5"
+              strokeWidth="7"
+              paintOrder="stroke fill"
+              fontSize="18.5"
+              fontWeight="700"
+              fontFamily="var(--font-heading)"
+            >
+              🏠 ইউনিট B1 — বাড়িওয়ালা (মালিকের নিজস্ব বাসভবন)
             </text>
           </g>
         </g>
@@ -259,7 +208,6 @@ export default function FloorBBlueprint({ floor, selectedUnitId, demoToLet }) {
             2. CENTRAL STAIRCASE (সিঁড়ি / STAIRS: x=432..570, y=240..356)
            =================================================================== */}
         <g className="bp-stairs" aria-label="কেন্দ্রীয় সিঁড়ি ঘর (Staircase)">
-          {/* Stairwell box */}
           <rect
             x="432"
             y="240"
@@ -267,14 +215,10 @@ export default function FloorBBlueprint({ floor, selectedUnitId, demoToLet }) {
             height="116"
             fill="#F5F0E6"
             stroke="#1F2421"
-            strokeWidth="2.4"
+            strokeWidth="2.2"
           />
-
-          {/* Landing strip at top of stairs (y=240..268) */}
-          <line x1="432" y1="268" x2="570" y2="268" stroke="#1F2421" strokeWidth="1.4" />
-
-          {/* Two flights of steps with central handrail (x=501) */}
-          <line x1="501" y1="268" x2="501" y2="338" stroke="#1F2421" strokeWidth="1.6" />
+          <line x1="432" y1="268" x2="570" y2="268" stroke="#1F2421" strokeWidth="1.3" />
+          <line x1="501" y1="268" x2="501" y2="338" stroke="#1F2421" strokeWidth="1.4" />
           {[278, 288, 298, 308, 318, 328, 338].map((yPos) => (
             <line
               key={yPos}
@@ -283,39 +227,30 @@ export default function FloorBBlueprint({ floor, selectedUnitId, demoToLet }) {
               x2="564"
               y2={yPos}
               stroke="#5C5852"
-              strokeWidth="1.1"
+              strokeWidth="1"
+              opacity="0.65"
             />
           ))}
-
-          {/* Up/Down direction arrow on stairs */}
-          <path d="M 468,332 L 468,276 L 463,283 M 468,276 L 473,283" fill="none" stroke="#C85A32" strokeWidth="1.6" strokeLinecap="round" />
-          <path d="M 534,276 L 534,332 L 529,325 M 534,332 L 539,325" fill="none" stroke="#5C5852" strokeWidth="1.4" strokeLinecap="round" />
-
-          {/* Stair label pill */}
-          <rect x="455" y="290" width="92" height="28" rx="7" fill="#FAF7F2" stroke="#1F2421" strokeWidth="1.5" />
-          <text x="501" y="309" textAnchor="middle" fill="#1F2421" fontSize="13.5" fontWeight="700" fontFamily="var(--font-heading)">
+          <text
+            x="501"
+            y="308"
+            textAnchor="middle"
+            fill="#1F2421"
+            stroke="#F5F0E6"
+            strokeWidth="6"
+            paintOrder="stroke fill"
+            fontSize="14"
+            fontWeight="700"
+            fontFamily="var(--font-heading)"
+          >
             সিঁড়ি (Stairs)
-          </text>
-
-          {/* Open setback / air shaft below stairs (x=432..570, y=356..500) */}
-          <rect
-            x="432"
-            y="356"
-            width="138"
-            height="144"
-            fill="rgba(250, 247, 242, 0.65)"
-            stroke="#8C857B"
-            strokeWidth="1.2"
-            strokeDasharray="4 4"
-          />
-          <text x="501" y="424" textAnchor="middle" fill="#8C857B" fontSize="11.5" fontWeight="600">
-            খোলা স্পেস / আলো-বাতাস
           </text>
         </g>
 
         {/* ===================================================================
             3. RIGHT UNIT: B2 (TENANT UNIT / ভাড়াটিয়ার ইউনিট)
-               Interactive floorplate matching the Red Border in AutoCAD.
+               Outlined in deep Terracotta (#C85A32) with the primary CTA button
+               embedded right inside the center of Drawing & Dining Room.
            =================================================================== */}
         <g
           className={`bp-unit bp-unit--tenant ${b2Hovered ? 'bp-unit--hovered' : ''}`}
@@ -328,7 +263,7 @@ export default function FloorBBlueprint({ floor, selectedUnitId, demoToLet }) {
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') handleOpenMedia(e);
           }}
-          aria-label={`ইউনিট B2 — ৩টি বেডরুম, ড্রয়িং-ডাইনিং, ২টি বাথরুম, ৩টি বারান্দা, কিচেন। ছবি এবং ভিডিও দেখতে ক্লিক করুন`}
+          aria-label="ইউনিট B2 — ছবি এবং ভিডিও দেখতে ক্লিক করুন"
         >
           {/* Base warm surface of Unit B2 */}
           <polygon points={b2PolygonPoints} fill={b2FillColor} />
@@ -343,7 +278,6 @@ export default function FloorBBlueprint({ floor, selectedUnitId, demoToLet }) {
             stroke="#1F2421"
             strokeWidth="2.2"
           />
-          {/* Top-Right Veranda (848..900, 60..122) */}
           <rect
             x="848"
             y="60"
@@ -353,7 +287,6 @@ export default function FloorBBlueprint({ floor, selectedUnitId, demoToLet }) {
             stroke="#1F2421"
             strokeWidth="2"
           />
-          {/* Top-Right Attached Bathroom (848..900, 122..204) */}
           <rect
             x="848"
             y="122"
@@ -363,12 +296,9 @@ export default function FloorBBlueprint({ floor, selectedUnitId, demoToLet }) {
             stroke="#1F2421"
             strokeWidth="2"
           />
-          {/* Doors for Top-Right Bedroom, Veranda & Bathroom (exact CAD positions) */}
-          {/* Door between Bedroom and Veranda on x=848 */}
+          {/* Doors for Top-Right Bedroom, Veranda & Bathroom */}
           <rect x="845" y="96" width="6" height="22" fill="#FFFDF9" stroke="#C85A32" strokeWidth="1.3" />
-          {/* Door between Bedroom and Bathroom on x=848 */}
           <rect x="845" y="130" width="6" height="26" fill="#FFFDF9" stroke="#C85A32" strokeWidth="1.3" />
-          {/* Door between Top-Right Bedroom and Drawing/Dining on y=204 */}
           <rect x="738" y="201" width="44" height="6" fill="#FFFDF9" stroke="#C85A32" strokeWidth="1.3" />
 
           {/* --- ROOM 2: Central Drawing & Dining Room (570..824, 204..356) --- */}
@@ -377,7 +307,7 @@ export default function FloorBBlueprint({ floor, selectedUnitId, demoToLet }) {
             y="204"
             width="254"
             height="152"
-            fill={isToLet ? '#ECF8F0' : '#FAF5EC'}
+            fill="#FAF5EC"
             stroke="#1F2421"
             strokeWidth="2.2"
           />
@@ -392,7 +322,6 @@ export default function FloorBBlueprint({ floor, selectedUnitId, demoToLet }) {
             stroke="#1F2421"
             strokeWidth="2"
           />
-          {/* Open doorway into Kitchen on x=824 (top part y=206..238) */}
           <line x1="824" y1="207" x2="824" y2="238" stroke="#FAF5EC" strokeWidth="3.5" />
 
           <rect
@@ -404,7 +333,6 @@ export default function FloorBBlueprint({ floor, selectedUnitId, demoToLet }) {
             stroke="#1F2421"
             strokeWidth="2"
           />
-          {/* Door into Common Toilet on x=824 */}
           <rect x="821" y="316" width="6" height="32" fill="#FFFDF9" stroke="#C85A32" strokeWidth="1.3" />
 
           {/* --- ROOM 4: Bottom-Left Bedroom of B2 (570..735, 356..500) + East Veranda --- */}
@@ -417,9 +345,7 @@ export default function FloorBBlueprint({ floor, selectedUnitId, demoToLet }) {
             stroke="#1F2421"
             strokeWidth="2.2"
           />
-          {/* Door from Drawing/Dining on y=356 */}
           <rect x="574" y="353" width="44" height="6" fill="#FFFDF9" stroke="#C85A32" strokeWidth="1.3" />
-          {/* Protruding East Veranda 1 (584..720, 500..545) */}
           <rect
             x="584"
             y="500"
@@ -429,7 +355,6 @@ export default function FloorBBlueprint({ floor, selectedUnitId, demoToLet }) {
             stroke="#1F2421"
             strokeWidth="2"
           />
-          {/* Door to Veranda 1 on y=500 */}
           <rect x="602" y="497" width="38" height="6" fill="#FFFDF9" stroke="#C85A32" strokeWidth="1.3" />
 
           {/* --- ROOM 5: Bottom-Right Bedroom of B2 (735..900, 356..500) + East Veranda --- */}
@@ -442,9 +367,7 @@ export default function FloorBBlueprint({ floor, selectedUnitId, demoToLet }) {
             stroke="#1F2421"
             strokeWidth="2.2"
           />
-          {/* Door from Drawing/Dining on y=356 */}
           <rect x="738" y="353" width="44" height="6" fill="#FFFDF9" stroke="#C85A32" strokeWidth="1.3" />
-          {/* Protruding East Veranda 2 (748..884, 500..545) */}
           <rect
             x="748"
             y="500"
@@ -454,17 +377,9 @@ export default function FloorBBlueprint({ floor, selectedUnitId, demoToLet }) {
             stroke="#1F2421"
             strokeWidth="2"
           />
-          {/* Door to Veranda 2 on y=500 */}
           <rect x="762" y="497" width="38" height="6" fill="#FFFDF9" stroke="#C85A32" strokeWidth="1.3" />
 
-          {/* Subtle CAD ceiling-fan / fixture crosshair inside Bottom-Right Bedroom (matching CAD image) */}
-          <g stroke="rgba(31, 36, 33, 0.25)" strokeWidth="1.1" fill="none">
-            <line x1="772" y1="362" x2="772" y2="442" />
-            <line x1="730" y1="396" x2="814" y2="396" />
-            <rect x="768" y="392" width="8" height="8" fill={b2FillColor} stroke="rgba(31, 36, 33, 0.35)" />
-          </g>
-
-          {/* Outer Highlight Border of Tenant Unit B2 (Red border in CAD -> Terracotta / Leaf Green) */}
+          {/* Outer Deep Terracotta Border of Tenant Unit B2 */}
           <polygon
             points={b2PolygonPoints}
             fill="none"
@@ -473,137 +388,94 @@ export default function FloorBBlueprint({ floor, selectedUnitId, demoToLet }) {
             strokeLinejoin="round"
           />
 
-          {/* 3 Blue Square Entry Pillars on the Staircase Entry Wall (x=570, matching CAD image) */}
+          {/* 3 Square Entry Pillars on the Staircase Entry Wall (x=570) */}
           <g fill="#2B5B84" stroke="#1F2421" strokeWidth="1.2">
             <rect x="565" y="242" width="10" height="10" rx="1.5" />
             <rect x="565" y="294" width="10" height="10" rx="1.5" />
             <rect x="565" y="344" width="10" height="10" rx="1.5" />
           </g>
-          {/* Entry arrow from Stairs into B2 Drawing & Dining */}
-          <g className="bp-entry-indicator">
-            <path
-              d="M 552,272 L 592,272"
-              stroke="#C85A32"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-            />
-            <polygon points="596,272 586,267 586,277" fill="#C85A32" />
-            <text x="600" y="276" fill="#C85A32" fontSize="10.5" fontWeight="700">
-              প্রবেশপথ
-            </text>
-          </g>
 
           {/* --- CRISP BANGLA ROOM LABELS INSIDE B2 --- */}
           <g fill="#1F2421" textAnchor="middle" className="bp-b2-labels">
-            {/* Top-Right Bedroom */}
-            <text x="791" y="128" fontSize="14.5" fontWeight="700" fontFamily="var(--font-heading)">বেডরুম ৩</text>
-            <text x="791" y="145" fontSize="10.5" fill="#5C5852" fontWeight="600">(উত্তর-পশ্চিম কোণ)</text>
+            {/* Unit B2 Header Tag */}
+            <rect x="744" y="68" width="94" height="25" rx="6" fill={b2AccentColor} />
+            <text x="791" y="85" fill="#FFFFFF" fontSize="12.5" fontWeight="700" fontFamily="var(--font-heading)">
+              ইউনিট B2
+            </text>
 
-            {/* Top-Right Veranda & Attached Bathroom (vertical labels like CAD) */}
+            {/* Top-Right Bedroom */}
+            <text x="791" y="132" fontSize="15" fontWeight="700" fontFamily="var(--font-heading)">বেডরুম ৩</text>
+            <text x="791" y="149" fontSize="10.5" fill="#5C5852" fontWeight="600">(উত্তর-পশ্চিম কোণ)</text>
+
+            {/* Top-Right Veranda & Attached Bathroom */}
             <text x="874" y="91" transform="rotate(-90 874 91)" fontSize="11" fontWeight="700" fill="#2D6A4F">বারান্দা</text>
             <text x="874" y="163" transform="rotate(-90 874 163)" fontSize="11.5" fontWeight="700">বাথরুম</text>
 
-            {/* Central Drawing & Dining Room */}
-            <text x="697" y="256" fontSize="16" fontWeight="700" fontFamily="var(--font-heading)" fill="#1F2421">
+            {/* Central Drawing & Dining Room Heading */}
+            <text x="697" y="246" fontSize="16" fontWeight="700" fontFamily="var(--font-heading)" fill="#1F2421">
               ড্রয়িং ও ডাইনিং রুম
-            </text>
-            <text x="697" y="274" fontSize="11" fill="#5C5852" fontWeight="600">
-              (প্রশস্ত মূল কক্ষ)
             </text>
 
             {/* Kitchen & Common Toilet */}
-            <text x="862" y="246" fontSize="13" fontWeight="700" fontFamily="var(--font-heading)" fill="#C85A32">কিচেন</text>
-            <text x="862" y="261" fontSize="9.5" fill="#5C5852" fontWeight="600">(রান্নাঘর)</text>
+            <text x="862" y="244" fontSize="13.5" fontWeight="700" fontFamily="var(--font-heading)" fill="#C85A32">কিচেন</text>
+            <text x="862" y="260" fontSize="10" fill="#5C5852" fontWeight="600">(রান্নাঘর)</text>
 
             <text x="862" y="317" fontSize="11.5" fontWeight="700">কমন</text>
             <text x="862" y="332" fontSize="11.5" fontWeight="700">টয়লেট</text>
 
             {/* Bottom-Left Bedroom of B2 (Bedroom 1) + Veranda */}
-            <text x="652" y="426" fontSize="14.5" fontWeight="700" fontFamily="var(--font-heading)">বেডরুম ১</text>
+            <text x="652" y="426" fontSize="15" fontWeight="700" fontFamily="var(--font-heading)">বেডরুম ১</text>
             <text x="652" y="444" fontSize="10.5" fill="#5C5852" fontWeight="600">(পূর্ব মুখী)</text>
             <text x="652" y="527" fontSize="12" fontWeight="700" fill="#2D6A4F">বারান্দা</text>
 
             {/* Bottom-Right Bedroom of B2 (Bedroom 2) + Veranda */}
-            <text x="818" y="426" fontSize="14.5" fontWeight="700" fontFamily="var(--font-heading)">বেডরুম ২</text>
+            <text x="818" y="426" fontSize="15" fontWeight="700" fontFamily="var(--font-heading)">বেডরুম ২</text>
             <text x="818" y="444" fontSize="10.5" fill="#5C5852" fontWeight="600">(উত্তর-পূর্ব কোণ)</text>
             <text x="816" y="527" fontSize="12" fontWeight="700" fill="#2D6A4F">বারান্দা</text>
           </g>
 
-          {/* Unit B2 Corner Header Tag inside the Blueprint */}
-          <g transform="translate(744, 68)">
+          {/* --- EMBEDDED CTA BUTTON INSIDE DRAWING & DINING ROOM CENTER --- */}
+          <g
+            className="bp-room-cta"
+            transform="translate(697, 294)"
+            onClick={handleOpenMedia}
+            onMouseEnter={() => setBtnHovered(true)}
+            onMouseLeave={() => setBtnHovered(false)}
+          >
+            {/* Button offset shadow */}
             <rect
-              x="0"
-              y="0"
-              width="94"
-              height="26"
-              rx="6"
-              fill={b2AccentColor}
+              x="-101"
+              y="-19"
+              width="206"
+              height="42"
+              rx="11"
+              fill="#1F2421"
             />
-            <text x="47" y="17" textAnchor="middle" fill="#FFFFFF" fontSize="12.5" fontWeight="700" fontFamily="var(--font-heading)">
-              ইউনিট B2 ➔
+            {/* Main Terracotta Button body */}
+            <rect
+              x="-103"
+              y="-22"
+              width="206"
+              height="42"
+              rx="11"
+              fill={btnHovered ? '#B34B25' : '#C85A32'}
+              stroke="#1F2421"
+              strokeWidth="2"
+            />
+            <text
+              x="0"
+              y="4"
+              textAnchor="middle"
+              fill="#FFFFFF"
+              fontSize="14.5"
+              fontWeight="700"
+              fontFamily="var(--font-heading)"
+            >
+              🎥 ছবি এবং ভিডিও দেখুন ➔
             </text>
           </g>
         </g>
       </svg>
-
-      {/* =====================================================================
-          PINNED / FLOATING INTERACTIVE CALLOUT CARD FOR UNIT B2
-          Positioned so it never hides the room geometry of B2, with a 1-tap
-          minimize/expand toggle for unobstructed blueprint inspection.
-         ===================================================================== */}
-      <div
-        className={`b2-callout-card ${isToLet ? 'b2-callout-card--tolet' : ''} ${
-          cardMinimized ? 'b2-callout-card--minimized' : ''
-        }`}
-      >
-        <div className="b2-callout-card__top">
-          <div className="b2-callout-card__title-group">
-            <span className="b2-callout-card__unit">ইউনিট {rawB2.id}</span>
-            {isToLet ? (
-              <span className="b2-status-badge b2-status-badge--available">
-                🟢 ভাড়া হবে ({monthBn(rawB2.availableFrom)} হতে) — {formatTaka(rawB2.rent)}/মাস
-              </span>
-            ) : (
-              <span className="b2-status-badge b2-status-badge--occupied">
-                ⚪ ভাড়া হয়ে গেছে ({formatTaka(rawB2.rent)}/মাস)
-              </span>
-            )}
-          </div>
-
-          <button
-            type="button"
-            className="b2-callout-card__minimize"
-            onClick={() => setCardMinimized((v) => !v)}
-            aria-expanded={!cardMinimized}
-          >
-            {cardMinimized ? '🔼 তথ্য কার্ড দেখুন' : '👁️ শুধু নকশা দেখুন'}
-          </button>
-        </div>
-
-        {!cardMinimized && (
-          <div className="b2-callout-card__body">
-            <p className="b2-callout-card__specs">
-              <strong>এক নজরে রুম তথ্য:</strong>{' '}
-              {rawB2.roomsSummaryBn ||
-                '৩টি বেডরুম • ড্রয়িং-ডাইনিং • ২টি বাথরুম • ৩টি বারান্দা • কিচেন'}
-            </p>
-            <p className="b2-callout-card__facing">
-              <strong>দিক ও সুবিধা:</strong>{' '}
-              {rawB2.facingBn || 'উত্তর-পূর্ব মুখী (দুই দিকেই রাস্তা ও খোলা জায়গা)'}
-            </p>
-
-            <div className="b2-callout-card__actions">
-              <button
-                type="button"
-                className="b2-cta-btn"
-                onClick={handleOpenMedia}
-              >
-                📸 ছবি এবং ভিডিও দেখুন ➔
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
     </div>
   );
 }
