@@ -1,0 +1,669 @@
+/* ==========================================================================
+   Page 2: Interactive Architectural Floor Map View (Terracotta & Chuna)
+   ========================================================================== */
+
+.fmap-page {
+  min-height: 100vh;
+  padding: 22px 16px 40px;
+  max-width: 1220px;
+  margin: 0 auto;
+}
+
+/* ---------- Header & Navigation ---------- */
+.fmap-header {
+  margin-bottom: 18px;
+}
+
+.fmap-header__top-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.fmap-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 8px 16px;
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  background: var(--surface-white);
+  color: var(--ink);
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 15px;
+  text-decoration: none;
+  box-shadow: 2px 3px 0 var(--ink);
+  transition: transform 0.12s, background-color 0.15s;
+}
+
+.fmap-back-btn:hover {
+  background: var(--surface-sand);
+}
+
+.fmap-back-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+
+/* Floor Switcher */
+.fmap-switcher {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 5px;
+  border: 1.5px solid var(--ink);
+  border-radius: 14px;
+  background: var(--surface-sand);
+}
+
+.fmap-switcher__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 13px;
+  border: 1.5px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-muted);
+  font: 600 14px var(--font-body);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.fmap-switcher__btn:hover {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.fmap-switcher__btn--active {
+  background: var(--surface-white);
+  color: var(--ink);
+  border-color: var(--ink);
+  font-weight: 700;
+  box-shadow: 1px 2px 0 rgba(31, 36, 33, 0.2);
+}
+
+.fmap-switcher__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--terracotta);
+}
+
+/* Demo Toggle Button */
+.fmap-demo-toggle {
+  min-height: 40px;
+  padding: 6px 14px;
+  border: 1.5px dashed var(--terracotta);
+  border-radius: 999px;
+  background: var(--surface-white);
+  color: var(--terracotta);
+  font: 600 13.5px var(--font-body);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.fmap-demo-toggle--on {
+  border-style: solid;
+  border-color: var(--available);
+  background: var(--available-bg);
+  color: var(--available);
+}
+
+/* Title Block */
+.fmap-header__title-block {
+  text-align: center;
+  max-width: 780px;
+  margin: 0 auto 12px;
+}
+
+.fmap-header__eyebrow {
+  display: inline-block;
+  margin: 0 0 6px;
+  padding: 2px 12px;
+  border-radius: 999px;
+  background: var(--surface-sand);
+  border: 1px solid rgba(31, 36, 33, 0.25);
+  color: var(--terracotta);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.fmap-header__title {
+  margin: 0;
+  font-size: clamp(24px, 4vw, 34px);
+  line-height: 1.25;
+}
+
+.fmap-header__subtitle {
+  margin: 6px 0 0;
+  color: var(--text-muted);
+  font-size: 15px;
+}
+
+/* Legend */
+.fmap-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 22px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.fmap-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fmap-legend__box {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 2px solid var(--ink);
+}
+
+.fmap-legend__box--owner {
+  background: #eae3d5;
+  border-color: #6e675f;
+}
+
+.fmap-legend__box--tenant {
+  background: #fffdf9;
+  border-color: var(--terracotta);
+}
+
+.fmap-legend__box--available {
+  background: var(--available-bg);
+  border-color: var(--available);
+}
+
+.fmap-legend__box--stairs {
+  background: #f5f0e6;
+  border-color: #2b5b84;
+}
+
+/* Modular floor notice banner */
+.fmap-modular-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 12px 18px;
+  border: 1.5px solid var(--ochre);
+  border-radius: 14px;
+  background: #fef9ec;
+  font-size: 14.5px;
+}
+
+.fmap-modular-notice__btn {
+  padding: 6px 14px;
+  border: 1.5px solid var(--ink);
+  border-radius: 10px;
+  background: var(--terracotta);
+  color: #fff;
+  font: 600 13.5px var(--font-body);
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   Compass Frame & 4-Edge Environmental Context Strips
+   ========================================================================== */
+
+.compass-frame {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border: 2.5px solid var(--ink);
+  border-radius: 24px;
+  background: var(--surface-sand);
+  box-shadow: 6px 8px 0 rgba(31, 36, 33, 0.1);
+}
+
+.compass-frame__middle {
+  display: grid;
+  grid-template-columns: 118px minmax(0, 1fr) 152px;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.compass-frame__canvas {
+  position: relative;
+  border: 2px solid var(--ink);
+  border-radius: 18px;
+  background: var(--bg-chuna);
+  overflow: hidden;
+  padding: 10px 10px 14px;
+}
+
+/* Environmental Strip Badges */
+.env-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border: 1.5px solid var(--ink);
+  border-radius: 14px;
+  background: var(--surface-white);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.env-strip__tag {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--surface-sand);
+  border: 1px solid var(--ink);
+  font-family: var(--font-heading);
+  font-size: 12.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.env-strip__tag--green {
+  background: var(--available-bg);
+  color: var(--available);
+  border-color: var(--available);
+}
+
+.env-strip__tag--terracotta {
+  background: #fbeae3;
+  color: var(--terracotta);
+  border-color: var(--terracotta);
+}
+
+/* TOP: West Strip (নিজস্ব খালি জায়গা) */
+.env-strip--west {
+  background: linear-gradient(90deg, #eff8f1 0%, #ffffff 50%, #eff8f1 100%);
+  border-color: var(--available);
+  flex-wrap: wrap;
+}
+
+.env-strip__trees {
+  letter-spacing: 3px;
+  font-size: 16px;
+}
+
+/* LEFT: South Strip (দক্ষিণা বাতাস) */
+.env-strip--south {
+  flex-direction: column;
+  background: linear-gradient(180deg, #fffdf7 0%, #fef6e4 100%);
+  text-align: center;
+  padding: 14px 10px;
+}
+
+.env-strip__vertical-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.env-strip__wind {
+  color: var(--ochre);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+/* RIGHT: North Strip (উত্তর পাশের রাস্তা ও খোলা প্লট) */
+.env-strip--north {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 8px;
+  padding: 10px;
+  background: linear-gradient(180deg, #eef7f0 0%, #faf7f2 100%);
+  border-color: var(--available);
+  text-align: center;
+}
+
+/* Road Lane Graphics (North & East) */
+.road-lane--vertical {
+  position: relative;
+  width: 22px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  background: #cfc8bc;
+  border: 1.5px solid #5c5852;
+  display: flex;
+  justify-content: center;
+}
+
+.road-lane--vertical .road-lane__dash {
+  width: 2px;
+  height: 100%;
+  background: repeating-linear-gradient(
+    to bottom,
+    #faf7f2 0 10px,
+    transparent 10px 20px
+  );
+}
+
+/* BOTTOM: East Strip (সামনের রাস্তা) */
+.env-strip--east {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding: 10px 14px 12px;
+  background: var(--surface-white);
+}
+
+.road-lane--horizontal {
+  position: relative;
+  height: 28px;
+  border-radius: 8px;
+  background: #cfc8bc;
+  border: 1.5px solid #5c5852;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.road-lane--horizontal .road-lane__dash {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: repeating-linear-gradient(
+    to right,
+    #faf7f2 0 14px,
+    transparent 14px 28px
+  );
+}
+
+.road-lane__label {
+  position: relative;
+  z-index: 1;
+  padding: 1px 12px;
+  border-radius: 999px;
+  background: rgba(31, 36, 33, 0.82);
+  color: #faf7f2;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+}
+
+.env-strip__east-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 16px;
+}
+
+.env-strip__opposite {
+  padding: 2px 10px;
+  border-radius: 6px;
+  background: var(--occupied-bg);
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+
+/* ---------- Compass Rose ---------- */
+.compass-rose {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 3;
+  width: 96px;
+  height: 96px;
+  padding: 4px;
+  border-radius: 14px;
+  background: rgba(250, 247, 242, 0.92);
+  border: 1.5px solid rgba(31, 36, 33, 0.3);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  pointer-events: none;
+}
+
+.compass-rose__svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.compass-rose__lbl {
+  font-family: var(--font-heading);
+  font-size: 8.5px;
+  font-weight: 700;
+  fill: var(--ink);
+}
+
+.compass-rose__lbl--top {
+  fill: var(--available);
+}
+
+.compass-rose__lbl--north {
+  fill: var(--terracotta);
+}
+
+/* ==========================================================================
+   SVG Blueprint Stage & Interactive Unit B2
+   ========================================================================== */
+
+.bp-stage {
+  position: relative;
+  width: 100%;
+}
+
+.bp-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 620px;
+}
+
+.bp-unit--owner {
+  cursor: default;
+}
+
+.bp-unit--tenant {
+  cursor: pointer;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.bp-unit--tenant:focus-visible {
+  outline: none;
+}
+
+/* ---------- Pinned Floating Callout Card for Unit B2 ---------- */
+.b2-callout-card {
+  margin: 8px auto 0;
+  max-width: 780px;
+  padding: 14px 18px;
+  border: 2.5px solid var(--terracotta);
+  border-radius: 18px;
+  background: linear-gradient(135deg, #ffffff 0%, #fdf8f2 100%);
+  box-shadow: 4px 5px 0 var(--ink);
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.b2-callout-card--tolet {
+  border-color: var(--available);
+  background: linear-gradient(135deg, #ffffff 0%, #eef8f1 100%);
+}
+
+.b2-callout-card--minimized {
+  padding: 10px 16px;
+}
+
+.b2-callout-card__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.b2-callout-card__title-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.b2-callout-card__unit {
+  font-family: var(--font-heading);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.b2-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.b2-status-badge--available {
+  background: var(--available-bg);
+  color: var(--available);
+  border: 1.5px solid var(--available);
+}
+
+.b2-status-badge--occupied {
+  background: var(--occupied-bg);
+  color: #544e46;
+  border: 1.5px solid var(--occupied);
+}
+
+.b2-callout-card__minimize {
+  padding: 4px 12px;
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  background: var(--surface-sand);
+  color: var(--ink);
+  font: 600 12.5px var(--font-body);
+  cursor: pointer;
+}
+
+.b2-callout-card__body {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8px 18px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1.5px dashed rgba(31, 36, 33, 0.2);
+}
+
+.b2-callout-card__specs,
+.b2-callout-card__facing {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.45;
+  grid-column: 1;
+}
+
+.b2-callout-card__facing {
+  color: var(--available);
+}
+
+.b2-callout-card__actions {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+
+.b2-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 50px;
+  padding: 10px 22px;
+  border: 2px solid var(--ink);
+  border-radius: 14px;
+  background: var(--terracotta);
+  color: #ffffff;
+  font-family: var(--font-heading);
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 var(--ink);
+  transition: transform 0.1s, box-shadow 0.1s, background-color 0.15s;
+  white-space: nowrap;
+}
+
+.b2-cta-btn:hover {
+  background: #b34b25;
+}
+
+.b2-cta-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+
+/* ---------- Responsive Layout ---------- */
+@media (max-width: 960px) {
+  .compass-frame__middle {
+    grid-template-columns: 1fr;
+  }
+
+  .env-strip--south,
+  .env-strip--north {
+    flex-direction: row;
+    justify-content: center;
+    padding: 8px 14px;
+  }
+
+  .env-strip__vertical-inner {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .road-lane--vertical {
+    width: 54px;
+    height: 18px;
+  }
+
+  .road-lane--vertical .road-lane__dash {
+    width: 100%;
+    height: 2px;
+    background: repeating-linear-gradient(
+      to right,
+      #faf7f2 0 8px,
+      transparent 8px 16px
+    );
+  }
+}
+
+@media (max-width: 720px) {
+  .b2-callout-card__body {
+    grid-template-columns: 1fr;
+  }
+
+  .b2-callout-card__actions {
+    grid-column: 1;
+    grid-row: auto;
+    margin-top: 6px;
+  }
+
+  .b2-cta-btn {
+    width: 100%;
+  }
+
+  .compass-rose {
+    width: 76px;
+    height: 76px;
+  }
+}

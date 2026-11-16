@@ -165,6 +165,24 @@
   font-size: 14px;
 }
 
+.home__blueprint-cta {
+  display: flex;
+  justify-content: center;
+  margin: 14px auto 0;
+}
+
+.btn--blueprint {
+  background: var(--surface-sand);
+  color: var(--ink);
+  font-size: 15.5px;
+  min-height: 46px;
+  padding: 8px 20px;
+}
+
+.btn--blueprint:hover {
+  background: #e6dfd2;
+}
+
 /* ---------- Location & contact ---------- */
 .info-grid {
   display: grid;

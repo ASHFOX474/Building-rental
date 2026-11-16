@@ -4,9 +4,9 @@ import { floorMapUrl } from '../../lib/building.js';
 
 /**
  * One flat box inside a floor row. Three states:
- *  - available: To-Let, clickable -> Floor Map
- *  - occupied : rented, muted
- *  - owner    : landlord's own flat (বাড়িওয়ালা)
+ *  - available: To-Let, highlighted + clickable -> Floor Map
+ *  - occupied : rented, muted, clickable to inspect floor map
+ *  - owner    : landlord's own flat (বাড়িওয়ালা), not clickable for rent
  */
 export default function UnitCell({ floor, unit, side, showRentOnOccupied, dimmed }) {
   const style = { flexBasis: `${unit.widthPct}%` };
@@ -51,7 +51,12 @@ export default function UnitCell({ floor, unit, side, showRentOnOccupied, dimmed
   }
 
   return (
-    <div className={classes} style={style} aria-label={`ফ্ল্যাট ${unit.id} — ভাড়া হয়ে গেছে`}>
+    <Link
+      to={floorMapUrl(floor, unit)}
+      className={classes}
+      style={style}
+      aria-label={`ফ্ল্যাট ${unit.id}, ${floor.nameBn} — ভাড়া হয়ে গেছে (ফ্লোর ম্যাপ দেখুন)`}
+    >
       <div className="unit__inner">
         <span className="unit__id">{unit.id}</span>
         {showRentOnOccupied && unit.rent && (
@@ -59,6 +64,6 @@ export default function UnitCell({ floor, unit, side, showRentOnOccupied, dimmed
         )}
         <span className="unit__taken">ভাড়া হয়ে গেছে</span>
       </div>
-    </div>
+    </Link>
   );
 }

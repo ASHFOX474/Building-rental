@@ -1,4 +1,4 @@
-// Mock data for the public Home Page. Will be replaced by GET /api/public/building.
+// Mock data for the public website. Will be replaced by GET /api/public/building.
 //
 // Floors are a dynamic array: add / remove / hide a floor here (later: from the
 // Admin Panel) and the building illustration re-stacks itself automatically.
@@ -38,6 +38,14 @@ export const building = {
     phone: '01815023898',
     whatsapp: '8801815023898',
   },
+
+  // Surrounding environment context for the architectural floor map (Top = West)
+  surroundings: {
+    westTopBn: '⬅️ পশ্চিম দিক — 🌳 আমাদের নিজস্ব খালি জায়গা (খোলামেলা পরিবেশ)',
+    eastBottomBn: '🛣️ সামনের রাস্তা (পূর্ব দিক) — রাস্তার বিপরীত পাশে ভবন',
+    northRightBn: '🛣️ উত্তর পাশের রাস্তা ও খোলা প্লট (কোনো বিল্ডিং নেই — প্রচুর আলো-বাতাস 🍃)',
+    southLeftBn: '☀️ দক্ষিণ দিক (দক্ষিণা বাতাস)',
+  },
 };
 
 export const floors = [
@@ -45,9 +53,19 @@ export const floors = [
     id: 'E',
     floorNumber: 5,
     nameBn: '৫ম তলা',
+    titleBn: '৫ম তলা (ফ্লোর E: ইউনিট E1, E2 ও E3)',
+    blueprintReady: false,
     isVisible: true,
     units: [
-      { id: 'E1', widthPct: 38, status: 'available', rent: 10500, availableFrom: 'april' },
+      {
+        id: 'E1',
+        widthPct: 38,
+        status: 'available',
+        rent: 10500,
+        availableFrom: 'april',
+        roomsSummaryBn: '৩টি বেডরুম • ড্রয়িং-ডাইনিং • ২টি বাথরুম • ২টি বারান্দা • কিচেন',
+        facingBn: 'দক্ষিণ-পূর্ব মুখী (প্রচুর আলো-বাতাস)',
+      },
       { id: 'E2', widthPct: 24, status: 'occupied', rent: 6500 },
       { id: 'E3', widthPct: 38, status: 'occupied', rent: 10500 },
     ],
@@ -56,17 +74,29 @@ export const floors = [
     id: 'D',
     floorNumber: 4,
     nameBn: '৪র্থ তলা',
+    titleBn: '৪র্থ তলা (ফ্লোর D: ইউনিট D1, D2 ও D3)',
+    blueprintReady: false,
     isVisible: true,
     units: [
       { id: 'D1', widthPct: 38, status: 'occupied', rent: 10500 },
       { id: 'D2', widthPct: 24, status: 'occupied', rent: 6500 },
-      { id: 'D3', widthPct: 38, status: 'available', rent: 10500, availableFrom: 'may' },
+      {
+        id: 'D3',
+        widthPct: 38,
+        status: 'available',
+        rent: 10500,
+        availableFrom: 'may',
+        roomsSummaryBn: '৩টি বেডরুম • ড্রয়িং-ডাইনিং • ২টি বাথরুম • ৩টি বারান্দা • কিচেন',
+        facingBn: 'উত্তর-পূর্ব মুখী (দুই দিকেই রাস্তা ও খোলা জায়গা)',
+      },
     ],
   },
   {
     id: 'C',
     floorNumber: 3,
     nameBn: '৩য় তলা',
+    titleBn: '৩য় তলা (ফ্লোর C: ইউনিট C1 ও C2)',
+    blueprintReady: false,
     isVisible: true,
     units: [
       { id: 'C1', widthPct: 62, status: 'occupied', rent: 15000 },
@@ -77,16 +107,36 @@ export const floors = [
     id: 'B',
     floorNumber: 2,
     nameBn: '২য় তলা',
+    titleBn: '২য় তলা (ফ্লোর B: ইউনিট B1 ও B2)',
+    blueprintReady: true,
     isVisible: true,
     units: [
-      { id: 'B1', widthPct: 62, status: 'owner' },
-      { id: 'B2', widthPct: 38, status: 'occupied', rent: 10500 },
+      {
+        id: 'B1',
+        widthPct: 62,
+        status: 'owner',
+        ownerLabelBn: 'ইউনিট B1 — বাড়িওয়ালা',
+        ownerSubtextBn: '(মালিকের নিজস্ব বাসভবন)',
+        roomsSummaryBn: '৪টি বেডরুম • বড় ড্রয়িং ও ডাইনিং • ৪টি বাথরুম • ৬টি বারান্দা • কিচেন',
+      },
+      {
+        id: 'B2',
+        widthPct: 38,
+        status: 'occupied',
+        rent: 10500,
+        availableFrom: 'june',
+        roomsSummaryBn: '৩টি বেডরুম • ড্রয়িং-ডাইনিং • ২টি বাথরুম • ৩টি বারান্দা • কিচেন',
+        facingBn: 'উত্তর-পূর্ব মুখী (দুই দিকেই রাস্তা ও খোলা জায়গা)',
+        tenantTypeBn: 'শুধুমাত্র ফ্যামিলি',
+      },
     ],
   },
   {
     id: 'A',
     floorNumber: 1,
     nameBn: '১ম তলা',
+    titleBn: '১ম তলা (ফ্লোর A: ইউনিট A1 ও A2)',
+    blueprintReady: false,
     isVisible: true,
     units: [
       { id: 'A1', widthPct: 45, status: 'occupied', rent: 11000 },
