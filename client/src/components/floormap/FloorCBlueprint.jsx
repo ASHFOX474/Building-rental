@@ -5,10 +5,13 @@ import { useNavigate } from 'react-router-dom';
  * Exact architectural floorplate for Row C (3rd Floor / ৩য় তলা: Units C1 & C2)
  * reconstructed directly from the Floor C AutoCAD blueprint.
  *
- * - Both Unit C1 (Left + Top-Middle L-shape, Green border in CAD -> #2D6A4F)
- *   and Unit C2 (Right side, Red border in CAD -> #C85A32) are active,
- *   full-visibility tenant units with embedded "🎥 ছবি এবং ভিডিও দেখুন ➔"
- *   buttons inside their Drawing & Dining rooms.
+ * Key geometrical alignments matching CAD:
+ * 1. The upper wall of C1's main Drawing & Dining room (y = 204) is strictly
+ *    colinear with C2's Drawing & Dining room (y = 204) across the whole floor.
+ * 2. In Unit C1, there is a completely open path (x = 432, y = 204..240)
+ *    connecting the two Drawing & Dining sections into one continuous space.
+ * 3. The leftmost Kitchen (x = 100..185, y = 278..356) has a clear open entry
+ *    path at its bottom-right (x = 185, y = 322..356) from C1's Drawing & Dining.
  */
 export default function FloorCBlueprint({ floor }) {
   const navigate = useNavigate();
@@ -58,6 +61,19 @@ export default function FloorCBlueprint({ floor }) {
     '114,545',
     '114,500',
     '100,500',
+  ].join(' ');
+
+  // Continuous L-shaped polygon for C1's two connected Drawing & Dining areas
+  // (No wall between (432,204) and (432,240) -> open path!)
+  const c1ConnectedHallPoints = [
+    '185,204',
+    '432,204',
+    '432,110',
+    '570,110',
+    '570,240',
+    '432,240',
+    '432,356',
+    '185,356',
   ].join(' ');
 
   // Exact outer polygon for Tenant Unit C2 (Red border in CAD)
@@ -131,37 +147,44 @@ export default function FloorCBlueprint({ floor }) {
           {/* Base surface of Unit C1 */}
           <polygon points={c1PolygonPoints} fill={c1FillColor} />
 
-          {/* --- TOP-LEFT: Far-Left Veranda (100..158, 60..128) & Bathroom (100..158, 128..212) --- */}
-          <rect x="100" y="60" width="58" height="68" fill={c1VerandaFill} stroke="#1F2421" strokeWidth="2" />
-          <rect x="100" y="128" width="58" height="84" fill="#EDF2EE" stroke="#1F2421" strokeWidth="2" />
+          {/* Continuous fill for both connected Drawing & Dining areas of C1 */}
+          <polygon points={c1ConnectedHallPoints} fill={c1HallFill} />
 
-          {/* Top-Left Bedroom 1 (158..286, 60..212) */}
-          <rect x="158" y="60" width="128" height="152" fill={c1FillColor} stroke="#1F2421" strokeWidth="2.2" />
+          {/* --- TOP-LEFT: Far-Left Veranda (100..158, 60..126) & Bathroom (100..158, 126..204) --- */}
+          <rect x="100" y="60" width="58" height="66" fill={c1VerandaFill} stroke="#1F2421" strokeWidth="2" />
+          <rect x="100" y="126" width="58" height="78" fill="#EDF2EE" stroke="#1F2421" strokeWidth="2" />
+
+          {/* Top-Left Bedroom 1 (158..286, 60..204 — bottom wall aligned at y=204!) */}
+          <rect x="158" y="60" width="128" height="144" fill={c1FillColor} stroke="#1F2421" strokeWidth="2.2" />
           {/* Doors for Top-Left Bedroom 1 */}
-          <rect x="155" y="98" width="6" height="24" fill="#FFFFFF" stroke={c1AccentColor} strokeWidth="1.3" />
-          <rect x="155" y="176" width="6" height="28" fill="#FFFFFF" stroke={c1AccentColor} strokeWidth="1.3" />
-          <rect x="230" y="209" width="46" height="6" fill="#FFFFFF" stroke={c1AccentColor} strokeWidth="1.3" />
+          <rect x="155" y="96" width="6" height="24" fill="#FFFFFF" stroke={c1AccentColor} strokeWidth="1.3" />
+          <rect x="155" y="168" width="6" height="28" fill="#FFFFFF" stroke={c1AccentColor} strokeWidth="1.3" />
+          <rect x="230" y="201" width="46" height="6" fill="#FFFFFF" stroke={c1AccentColor} strokeWidth="1.3" />
 
-          {/* --- TOP-LEFT-CENTER: Veranda (286..340, 60..104), Bathroom (340..432, 60..104) & Bedroom 2 (286..432, 104..212) --- */}
+          {/* --- TOP-LEFT-CENTER: Veranda (286..340, 60..104), Bathroom (340..432, 60..104) & Bedroom 2 (286..432, 104..204 — bottom wall aligned at y=204!) --- */}
           <rect x="286" y="60" width="54" height="44" fill={c1VerandaFill} stroke="#1F2421" strokeWidth="2" />
           <rect x="340" y="60" width="92" height="44" fill="#EDF2EE" stroke="#1F2421" strokeWidth="2" />
-          <rect x="286" y="104" width="146" height="108" fill={c1FillColor} stroke="#1F2421" strokeWidth="2.2" />
+          <rect x="286" y="104" width="146" height="100" fill={c1FillColor} stroke="#1F2421" strokeWidth="2.2" />
           {/* Doors for Bedroom 2 */}
           <rect x="292" y="101" width="26" height="6" fill="#FFFFFF" stroke={c1AccentColor} strokeWidth="1.3" />
           <rect x="348" y="101" width="28" height="6" fill="#FFFFFF" stroke={c1AccentColor} strokeWidth="1.3" />
           {/* Door on right wall (x=432) opening into Top-Center Drawing & Dining */}
-          <rect x="429" y="144" width="6" height="38" fill="#FFFFFF" stroke={c1AccentColor} strokeWidth="1.3" />
+          <rect x="429" y="140" width="6" height="38" fill="#FFFFFF" stroke={c1AccentColor} strokeWidth="1.3" />
 
-          {/* --- MIDDLE-LEFT OUTER WALL: Common Toilet (100..185, 212..282) & Kitchen (100..185, 282..356) --- */}
-          <rect x="100" y="212" width="85" height="70" fill="#EDF2EE" stroke="#1F2421" strokeWidth="2" />
-          <rect x="182" y="222" width="6" height="34" fill="#FFFFFF" stroke={c1AccentColor} strokeWidth="1.3" />
+          {/* --- MIDDLE-LEFT OUTER WALL: Common Toilet (100..185, 204..278) & Kitchen (100..185, 278..356) --- */}
+          <rect x="100" y="204" width="85" height="74" fill="#EDF2EE" stroke="#1F2421" strokeWidth="2" />
+          <rect x="182" y="218" width="6" height="34" fill="#FFFFFF" stroke={c1AccentColor} strokeWidth="1.3" />
 
-          <rect x="100" y="282" width="85" height="74" fill="#F4EFE6" stroke="#1F2421" strokeWidth="2" />
-          {/* Open entry to middle-left Kitchen on x=185 (bottom part y=316..354) */}
-          <line x1="185" y1="316" x2="185" y2="354" stroke={c1HallFill} strokeWidth="3.6" />
-
-          {/* --- LOWER-LEFT MAIN HALL: Spacious Drawing & Dining (185..432, 212..356) --- */}
-          <rect x="185" y="212" width="247" height="144" fill={c1HallFill} stroke="#1F2421" strokeWidth="2.2" />
+          {/* Leftmost Kitchen (100..185, 278..356) with OPEN PATH at bottom-right (x=185, y=322..356) */}
+          <rect x="100" y="278" width="85" height="78" fill="#F4EFE6" stroke="none" />
+          {/* Kitchen walls: top (y=278), left (x=100), bottom (y=356), and upper part of right wall (x=185, y=278..322), leaving y=322..356 completely open! */}
+          <path
+            d="M 100,278 L 185,278 L 185,322 M 185,356 L 100,356 L 100,278"
+            fill="none"
+            stroke="#1F2421"
+            strokeWidth="2.2"
+            strokeLinecap="square"
+          />
 
           {/* --- BOTTOM-LEFT (East Road Side): Two Side-by-Side Bedrooms (y=356..500) + Two Verandas --- */}
           {/* Bottom-Far-Left Bedroom (100..266, 356..500) */}
@@ -177,30 +200,35 @@ export default function FloorCBlueprint({ floor }) {
           <rect x="364" y="497" width="36" height="6" fill="#FFFFFF" stroke={c1AccentColor} strokeWidth="1.3" />
 
           {/* --- TOP-CENTER SECTION (Above Staircase: x=432..570, y=60..240) --- */}
-          {/* Second Drawing & Dining Space (432..570, 110..240) */}
-          <rect x="432" y="110" width="138" height="130" fill={c1HallFill} stroke="#1F2421" strokeWidth="2.2" />
-          {/* Top-Center Left: Kitchen (432..502, 60..110) */}
-          <rect x="432" y="60" width="70" height="50" fill="#F4EFE6" stroke="#1F2421" strokeWidth="2" />
-          {/* Open doorway at bottom-left of top-center Kitchen (y=110, x=434..464) */}
-          <line x1="434" y1="110" x2="464" y2="110" stroke={c1HallFill} strokeWidth="3.6" />
+          {/* Top-Center Left: Kitchen (432..502, 60..110) with open path at bottom-left (x=432..464, y=110) */}
+          <rect x="432" y="60" width="70" height="50" fill="#F4EFE6" stroke="none" />
+          <path
+            d="M 432,110 L 432,60 L 502,60 L 502,110 L 464,110"
+            fill="none"
+            stroke="#1F2421"
+            strokeWidth="2"
+            strokeLinecap="square"
+          />
 
           {/* Top-Center Right: Common Toilet (502..570, 60..110) */}
           <rect x="502" y="60" width="68" height="50" fill="#EDF2EE" stroke="#1F2421" strokeWidth="2" />
           <rect x="536" y="107" width="28" height="6" fill="#FFFFFF" stroke={c1AccentColor} strokeWidth="1.3" />
+
+          {/* Note: NO vertical wall at x=432 between y=204 and y=240 -> Open path between the 2 Drawing & Dining areas! */}
 
           {/* --- TOP-RIGHT OF GREEN ZONE (Above C2's Drawing/Dining: x=570..735, y=60..204) --- */}
           {/* Bathroom (570..660, 60..118) */}
           <rect x="570" y="60" width="90" height="58" fill="#EDF2EE" stroke="#1F2421" strokeWidth="2" />
           {/* Veranda (660..735, 60..102) */}
           <rect x="660" y="60" width="75" height="42" fill={c1VerandaFill} stroke="#1F2421" strokeWidth="2" />
-          {/* 4th Bedroom of C1 (570..735, 118/102..204) */}
+          {/* 5th Bedroom of C1 (570..735, 118/102..204) */}
           <path
             d="M 570,118 L 660,118 L 660,102 L 735,102 L 735,204 L 570,204 Z"
             fill={c1FillColor}
             stroke="#1F2421"
             strokeWidth="2.2"
           />
-          {/* Doors for 4th Bedroom */}
+          {/* Doors for 5th Bedroom */}
           <rect x="630" y="115" width="24" height="6" fill="#FFFFFF" stroke={c1AccentColor} strokeWidth="1.3" />
           <rect x="664" y="99" width="26" height="6" fill="#FFFFFF" stroke={c1AccentColor} strokeWidth="1.3" />
           <rect x="567" y="160" width="6" height="34" fill="#FFFFFF" stroke={c1AccentColor} strokeWidth="1.3" />
@@ -227,27 +255,27 @@ export default function FloorCBlueprint({ floor }) {
             </text>
 
             {/* Far-Left Veranda & Bathroom */}
-            <text x="129" y="94" transform="rotate(-90 129 94)" fontSize="11" fontWeight="700" fill={c1AccentColor}>বারান্দা</text>
-            <text x="129" y="170" transform="rotate(-90 129 170)" fontSize="11.5" fontWeight="700">বাথরুম</text>
+            <text x="129" y="93" transform="rotate(-90 129 93)" fontSize="11" fontWeight="700" fill={c1AccentColor}>বারান্দা</text>
+            <text x="129" y="165" transform="rotate(-90 129 165)" fontSize="11.5" fontWeight="700">বাথরুম</text>
 
             {/* Top-Left Bedroom 1 */}
-            <text x="222" y="138" fontSize="15" fontWeight="700" fontFamily="var(--font-heading)">বেডরুম ১</text>
-            <text x="222" y="155" fontSize="10.5" fill="#5C5852" fontWeight="600">(দক্ষিণ-পশ্চিম)</text>
+            <text x="222" y="134" fontSize="15" fontWeight="700" fontFamily="var(--font-heading)">বেডরুম ১</text>
+            <text x="222" y="151" fontSize="10.5" fill="#5C5852" fontWeight="600">(দক্ষিণ-পশ্চিম)</text>
 
             {/* Top-Left-Center Veranda, Bathroom & Bedroom 2 */}
             <text x="313" y="86" fontSize="10.5" fontWeight="700" fill={c1AccentColor}>বারান্দা</text>
             <text x="386" y="86" fontSize="11" fontWeight="700">বাথরুম</text>
-            <text x="359" y="154" fontSize="15" fontWeight="700" fontFamily="var(--font-heading)">বেডরুম ২</text>
-            <text x="359" y="171" fontSize="10.5" fill="#5C5852" fontWeight="600">(পশ্চিম মুখী)</text>
+            <text x="359" y="150" fontSize="15" fontWeight="700" fontFamily="var(--font-heading)">বেডরুম ২</text>
+            <text x="359" y="167" fontSize="10.5" fill="#5C5852" fontWeight="600">(পশ্চিম মুখী)</text>
 
             {/* Middle-Left Common Toilet & Kitchen */}
-            <text x="142" y="244" fontSize="11.5" fontWeight="700">কমন</text>
-            <text x="142" y="259" fontSize="11.5" fontWeight="700">টয়লেট</text>
-            <text x="142" y="320" fontSize="13.5" fontWeight="700" fontFamily="var(--font-heading)" fill="#C85A32">কিচেন</text>
-            <text x="142" y="335" fontSize="10" fill="#5C5852" fontWeight="600">(রান্নাঘর)</text>
+            <text x="142" y="238" fontSize="11.5" fontWeight="700">কমন</text>
+            <text x="142" y="253" fontSize="11.5" fontWeight="700">টয়লেট</text>
+            <text x="142" y="316" fontSize="13.5" fontWeight="700" fontFamily="var(--font-heading)" fill="#C85A32">কিচেন</text>
+            <text x="142" y="331" fontSize="10" fill="#5C5852" fontWeight="600">(রান্নাঘর)</text>
 
             {/* Lower-Left Main Drawing & Dining Heading */}
-            <text x="308" y="252" fontSize="16" fontWeight="700" fontFamily="var(--font-heading)" fill="#1F2421">
+            <text x="308" y="246" fontSize="16" fontWeight="700" fontFamily="var(--font-heading)" fill="#1F2421">
               ড্রয়িং ও ডাইনিং
             </text>
 
@@ -282,7 +310,7 @@ export default function FloorCBlueprint({ floor }) {
           {/* --- EMBEDDED CTA BUTTON INSIDE C1 MAIN DRAWING & DINING ROOM --- */}
           <g
             className="bp-room-cta"
-            transform="translate(308, 298)"
+            transform="translate(308, 294)"
             onClick={handleOpenC1}
             onMouseEnter={() => setC1BtnHovered(true)}
             onMouseLeave={() => setC1BtnHovered(false)}
@@ -385,11 +413,24 @@ export default function FloorCBlueprint({ floor }) {
           <rect x="738" y="201" width="44" height="6" fill="#FFFDF9" stroke="#C85A32" strokeWidth="1.3" />
 
           {/* --- ROOM 2: Central Drawing & Dining Room (570..824, 204..356) --- */}
-          <rect x="570" y="204" width="254" height="152" fill={c2HallFill} stroke="#1F2421" strokeWidth="2.2" />
+          <rect x="570" y="204" width="254" height="152" fill={c2HallFill} stroke="none" />
+          {/* Top, left, bottom walls of C2 Drawing & Dining (right side meets Kitchen open path + Common Toilet) */}
+          <path
+            d="M 570,204 L 824,204 M 570,204 L 570,356 L 824,356"
+            fill="none"
+            stroke="#1F2421"
+            strokeWidth="2.2"
+          />
 
-          {/* --- ROOM 3: Kitchen (824..900, 204..286) & Common Toilet (824..900, 286..356) --- */}
-          <rect x="824" y="204" width="76" height="82" fill="#F7EFE4" stroke="#1F2421" strokeWidth="2" />
-          <line x1="824" y1="207" x2="824" y2="238" stroke={c2HallFill} strokeWidth="3.5" />
+          {/* --- ROOM 3: Kitchen (824..900, 204..286) with open path at top-left (x=824, y=204..238) & Common Toilet (824..900, 286..356) --- */}
+          <rect x="824" y="204" width="76" height="82" fill="#F7EFE4" stroke="none" />
+          <path
+            d="M 824,204 L 900,204 L 900,286 L 824,286 L 824,238"
+            fill="none"
+            stroke="#1F2421"
+            strokeWidth="2"
+            strokeLinecap="square"
+          />
 
           <rect x="824" y="286" width="76" height="70" fill="#F2ECE1" stroke="#1F2421" strokeWidth="2" />
           <rect x="821" y="316" width="6" height="32" fill="#FFFDF9" stroke="#C85A32" strokeWidth="1.3" />

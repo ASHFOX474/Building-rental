@@ -308,21 +308,31 @@ export default function FloorBBlueprint({ floor }) {
             width="254"
             height="152"
             fill="#FAF5EC"
+            stroke="none"
+          />
+          <path
+            d="M 570,204 L 824,204 M 570,204 L 570,356 L 824,356"
+            fill="none"
             stroke="#1F2421"
             strokeWidth="2.2"
           />
 
-          {/* --- ROOM 3: Kitchen (824..900, 204..286) & Common Toilet (824..900, 286..356) --- */}
+          {/* --- ROOM 3: Kitchen (824..900, 204..286) with open path at top-left (x=824, y=204..238) & Common Toilet (824..900, 286..356) --- */}
           <rect
             x="824"
             y="204"
             width="76"
             height="82"
             fill="#F7EFE4"
+            stroke="none"
+          />
+          <path
+            d="M 824,204 L 900,204 L 900,286 L 824,286 L 824,238"
+            fill="none"
             stroke="#1F2421"
             strokeWidth="2"
+            strokeLinecap="square"
           />
-          <line x1="824" y1="207" x2="824" y2="238" stroke="#FAF5EC" strokeWidth="3.5" />
 
           <rect
             x="824"
