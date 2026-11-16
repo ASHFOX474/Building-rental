@@ -199,7 +199,7 @@ export default function FloorBBlueprint({ floor }) {
               fontWeight="700"
               fontFamily="var(--font-heading)"
             >
-              🏠 ইউনিট B1 — বাড়িওয়ালা (মালিকের নিজস্ব বাসভবন)
+              🏠 ইউনিট B1 — বাড়িওয়ালা
             </text>
           </g>
         </g>
@@ -392,7 +392,6 @@ export default function FloorBBlueprint({ floor }) {
           <g fill="#2B5B84" stroke="#1F2421" strokeWidth="1.2">
             <rect x="565" y="242" width="10" height="10" rx="1.5" />
             <rect x="565" y="294" width="10" height="10" rx="1.5" />
-            <rect x="565" y="344" width="10" height="10" rx="1.5" />
           </g>
 
           {/* --- CRISP BANGLA ROOM LABELS INSIDE B2 --- */}

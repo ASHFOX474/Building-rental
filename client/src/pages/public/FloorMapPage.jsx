@@ -14,6 +14,11 @@ export default function FloorMapPage() {
   const { floorNumber } = useParams();
   const navigate = useNavigate();
 
+  const orderedFloors = floors
+    .filter((f) => f.isVisible !== false)
+    .slice()
+    .sort((a, b) => a.floorNumber - b.floorNumber);
+
   const floorB = floors.find((f) => f.id === 'B') || floors[3];
   const currentFloor =
     floors.find((f) => String(f.floorNumber) === String(floorNumber)) || floorB;
@@ -22,12 +27,32 @@ export default function FloorMapPage() {
 
   return (
     <div className="fmap-page">
-      {/* Simplified Header & Legend */}
+      {/* Top Bar (Back Button + Floor Switcher), Title & 3-Pill Legend */}
       <header className="fmap-header">
         <div className="fmap-header__nav">
           <Link to="/" className="fmap-back-btn">
             ⬅️ হোম পেজে ফিরে যান
           </Link>
+
+          {/* Top Floor Switcher Bar */}
+          <nav className="fmap-switcher" aria-label="অন্যান্য তলার ফ্লোর ম্যাপ দেখুন">
+            {orderedFloors.map((f) => {
+              const isActive = f.id === currentFloor.id;
+              return (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => navigate(`/floor/${f.floorNumber}`)}
+                  className={`fmap-switcher__btn ${isActive ? 'fmap-switcher__btn--active' : ''}`}
+                >
+                  {f.nameBn} ({f.id})
+                  {f.blueprintReady && (
+                    <span className="fmap-switcher__dot" title="অটো-ক্যাড নকশা প্রস্তুত" />
+                  )}
+                </button>
+              );
+            })}
+          </nav>
         </div>
 
         <h1 className="fmap-header__title">

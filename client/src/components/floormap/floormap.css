@@ -19,8 +19,56 @@
 
 .fmap-header__nav {
   display: flex;
-  justify-content: flex-start;
-  margin-bottom: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+/* Top Floor Switcher Bar */
+.fmap-switcher {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 5px;
+  border: 1.5px solid var(--ink);
+  border-radius: 14px;
+  background: var(--surface-sand);
+}
+
+.fmap-switcher__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 13px;
+  border: 1.5px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-muted);
+  font: 600 14px var(--font-body);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.fmap-switcher__btn:hover {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.65);
+}
+
+.fmap-switcher__btn--active {
+  background: var(--surface-white);
+  color: var(--ink);
+  border-color: var(--ink);
+  font-weight: 700;
+  box-shadow: 1px 2px 0 rgba(31, 36, 33, 0.2);
+}
+
+.fmap-switcher__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--terracotta);
 }
 
 .fmap-back-btn {
