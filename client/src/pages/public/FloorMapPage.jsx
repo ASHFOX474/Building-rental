@@ -1,12 +1,14 @@
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import FloorCompassFrame from '../../components/floormap/FloorCompassFrame.jsx';
 import FloorBBlueprint from '../../components/floormap/FloorBBlueprint.jsx';
+import FloorCBlueprint from '../../components/floormap/FloorCBlueprint.jsx';
 import { building, floors } from '../../data/mockBuilding.js';
 import '../../components/floormap/floormap.css';
 
-// Modular blueprint registry: new floor CAD components (C, D, E, A) plug in here step by step.
+// Modular blueprint registry: new floor CAD components (D, E, A) plug in here step by step.
 const FLOOR_BLUEPRINTS = {
   B: FloorBBlueprint,
+  C: FloorCBlueprint,
 };
 
 /** Hand-drawn ornamental Alpana divider (~~~ ❖ ~~~) placed beneath the page title. */
@@ -58,6 +60,7 @@ export default function FloorMapPage() {
     floors.find((f) => String(f.floorNumber) === String(floorNumber)) || floorB;
 
   const ActiveBlueprint = FLOOR_BLUEPRINTS[currentFloor.id];
+  const legendPills = currentFloor.legendPills || floorB.legendPills || [];
 
   return (
     <div className="fmap-page">
@@ -97,18 +100,12 @@ export default function FloorMapPage() {
 
         {/* 3-Pill Legend */}
         <ul className="fmap-legend" aria-label="নকশার রঙের অর্থ">
-          <li className="fmap-legend__pill">
-            <span className="fmap-legend__swatch fmap-legend__swatch--owner" />
-            ইউনিট B1: বাড়িওয়ালা (মালিকের নিজস্ব বাসস্থান)
-          </li>
-          <li className="fmap-legend__pill">
-            <span className="fmap-legend__swatch fmap-legend__swatch--tenant" />
-            ইউনিট B2: ভাড়াটিয়ার ইউনিট (ছবি ও ভিডিও দেখতে ক্লিক করুন)
-          </li>
-          <li className="fmap-legend__pill">
-            <span className="fmap-legend__swatch fmap-legend__swatch--stairs" />
-            সিঁড়ি ঘর ও প্রবেশপথ
-          </li>
+          {legendPills.map((pill) => (
+            <li key={pill.textBn} className="fmap-legend__pill">
+              <span className={`fmap-legend__swatch fmap-legend__swatch--${pill.swatch}`} />
+              {pill.textBn}
+            </li>
+          ))}
         </ul>
       </header>
 

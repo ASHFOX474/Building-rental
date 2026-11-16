@@ -7,10 +7,15 @@ import './styles/theme.css';
 
 function FlatDetailsPlaceholder() {
   const { flatId } = useParams();
+  const floorMapNumber =
+    flatId?.startsWith('C') ? 3 :
+    flatId?.startsWith('D') ? 4 :
+    flatId?.startsWith('E') ? 5 :
+    flatId?.startsWith('A') ? 1 : 2;
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', padding: '48px 20px' }}>
       <Link
-        to="/floor/2?unit=B2"
+        to={`/floor/${floorMapNumber}?unit=${encodeURIComponent(flatId || 'B2')}`}
         style={{
           display: 'inline-block',
           padding: '8px 16px',

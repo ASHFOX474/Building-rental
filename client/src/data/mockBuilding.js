@@ -95,9 +95,23 @@ export const floors = [
     id: 'C',
     floorNumber: 3,
     nameBn: '৩য় তলা',
-    titleBn: '৩য় তলা (ফ্লোর C: ইউনিট C1 ও C2)',
-    blueprintReady: false,
+    titleBn: '৩য় তলা (ফ্লোর C: ইউনিট C1 ও C2)',
+    blueprintReady: true,
     isVisible: true,
+    legendPills: [
+      {
+        swatch: 'green',
+        textBn: 'ইউনিট C1: ভাড়াটিয়ার ইউনিট — বড় ফ্ল্যাট (ছবি ও ভিডিও দেখতে ক্লিক করুন)',
+      },
+      {
+        swatch: 'tenant',
+        textBn: 'ইউনিট C2: ভাড়াটিয়ার ইউনিট (ছবি ও ভিডিও দেখতে ক্লিক করুন)',
+      },
+      {
+        swatch: 'stairs',
+        textBn: 'সিঁড়ি ঘর ও প্রবেশপথ',
+      },
+    ],
     units: [
       { id: 'C1', widthPct: 62, status: 'occupied', rent: 15000 },
       { id: 'C2', widthPct: 38, status: 'occupied', rent: 10500 },
@@ -110,6 +124,20 @@ export const floors = [
     titleBn: '২য় তলা (ফ্লোর B: ইউনিট B1 ও B2)',
     blueprintReady: true,
     isVisible: true,
+    legendPills: [
+      {
+        swatch: 'owner',
+        textBn: 'ইউনিট B1: বাড়িওয়ালা (মালিকের নিজস্ব বাসস্থান)',
+      },
+      {
+        swatch: 'tenant',
+        textBn: 'ইউনিট B2: ভাড়াটিয়ার ইউনিট (ছবি ও ভিডিও দেখতে ক্লিক করুন)',
+      },
+      {
+        swatch: 'stairs',
+        textBn: 'সিঁড়ি ঘর ও প্রবেশপথ',
+      },
+    ],
     units: [
       {
         id: 'B1',
