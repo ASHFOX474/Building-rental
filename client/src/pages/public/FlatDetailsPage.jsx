@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { defaultRoomMediaSections } from '../../data/mockBuilding.js';
+import { defaultRoomMediaSections, getDefaultSectionsForUnit } from '../../data/mockBuilding.js';
 import { useBuilding } from '../../context/BuildingContext.jsx';
 import { isUnitAvailable } from '../../components/floormap/UnitStatusElements.jsx';
 import { formatTaka, monthBn, toBanglaDigits, formatPhoneBn } from '../../lib/bangla.js';
@@ -91,10 +91,7 @@ export default function FlatDetailsPage() {
     setLightboxIndex(null);
   }, [normalizedId]);
 
-  const is2Bed = matchedUnit?.bedrooms === 2;
-  const sections = Array.isArray(matchedUnit?.mediaSections)
-    ? matchedUnit.mediaSections
-    : defaultRoomMediaSections.filter((sec) => !(is2Bed && sec.id === 'sec-bed-3'));
+  const sections = getDefaultSectionsForUnit(matchedUnit);
 
   const filteredSections =
     activeTabId === 'all'
@@ -244,7 +241,12 @@ export default function FlatDetailsPage() {
   // Concise, non-repeating summary pills
   const summaryPills = [
     { icon: '🛏️', text: `${toBanglaDigits(bedroomsCount)} বেডরুম` },
-    { icon: '🛋️', text: 'ড্রয়িং-ডাইনিং (দেয়ালে টাইলস)' },
+    {
+      icon: '🛋️',
+      text: matchedUnit.hasSeparateDrawingDining
+        ? 'আলাদা ড্রয়িং ও ডাইনিং (দেয়ালে টাইলস)'
+        : 'ড্রয়িং-ডাইনিং (দেয়ালে টাইলস)',
+    },
     { icon: '🚿', text: `${toBanglaDigits(washroomsCount)} বাথরুম (১টি হাই-কমোড)` },
     { icon: '☀️', text: `${toBanglaDigits(balconiesCount)} বারান্দা` },
     { icon: '🔥', text: 'লাইনের গ্যাস' },

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useBuilding } from '../../context/BuildingContext.jsx';
-import { defaultRoomMediaSections } from '../../data/mockBuilding.js';
+import { defaultRoomMediaSections, getDefaultSectionsForUnit } from '../../data/mockBuilding.js';
 import { isUnitAvailable } from '../floormap/UnitStatusElements.jsx';
 import { formatTaka, toBanglaDigits, toAsciiDigits } from '../../lib/bangla.js';
 
@@ -54,18 +54,9 @@ const MONTH_PRESETS = [
   { key: 'november', fullBn: 'চলতি মাস' },
 ];
 
-/** Deep-clone the default room sections tailored to a unit's bedroom count. */
+/** Deep-clone the default room sections tailored to a unit's exact Floor-Map layout. */
 function getInitialSectionsForUnit(unit) {
-  if (Array.isArray(unit?.mediaSections)) {
-    return unit.mediaSections;
-  }
-  const is2Bed = unit?.bedrooms === 2;
-  return defaultRoomMediaSections
-    .filter((sec) => !(is2Bed && sec.id === 'sec-bed-3'))
-    .map((sec) => ({
-      ...sec,
-      items: sec.items.map((it) => ({ ...it })),
-    }));
+  return getDefaultSectionsForUnit(unit);
 }
 
 /** Count total photos and videos configured for a unit. */
@@ -306,31 +297,56 @@ export default function ToLetMediaTab({ initialUnitId = 'E1' }) {
   // =========================================================================
   const bedroomsCount = selectedUnit.bedrooms || 3;
 
-  const presetRoomButtons = [
-    { category: 'drawing', titleBn: 'ড্রয়িং ও ডাইনিং রুম' },
-    { category: 'bed-1', titleBn: 'বেডরুম ১ (পূর্ব মুখী — বারান্দাসহ)' },
-    { category: 'bed-2', titleBn: 'বেডরুম ২ (উত্তর-পূর্ব কোণ — বারান্দাসহ)' },
-    ...(bedroomsCount >= 3
+  const presetRoomButtons =
+    selectedUnit.id === 'A1' || selectedUnit.hasSeparateDrawingDining
       ? [
+          { category: 'drawing', titleBn: 'ড্রয়িং রুম (আলাদা বসার ঘর)' },
+          { category: 'dining', titleBn: 'ডাইনিং রুম' },
           {
-            category: 'bed-3',
-            titleBn: 'বেডরুম ৩ (উত্তর-পশ্চিম কোণ — বাথরুম ও বারান্দাসহ)',
+            category: 'bed-1',
+            titleBn: 'বেডরুম (উত্তর-পশ্চিম কোণ — বাথরুম ও বারান্দাসহ)',
           },
+          { category: 'kitchen', titleBn: 'কিচেন (রান্নাঘর)' },
+          { category: 'toilet-bath', titleBn: 'কমন টয়লেট ও বাথরুম' },
+          { category: 'veranda', titleBn: 'বারান্দা ও অন্যান্য' },
         ]
-      : []),
-    ...(bedroomsCount >= 4
+      : selectedUnit.id === 'A2'
       ? [
-          { category: 'bed-4', titleBn: 'বেডরুম ৪ (পূর্ব মুখী — বারান্দাসহ)' },
+          { category: 'drawing', titleBn: 'ড্রয়িং ও ডাইনিং রুম' },
+          { category: 'bed-1', titleBn: 'বেডরুম ১ (পূর্ব মুখী — বারান্দাসহ)' },
           {
-            category: 'bed-5',
-            titleBn: 'বেডরুম ৫ (পশ্চিম মুখী — বাথরুম ও বারান্দাসহ)',
+            category: 'bed-2',
+            titleBn: 'বেডরুম ২ (উত্তর-পূর্ব কোণ — এটাচড বাথরুমসহ)',
           },
+          { category: 'kitchen', titleBn: 'কিচেন (রান্নাঘর)' },
+          { category: 'toilet-bath', titleBn: 'কমন টয়লেট ও বাথরুম' },
+          { category: 'veranda', titleBn: 'বারান্দা ও অন্যান্য' },
         ]
-      : []),
-    { category: 'kitchen', titleBn: 'কিচেন (রান্নাঘর)' },
-    { category: 'toilet-bath', titleBn: 'কমন টয়লেট ও বাথরুম' },
-    { category: 'veranda', titleBn: 'বারান্দা ও অন্যান্য' },
-  ];
+      : [
+          { category: 'drawing', titleBn: 'ড্রয়িং ও ডাইনিং রুম' },
+          { category: 'bed-1', titleBn: 'বেডরুম ১ (পূর্ব মুখী — বারান্দাসহ)' },
+          { category: 'bed-2', titleBn: 'বেডরুম ২ (উত্তর-পূর্ব কোণ — বারান্দাসহ)' },
+          ...(bedroomsCount >= 3
+            ? [
+                {
+                  category: 'bed-3',
+                  titleBn: 'বেডরুম ৩ (উত্তর-পশ্চিম কোণ — বাথরুম ও বারান্দাসহ)',
+                },
+              ]
+            : []),
+          ...(bedroomsCount >= 4
+            ? [
+                { category: 'bed-4', titleBn: 'বেডরুম ৪ (পূর্ব মুখী — বারান্দাসহ)' },
+                {
+                  category: 'bed-5',
+                  titleBn: 'বেডরুম ৫ (পশ্চিম মুখী — বাথরুম ও বারান্দাসহ)',
+                },
+              ]
+            : []),
+          { category: 'kitchen', titleBn: 'কিচেন (রান্নাঘর)' },
+          { category: 'toilet-bath', titleBn: 'কমন টয়লেট ও বাথরুম' },
+          { category: 'veranda', titleBn: 'বারান্দা ও অন্যান্য' },
+        ];
 
   const handleAddRoomSection = (titleBn, category = 'custom') => {
     const cleanTitle = titleBn.trim();

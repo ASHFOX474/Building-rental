@@ -2,7 +2,7 @@
 // Persisted in localStorage via BuildingContext so any change in /admin immediately
 // updates Page 1 (/), Page 2 (/floor/:id), and Page 3 (/flat/:unitId).
 
-export const STORAGE_SCHEMA_VERSION = 'moni-lodge-v2';
+export const STORAGE_SCHEMA_VERSION = 'moni-lodge-v3';
 
 export const building = {
   name: 'মনি লজ',
@@ -260,8 +260,8 @@ export const floors = [
     id: 'A',
     floorNumber: 1,
     nameBn: '১ম তলা',
-    titleBn: '১ম তলা (ফ্লোর A: ইউনিট A1 ও A2)',
-    blueprintReady: false,
+    titleBn: '১ম তলা / নিচতলা (ফ্লোর A: গ্যারেজ, ইউনিট A1 ও A2)',
+    blueprintReady: true,
     isVisible: true,
     units: [
       {
@@ -269,9 +269,12 @@ export const floors = [
         widthPct: 45,
         status: 'occupied',
         rent: 11000,
-        bedrooms: 3,
+        bedrooms: 1,
         washrooms: 2,
-        balconies: 2,
+        balconies: 1,
+        hasSeparateDrawingDining: true,
+        roomsSummaryBn: '১টি বেডরুম • আলাদা ড্রয়িং ও ডাইনিং • ২টি বাথরুম • ১টি বারান্দা • কিচেন',
+        facingBn: 'উত্তর-পশ্চিম মুখী (খোলামেলা পরিবেশ)',
         renterNameBn: 'জনাব নাজমুল হুদা',
         renterPhone: '01716778899',
       },
@@ -280,9 +283,11 @@ export const floors = [
         widthPct: 55,
         status: 'occupied',
         rent: 12000,
-        bedrooms: 3,
+        bedrooms: 2,
         washrooms: 2,
-        balconies: 3,
+        balconies: 1,
+        roomsSummaryBn: '২টি বেডরুম • ড্রয়িং ও ডাইনিং • ২টি বাথরুম • ১টি বারান্দা • কিচেন',
+        facingBn: 'উত্তর-পূর্ব মুখী (দুই দিকেই রাস্তা ও খোলা জায়গা)',
         renterNameBn: 'জনাব মো. জহির উদ্দিন',
         renterPhone: '01818990011',
       },
@@ -486,3 +491,75 @@ export const defaultRoomMediaSections = [
     ],
   },
 ];
+
+/**
+ * Return the default Floor-Map-matched room media sections for any unit
+ * (adapting automatically for A1, A2, 2-bedroom D2/E2, or 3+ bedroom units).
+ */
+export function getDefaultSectionsForUnit(unit) {
+  if (Array.isArray(unit?.mediaSections)) {
+    return unit.mediaSections;
+  }
+
+  // Ground Floor Unit A1: 1 Bedroom + Separate Drawing Room & Dining Room
+  if (unit?.id === 'A1' || unit?.hasSeparateDrawingDining) {
+    return [
+      {
+        id: 'sec-a1-drawing',
+        category: 'drawing',
+        titleBn: 'ড্রয়িং রুম (আলাদা বসার ঘর)',
+        items: defaultRoomMediaSections[0].items.slice(0, 2).map((it) => ({ ...it })),
+      },
+      {
+        id: 'sec-a1-dining',
+        category: 'dining',
+        titleBn: 'ডাইনিং রুম',
+        items: defaultRoomMediaSections[0].items.slice(1).map((it) => ({ ...it })),
+      },
+      {
+        id: 'sec-a1-bed',
+        category: 'bed-1',
+        titleBn: 'বেডরুম (উত্তর-পশ্চিম কোণ — বাথরুম ও বারান্দাসহ)',
+        items: defaultRoomMediaSections[3].items.map((it) => ({ ...it })),
+      },
+      {
+        id: 'sec-a1-kitchen-bath',
+        category: 'kitchen-bath',
+        titleBn: 'কিচেন ও কমন টয়লেট',
+        items: defaultRoomMediaSections[4].items.map((it) => ({ ...it })),
+      },
+    ];
+  }
+
+  // Ground Floor Unit A2: 2 Bedrooms (Bedroom 1 with Veranda, Bedroom 2 with Attached Bathroom)
+  if (unit?.id === 'A2') {
+    return [
+      {
+        ...defaultRoomMediaSections[0],
+        items: defaultRoomMediaSections[0].items.map((it) => ({ ...it })),
+      },
+      {
+        ...defaultRoomMediaSections[1],
+        items: defaultRoomMediaSections[1].items.map((it) => ({ ...it })),
+      },
+      {
+        id: 'sec-a2-bed-2',
+        category: 'bed-2',
+        titleBn: 'বেডরুম ২ (উত্তর-পূর্ব কোণ — এটাচড বাথরুমসহ)',
+        items: defaultRoomMediaSections[2].items.map((it) => ({ ...it })),
+      },
+      {
+        ...defaultRoomMediaSections[4],
+        items: defaultRoomMediaSections[4].items.map((it) => ({ ...it })),
+      },
+    ];
+  }
+
+  const is2Bed = unit?.bedrooms === 2;
+  return defaultRoomMediaSections
+    .filter((sec) => !(is2Bed && sec.id === 'sec-bed-3'))
+    .map((sec) => ({
+      ...sec,
+      items: sec.items.map((it) => ({ ...it })),
+    }));
+}

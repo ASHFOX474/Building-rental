@@ -1,5 +1,6 @@
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import FloorCompassFrame from '../../components/floormap/FloorCompassFrame.jsx';
+import FloorABlueprint from '../../components/floormap/FloorABlueprint.jsx';
 import FloorBBlueprint from '../../components/floormap/FloorBBlueprint.jsx';
 import FloorCBlueprint from '../../components/floormap/FloorCBlueprint.jsx';
 import FloorDEBlueprint from '../../components/floormap/FloorDEBlueprint.jsx';
@@ -8,8 +9,9 @@ import { useBuilding } from '../../context/BuildingContext.jsx';
 import { monthBn } from '../../lib/bangla.js';
 import '../../components/floormap/floormap.css';
 
-// Modular blueprint registry: Floor A plugs in here next.
+// Complete blueprint registry across all 5 floors (A, B, C, D, E)
 const FLOOR_BLUEPRINTS = {
+  A: FloorABlueprint,
   B: FloorBBlueprint,
   C: FloorCBlueprint,
   D: FloorDEBlueprint,
@@ -49,15 +51,29 @@ function AlpanaTitleDivider() {
 
 /**
  * Builds the dynamic legend pills for a floor based on each unit's live
- * availability status (`available`, `occupied`, or `owner`).
+ * availability status (`available`, `occupied`, or `owner`) + Garage on Floor A.
  */
 function buildDynamicLegendPills(floor) {
   const unitCount = floor.units.length;
-  const pills = floor.units.map((unit, idx) => {
-    // Architectural border swatch color matching the blueprint zone
+  const pills = [];
+
+  // On Ground Floor (Floor A), prepend the Garage legend pill
+  if (floor.id === 'A') {
+    pills.push({
+      key: 'garage',
+      swatch: 'owner',
+      statusDot: '🚗',
+      textBn: 'গ্যারেজ ও পার্কিং (বাম পাশ)',
+      isAvailable: false,
+    });
+  }
+
+  floor.units.forEach((unit, idx) => {
     let zoneSwatch = 'tenant';
     if (unit.status === 'owner') {
       zoneSwatch = 'owner';
+    } else if (floor.id === 'A') {
+      zoneSwatch = idx === 0 ? 'ochre' : 'tenant';
     } else if (unitCount === 3) {
       zoneSwatch = idx === 0 ? 'green' : idx === 1 ? 'ochre' : 'tenant';
     } else if (unitCount === 2) {
@@ -65,34 +81,36 @@ function buildDynamicLegendPills(floor) {
     }
 
     if (unit.status === 'owner') {
-      return {
+      pills.push({
         key: unit.id,
         swatch: 'owner',
         statusDot: '🏠',
         textBn: `ইউনিট ${unit.id}: বাড়িওয়ালা (মালিকের নিজস্ব বাসস্থান)`,
         isAvailable: false,
-      };
+      });
+      return;
     }
 
     if (isUnitAvailable(unit)) {
       const fromText = unit.availableFrom ? ` (${monthBn(unit.availableFrom)} হতে)` : '';
-      return {
+      pills.push({
         key: unit.id,
         swatch: zoneSwatch,
         statusDot: '🟢',
         textBn: `ইউনিট ${unit.id}: ভাড়া হবে${fromText} — ছবি ও ভিডিও দেখুন`,
         isAvailable: true,
         unitId: unit.id,
-      };
+      });
+      return;
     }
 
-    return {
+    pills.push({
       key: unit.id,
       swatch: zoneSwatch,
       statusDot: '🔒',
       textBn: `ইউনিট ${unit.id}: ভাড়া হয়ে গেছে`,
       isAvailable: false,
-    };
+    });
   });
 
   pills.push({
@@ -117,7 +135,7 @@ export default function FloorMapPage() {
     .slice()
     .sort((a, b) => a.floorNumber - b.floorNumber);
 
-  const floorB = floors.find((f) => f.id === 'B') || floors[3];
+  const floorB = floors.find((f) => f.id === 'B') || floors[0];
   const currentFloor =
     floors.find((f) => String(f.floorNumber) === String(floorNumber)) || floorB;
 
@@ -125,10 +143,10 @@ export default function FloorMapPage() {
     FLOOR_BLUEPRINTS[currentFloor.id] ||
     (currentFloor.floorNumber >= 6 || currentFloor.units.length === 3
       ? FloorDEBlueprint
-      : null);
-  const displayFloor = ActiveBlueprint ? currentFloor : floorB;
-  const legendPills = buildDynamicLegendPills(displayFloor);
-  const floorHasAvailable = displayFloor.units.some(isUnitAvailable);
+      : FloorBBlueprint);
+
+  const legendPills = buildDynamicLegendPills(currentFloor);
+  const floorHasAvailable = currentFloor.units.some(isUnitAvailable);
 
   return (
     <div className="fmap-page">
@@ -200,31 +218,11 @@ export default function FloorMapPage() {
       </header>
 
       <main className="fmap-main">
-        {!ActiveBlueprint && (
-          <div className="fmap-modular-notice" role="status">
-            <div>
-              <strong>{currentFloor.titleBn}</strong>-এর নিজস্ব অটো-ক্যাড নকশা পরের ধাপে যুক্ত করা হবে।
-              আপাতত নিচে <strong>২য় তলা (ফ্লোর B: ইউনিট B1 ও B2)</strong>-এর অটো-ক্যাড ফ্লোর ম্যাপ দেখানো হচ্ছে।
-            </div>
-            <button
-              type="button"
-              className="fmap-modular-notice__btn"
-              onClick={() => navigate('/floor/2?unit=B2')}
-            >
-              ২য় তলায় (ফ্লোর B) যান ➔
-            </button>
-          </div>
-        )}
-
         <FloorCompassFrame
           surroundings={building.surroundings}
           hasAvailableUnit={floorHasAvailable}
         >
-          {ActiveBlueprint ? (
-            <ActiveBlueprint floor={currentFloor} />
-          ) : (
-            <FloorBBlueprint floor={floorB} />
-          )}
+          <ActiveBlueprint floor={currentFloor} />
         </FloorCompassFrame>
       </main>
     </div>
