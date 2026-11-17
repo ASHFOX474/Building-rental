@@ -1233,3 +1233,1069 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* ==========================================================================
+   5. TAB 2: TO-LET SWITCH & GOOGLE DRIVE ROOM MEDIA MANAGER (ToLetMediaTab)
+   ========================================================================== */
+
+.adm-tolet {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.adm-toast {
+  position: sticky;
+  top: 12px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 20px;
+  border: 2.5px solid var(--ink);
+  border-radius: 15px;
+  background: var(--available);
+  color: #ffffff;
+  font-family: var(--font-heading);
+  font-size: 19px;
+  font-weight: 700;
+  box-shadow: 0 8px 24px rgba(31, 36, 33, 0.25);
+}
+
+.adm-toast__close {
+  width: 36px;
+  height: 36px;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  background: transparent;
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.adm-step-title {
+  margin: 0 0 12px;
+  font-size: clamp(22px, 3vw, 25px);
+  color: var(--ink);
+}
+
+.adm-sub-note {
+  margin: -6px 0 14px;
+  font-size: 17.5px;
+  color: var(--text-muted);
+}
+
+/* ---------- Step 1: Visual Unit Selector Bar ---------- */
+.adm-unit-selector-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.adm-selector-floor-row {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1.5px solid rgba(31, 36, 33, 0.18);
+  border-radius: 14px;
+  background: var(--bg-chuna);
+}
+
+.adm-selector-floor-row__label {
+  font-family: var(--font-heading);
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.adm-selector-floor-row__units {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.adm-unit-select-btn {
+  min-height: 76px;
+  padding: 10px 14px;
+  border: 2px solid var(--ink);
+  border-radius: 14px;
+  background: var(--surface-white);
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 4px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.adm-unit-select-btn:hover {
+  background: var(--surface-sand);
+}
+
+.adm-unit-select-btn--open {
+  border-color: var(--available);
+  background: #f5fbf7;
+}
+
+.adm-unit-select-btn--active {
+  border-color: var(--terracotta);
+  border-width: 3px;
+  background: #fff8f3;
+  box-shadow: 3px 4px 0 var(--terracotta);
+}
+
+.adm-unit-select-btn--owner {
+  background: var(--surface-sand);
+  border-style: dashed;
+  border-color: #7a736a;
+  cursor: default;
+  opacity: 0.78;
+}
+
+.adm-unit-select-btn__id {
+  font-family: var(--font-heading);
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.adm-unit-select-btn__status {
+  font-size: 15.5px;
+  font-weight: 700;
+}
+
+.adm-unit-select-btn__status--open {
+  color: var(--available);
+}
+
+.adm-unit-select-btn__status--occupied {
+  color: var(--text-muted);
+}
+
+.adm-unit-select-btn__media {
+  font-size: 14.5px;
+  color: var(--text-muted);
+}
+
+/* ---------- Step 2: Giant Live "To-Let" Switch & Rent Terms Box ---------- */
+.adm-tolet-control-card__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.adm-selected-pill {
+  display: inline-block;
+  margin-bottom: 4px;
+  padding: 3px 12px;
+  border-radius: 999px;
+  background: var(--terracotta);
+  color: #ffffff;
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.adm-preview-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 50px;
+  padding: 8px 18px;
+  border: 2px solid var(--ink);
+  border-radius: 13px;
+  background: var(--surface-sand);
+  color: var(--ink);
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 2px 3px 0 var(--ink);
+}
+
+.adm-preview-link-btn:hover {
+  background: var(--terracotta);
+  color: #ffffff;
+}
+
+.adm-giant-toggle-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.adm-giant-toggle-btn {
+  min-height: 68px;
+  padding: 14px 18px;
+  border: 2.5px solid var(--ink);
+  border-radius: 15px;
+  background: var(--bg-chuna);
+  color: var(--ink);
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.adm-giant-toggle-btn--yes-active {
+  background: var(--available);
+  border-color: var(--ink);
+  color: #ffffff;
+  box-shadow: 3px 4px 0 var(--ink);
+}
+
+.adm-giant-toggle-btn--no-active {
+  background: #544e46;
+  border-color: var(--ink);
+  color: #ffffff;
+  box-shadow: 3px 4px 0 var(--ink);
+}
+
+.adm-effect-banner {
+  padding: 13px 18px;
+  border-radius: 13px;
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 18px;
+}
+
+.adm-effect-banner--open {
+  background: var(--available-bg);
+  border: 2px solid var(--available);
+  color: #1b4332;
+}
+
+.adm-effect-banner--closed {
+  background: var(--occupied-bg);
+  border: 2px solid #7a736a;
+  color: #3e3a35;
+}
+
+.adm-terms-editor-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 16px;
+}
+
+.adm-term-box {
+  padding: 16px;
+  border: 1.8px solid rgba(31, 36, 33, 0.22);
+  border-radius: 15px;
+  background: var(--bg-chuna);
+}
+
+.adm-term-box__label {
+  display: block;
+  margin-bottom: 10px;
+  font-family: var(--font-heading);
+  font-size: 19.5px;
+  font-weight: 700;
+}
+
+.adm-month-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.adm-month-pill {
+  min-height: 46px;
+  padding: 6px 15px;
+  border: 1.8px solid var(--ink);
+  border-radius: 999px;
+  background: var(--surface-white);
+  color: var(--ink);
+  font-family: var(--font-heading);
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.adm-month-pill--active {
+  background: var(--terracotta);
+  color: #ffffff;
+}
+
+.adm-custom-month-input {
+  margin-top: 10px;
+  width: 100%;
+  min-height: 48px;
+  padding: 8px 14px;
+  border: 2px solid var(--ink);
+  border-radius: 11px;
+  font-size: 18px;
+  background: var(--surface-white);
+}
+
+/* Rent Stepper (-500 / +500) */
+.adm-rent-stepper {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.adm-step-btn {
+  min-height: 54px;
+  padding: 8px 14px;
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  background: var(--surface-white);
+  color: var(--ink);
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 var(--ink);
+}
+
+.adm-step-btn--plus {
+  background: var(--available-bg);
+  color: #1b4332;
+}
+
+.adm-step-btn--minus {
+  background: #fbeae3;
+  color: var(--terracotta);
+}
+
+.adm-rent-stepper__input {
+  width: 100%;
+  min-height: 54px;
+  padding: 6px 10px;
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  background: var(--surface-white);
+  font-family: var(--font-heading);
+  font-size: 26px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--terracotta);
+}
+
+.adm-inclusive-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1b4332;
+  cursor: pointer;
+}
+
+.adm-inclusive-toggle input {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--available);
+}
+
+/* ---------- Step 3: Google Drive Folder Mapping & Auto-Sync ---------- */
+.adm-drive-sync-card__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.adm-drive-path-badge {
+  margin: 0;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: var(--bg-chuna);
+  border: 1.5px solid rgba(31, 36, 33, 0.2);
+  font-size: 17px;
+}
+
+.adm-drive-path-badge code {
+  font-weight: 700;
+  color: var(--terracotta);
+}
+
+.adm-sync-drive-btn {
+  min-height: 56px;
+  padding: 12px 22px;
+  border: 2.2px solid var(--ink);
+  border-radius: 14px;
+  background: var(--available);
+  color: #ffffff;
+  font-family: var(--font-heading);
+  font-size: 19px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 3px 4px 0 var(--ink);
+}
+
+.adm-sync-drive-btn:hover {
+  background: #21523c;
+}
+
+.adm-drive-folder-input-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.adm-drive-folder-input-row__lbl {
+  font-weight: 700;
+  font-size: 17.5px;
+}
+
+.adm-drive-folder-input-row__input {
+  min-height: 48px;
+  padding: 8px 14px;
+  border: 1.8px solid var(--ink);
+  border-radius: 11px;
+  font-size: 17px;
+  background: var(--bg-chuna);
+}
+
+/* ---------- Step 4: Main Walkthrough Video Manager ---------- */
+.adm-main-video-preview-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.adm-main-video-player {
+  width: 100%;
+  max-width: 720px;
+  aspect-ratio: 16 / 9;
+  border: 2px solid var(--ink);
+  border-radius: 14px;
+  overflow: hidden;
+  background: #1f2421;
+}
+
+.adm-main-video-player iframe,
+.adm-main-video-player video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  object-fit: cover;
+}
+
+.adm-main-video-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.adm-replace-video-btn,
+.adm-delete-video-btn {
+  min-height: 52px;
+  padding: 10px 20px;
+  border: 2px solid var(--ink);
+  border-radius: 13px;
+  font-family: var(--font-heading);
+  font-size: 18.5px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 2px 3px 0 var(--ink);
+}
+
+.adm-replace-video-btn {
+  background: var(--surface-sand);
+  color: var(--ink);
+}
+
+.adm-delete-video-btn {
+  background: var(--unpaid);
+  color: #ffffff;
+}
+
+.adm-main-video-upload-box {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.adm-upload-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 26px 20px;
+  border: 2.5px dashed var(--terracotta);
+  border-radius: 16px;
+  background: #fffaf5;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.adm-upload-dropzone:hover {
+  background: #fdf1e6;
+}
+
+.adm-upload-dropzone__icon {
+  font-size: 36px;
+}
+
+.adm-upload-dropzone__title {
+  font-family: var(--font-heading);
+  font-size: 21px;
+  font-weight: 700;
+  color: var(--terracotta);
+}
+
+.adm-upload-dropzone__sub {
+  font-size: 17px;
+  color: var(--text-muted);
+}
+
+.adm-drive-link-inline {
+  padding: 14px;
+  border-radius: 13px;
+  background: var(--bg-chuna);
+  border: 1.5px solid rgba(31, 36, 33, 0.2);
+}
+
+.adm-drive-link-inline__lbl {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 700;
+  font-size: 17.5px;
+}
+
+.adm-drive-link-inline__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.adm-drive-link-inline__input {
+  flex: 1;
+  min-width: 240px;
+  min-height: 48px;
+  padding: 8px 14px;
+  border: 1.8px solid var(--ink);
+  border-radius: 10px;
+  font-size: 17px;
+  background: var(--surface-white);
+}
+
+.adm-drive-link-inline__btn,
+.adm-drive-link-inline__cancel {
+  min-height: 48px;
+  padding: 8px 18px;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.adm-drive-link-inline__btn {
+  background: var(--terracotta);
+  color: #ffffff;
+}
+
+.adm-drive-link-inline__cancel {
+  background: var(--surface-sand);
+}
+
+/* ---------- Step 5: Room-by-Room Media Sections ---------- */
+.adm-preset-rooms-box {
+  padding: 16px;
+  border: 2px dashed var(--available);
+  border-radius: 16px;
+  background: #f5fbf7;
+  margin-bottom: 20px;
+}
+
+.adm-preset-rooms-box__label {
+  display: block;
+  margin-bottom: 10px;
+  font-family: var(--font-heading);
+  font-size: 19.5px;
+  font-weight: 700;
+  color: #1b4332;
+}
+
+.adm-preset-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.adm-preset-room-btn {
+  min-height: 50px;
+  padding: 8px 16px;
+  border: 2px solid var(--available);
+  border-radius: 12px;
+  background: var(--surface-white);
+  color: #1b4332;
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 rgba(45, 106, 79, 0.25);
+  transition: all 0.15s;
+}
+
+.adm-preset-room-btn:hover {
+  background: var(--available);
+  color: #ffffff;
+}
+
+.adm-preset-room-btn--custom {
+  border-color: var(--terracotta);
+  color: var(--terracotta);
+}
+
+.adm-preset-room-btn--custom:hover {
+  background: var(--terracotta);
+  color: #ffffff;
+}
+
+.adm-custom-room-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.adm-custom-room-row__input {
+  flex: 1;
+  min-width: 240px;
+  min-height: 50px;
+  padding: 8px 14px;
+  border: 2px solid var(--ink);
+  border-radius: 11px;
+  font-size: 18px;
+  background: var(--surface-white);
+}
+
+.adm-custom-room-row__add {
+  min-height: 50px;
+  padding: 8px 20px;
+  border: 2px solid var(--ink);
+  border-radius: 11px;
+  background: var(--terracotta);
+  color: #ffffff;
+  font-family: var(--font-heading);
+  font-size: 18.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Room Section Cards */
+.adm-room-section-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.adm-room-sec-card {
+  padding: 20px;
+  border: 2.2px solid var(--ink);
+  border-radius: 18px;
+  background: var(--bg-chuna);
+}
+
+.adm-room-sec-card__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1.8px dashed rgba(31, 36, 33, 0.2);
+  margin-bottom: 16px;
+}
+
+.adm-room-sec-card__title-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.adm-room-sec-card__title {
+  margin: 0;
+  font-size: 23px;
+  color: var(--ink);
+}
+
+.adm-sec-small-btn {
+  min-height: 40px;
+  padding: 4px 12px;
+  border: 1.6px solid var(--ink);
+  border-radius: 9px;
+  background: var(--surface-white);
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.adm-sec-count-badge {
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--surface-sand);
+  border: 1.4px solid rgba(31, 36, 33, 0.25);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.adm-sec-rename-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.adm-sec-rename-row__input {
+  min-height: 44px;
+  padding: 6px 12px;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  font-size: 18px;
+  background: var(--surface-white);
+}
+
+.adm-sec-rename-row__save,
+.adm-sec-rename-row__cancel {
+  min-height: 44px;
+  padding: 6px 14px;
+  border: 1.8px solid var(--ink);
+  border-radius: 10px;
+  font-family: var(--font-heading);
+  font-size: 16.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.adm-sec-rename-row__save {
+  background: var(--available);
+  color: #ffffff;
+}
+
+.adm-room-sec-card__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.adm-sec-ctrl-btn {
+  min-height: 44px;
+  padding: 6px 14px;
+  border: 1.8px solid var(--ink);
+  border-radius: 10px;
+  background: var(--surface-white);
+  color: var(--ink);
+  font-family: var(--font-heading);
+  font-size: 16.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.adm-sec-ctrl-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.adm-sec-ctrl-btn--delete {
+  background: var(--unpaid-bg);
+  border-color: var(--unpaid);
+  color: var(--unpaid);
+}
+
+.adm-sec-delete-confirm {
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  border: 2px solid var(--unpaid);
+  border-radius: 13px;
+  background: var(--unpaid-bg);
+  color: var(--unpaid);
+  text-align: center;
+}
+
+.adm-sec-delete-confirm p {
+  margin: 0 0 10px;
+  font-size: 18.5px;
+}
+
+.adm-sec-delete-confirm__btns {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+/* Grid of Existing Photos & Videos Inside Room */
+.adm-room-media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.adm-media-item-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1.8px solid rgba(31, 36, 33, 0.25);
+  border-radius: 14px;
+  background: var(--surface-white);
+}
+
+.adm-media-item-card__preview {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #1f2421;
+}
+
+.adm-media-item-card__preview img,
+.adm-media-item-card__preview video,
+.adm-media-item-card__preview iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border: 0;
+}
+
+.adm-media-type-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.adm-media-type-badge--image {
+  background: rgba(31, 36, 33, 0.8);
+}
+
+.adm-media-type-badge--video {
+  background: var(--terracotta);
+}
+
+.adm-media-delete-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  min-height: 36px;
+  padding: 4px 12px;
+  border: 1.8px solid #ffffff;
+  border-radius: 9px;
+  background: var(--unpaid);
+  color: #ffffff;
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.adm-media-zoom-btn {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  min-height: 34px;
+  padding: 3px 10px;
+  border: 1.5px solid #ffffff;
+  border-radius: 8px;
+  background: rgba(31, 36, 33, 0.82);
+  color: #ffffff;
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.adm-media-caption-input {
+  width: 100%;
+  min-height: 40px;
+  padding: 6px 10px;
+  border: 1.5px solid rgba(31, 36, 33, 0.25);
+  border-radius: 8px;
+  font-size: 15.5px;
+  background: var(--bg-chuna);
+}
+
+.adm-empty-room-note {
+  margin: 0 0 14px;
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--surface-white);
+  text-align: center;
+  color: var(--text-muted);
+}
+
+/* Add New Photos or Videos to Room */
+.adm-room-add-zone {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.adm-room-upload-btn {
+  flex: 1;
+  min-width: 280px;
+  min-height: 54px;
+  padding: 10px 18px;
+  border: 2px solid var(--ink);
+  border-radius: 13px;
+  background: var(--terracotta);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font-heading);
+  font-size: 18.5px;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 2px 3px 0 var(--ink);
+}
+
+.adm-room-upload-btn:hover {
+  background: #b34b25;
+}
+
+.adm-room-link-toggle-btn {
+  min-height: 54px;
+  padding: 10px 16px;
+  border: 2px solid var(--ink);
+  border-radius: 13px;
+  background: var(--surface-white);
+  color: var(--ink);
+  font-family: var(--font-heading);
+  font-size: 17.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.adm-room-link-panel {
+  margin-top: 12px;
+  padding: 14px;
+  border: 2px solid var(--terracotta);
+  border-radius: 13px;
+  background: var(--surface-white);
+}
+
+.adm-room-link-panel__types {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.adm-type-pill {
+  min-height: 42px;
+  padding: 6px 16px;
+  border: 1.8px solid var(--ink);
+  border-radius: 999px;
+  background: var(--bg-chuna);
+  font-family: var(--font-heading);
+  font-size: 16.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.adm-type-pill--active {
+  background: var(--available);
+  color: #ffffff;
+}
+
+.adm-room-link-panel__inputs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.adm-room-link-panel__url,
+.adm-room-link-panel__caption {
+  flex: 1;
+  min-width: 220px;
+  min-height: 46px;
+  padding: 6px 12px;
+  border: 1.8px solid var(--ink);
+  border-radius: 10px;
+  font-size: 16.5px;
+}
+
+.adm-room-link-panel__submit {
+  min-height: 46px;
+  padding: 8px 18px;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  background: var(--terracotta);
+  color: #ffffff;
+  font-family: var(--font-heading);
+  font-size: 17.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Admin Lightbox Preview */
+.adm-lightbox-box {
+  position: relative;
+  max-width: min(880px, 92vw);
+  padding: 16px;
+  border-radius: 16px;
+  background: var(--surface-white);
+  text-align: center;
+}
+
+.adm-lightbox-box img {
+  max-width: 100%;
+  max-height: 75vh;
+  border-radius: 12px;
+  display: block;
+  margin: 0 auto;
+}
+
+.adm-lightbox-box p {
+  margin: 10px 0 0;
+  font-family: var(--font-heading);
+  font-weight: 700;
+}
+
+.adm-lightbox-box__close {
+  margin-bottom: 10px;
+  min-height: 42px;
+  padding: 6px 16px;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  background: var(--terracotta);
+  color: #ffffff;
+  font-family: var(--font-heading);
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+@media (max-width: 920px) {
+  .adm-selector-floor-row,
+  .adm-giant-toggle-grid,
+  .adm-terms-editor-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import AdminPinLogin from '../../components/admin/AdminPinLogin.jsx';
 import RentLedgerTab from '../../components/admin/RentLedgerTab.jsx';
+import ToLetMediaTab from '../../components/admin/ToLetMediaTab.jsx';
 import { useBuilding } from '../../context/BuildingContext.jsx';
 import '../../components/admin/admin.css';
 
@@ -27,6 +28,7 @@ const ADMIN_TABS = [
 /**
  * Private Family Admin Panel (/admin)
  * Part 1: PIN Pad Login, 3-Tab Header Navigation, and Tab 1 (Monthly Rent Ledger).
+ * Part 2: Tab 2 (Live To-Let Switch & Google Drive Room-by-Room Media Manager).
  */
 export default function AdminDashboardPage() {
   const { building } = useBuilding();
@@ -122,23 +124,7 @@ export default function AdminDashboardPage() {
         )}
 
         {activeTab === 'tolet' && (
-          <section className="adm-puthi-card adm-placeholder-card">
-            <div className="adm-puthi-card__inner-rule" aria-hidden="true" />
-            <span className="adm-placeholder-card__badge">পরবর্তী ধাপ (Part 2)</span>
-            <h2 className="adm-placeholder-card__title">
-              🏠 ২. টু-লেট ও ছবি আপলোড (নির্বাচিত ইউনিট: {preselectedUnitId})
-            </h2>
-            <p className="adm-placeholder-card__desc">
-              এই ট্যাবে যেকোনো ফ্ল্যাটের <strong>টু-লেট (ভাড়া হবে / ভাড়া হয়ে গেছে)</strong> সুইচ অন-অফ করা এবং রুম অনুযায়ী গুগল ড্রাইভের ছবি ও ভিডিও খুব সহজে সাজানোর সুবিধা <strong>Part 2</strong>-তে যুক্ত হবে।
-            </p>
-            <button
-              type="button"
-              className="adm-back-to-ledger-btn"
-              onClick={() => setActiveTab('ledger')}
-            >
-              ⬅️ ভাড়ার খাতায় ফিরে যান
-            </button>
-          </section>
+          <ToLetMediaTab initialUnitId={preselectedUnitId} />
         )}
 
         {activeTab === 'settings' && (

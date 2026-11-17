@@ -2,7 +2,7 @@
 // Persisted in localStorage via BuildingContext so any change in /admin immediately
 // updates Page 1 (/), Page 2 (/floor/:id), and Page 3 (/flat/:unitId).
 
-export const STORAGE_SCHEMA_VERSION = 'moni-lodge-v1';
+export const STORAGE_SCHEMA_VERSION = 'moni-lodge-v2';
 
 export const building = {
   name: 'মনি লজ',
@@ -69,11 +69,14 @@ export const floors = [
         status: 'available',
         rent: 12000,
         availableFrom: 'april',
-        availableFromFullBn: 'এপ্রিল ২০২৭ থেকে',
+        availableFromFullBn: 'এপ্রিল ২০২৭',
+        inclusiveBills: true,
         bedrooms: 3,
         washrooms: 2,
         balconies: 3,
         driveVideoId: '',
+        mainVideoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+        driveFolderUrl: '',
         renterNameBn: '',
         renterPhone: '',
         roomsSummaryBn: '৩টি বেডরুম • ড্রয়িং-ডাইনিং • ২টি বাথরুম • ৩টি বারান্দা • কিচেন',
@@ -145,11 +148,14 @@ export const floors = [
         status: 'available',
         rent: 12000,
         availableFrom: 'may',
-        availableFromFullBn: 'মে ২০২৭ থেকে',
+        availableFromFullBn: 'মে ২০২৭',
+        inclusiveBills: true,
         bedrooms: 3,
         washrooms: 2,
         balconies: 3,
         driveVideoId: '',
+        mainVideoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+        driveFolderUrl: '',
         renterNameBn: '',
         renterPhone: '',
         roomsSummaryBn: '৩টি বেডরুম • ড্রয়িং-ডাইনিং • ২টি বাথরুম • ৩টি বারান্দা • কিচেন',
@@ -353,12 +359,13 @@ export const initialPaymentsByMonth = {
   },
 };
 
-// Default Admin-Organized Room-by-Room Media Sections for available flats.
+// Default Admin-Organized Room-by-Room Media Sections using exact Floor-Map room names.
+// Supports both 'image' and 'video' items inside every room section.
 export const defaultRoomMediaSections = [
   {
     id: 'sec-drawing',
     category: 'drawing',
-    titleBn: '১. ড্রয়িং ও ডাইনিং রুম',
+    titleBn: 'ড্রয়িং ও ডাইনিং রুম',
     items: [
       {
         id: 'dd-1',
@@ -377,71 +384,55 @@ export const defaultRoomMediaSections = [
           'https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?auto=format&fit=crop&w=1000&q=80',
       },
       {
-        id: 'dd-3',
-        type: 'image',
-        labelBn: 'ড্রয়িং রুমের মেইন এন্ট্রি ও ফ্লোর টাইলস',
+        id: 'dd-vid-1',
+        type: 'video',
+        labelBn: 'ড্রয়িং ও ডাইনিং রুমের সংক্ষিপ্ত ভিডিও',
         driveFileId: '',
         previewUrl:
-          'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1000&q=80',
+          'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoy.mp4',
       },
     ],
   },
   {
-    id: 'sec-master',
-    category: 'master',
-    titleBn: '২. মাস্টার বেডরুম ও এটাচড বাথরুম',
+    id: 'sec-bed-1',
+    category: 'bed-1',
+    titleBn: 'বেডরুম ১ (পূর্ব মুখী — বারান্দাসহ)',
     items: [
       {
-        id: 'mb-1',
+        id: 'b1-1',
         type: 'image',
-        labelBn: 'মাস্টার বেডরুম (দক্ষিণ-পূর্ব মুখী জানালা ও বারান্দা)',
+        labelBn: 'বেডরুম ১ (দক্ষিণ-পূর্ব আলো-বাতাস ও জানালা)',
         driveFileId: '',
         previewUrl:
           'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?auto=format&fit=crop&w=1000&q=80',
       },
       {
-        id: 'mb-2',
+        id: 'b1-2',
         type: 'image',
-        labelBn: 'মাস্টার বেডরুমের সাথে সংযুক্ত বারান্দা',
+        labelBn: 'বেডরুম ১-এর সাথে সংযুক্ত পূর্বমুখী বারান্দা',
         driveFileId: '',
         previewUrl:
           'https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?auto=format&fit=crop&w=1000&q=80',
       },
-      {
-        id: 'mb-3',
-        type: 'image',
-        labelBn: 'এটাচড বাথরুম (হাই-কমোড ও আধুনিক ফিটিংস)',
-        driveFileId: '',
-        previewUrl:
-          'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=1000&q=80',
-      },
     ],
   },
   {
-    id: 'sec-other-beds',
-    category: 'other-bedrooms',
-    titleBn: '৩. ২য় ও ৩য় বেডরুম ও বারান্দা',
+    id: 'sec-bed-2',
+    category: 'bed-2',
+    titleBn: 'বেডরুম ২ (উত্তর-পূর্ব কোণ — বারান্দাসহ)',
     items: [
       {
-        id: 'ob-1',
+        id: 'b2-1',
         type: 'image',
-        labelBn: '২য় বেডরুম (পর্যাপ্ত আলো-বাতাস ও সংযুক্ত বারান্দা)',
+        labelBn: 'বেডরুম ২ (দুই দিকে খোলামেলা জানালা)',
         driveFileId: '',
         previewUrl:
           'https://images.unsplash.com/photo-1540518614846-7ede433c457?auto=format&fit=crop&w=1000&q=80',
       },
       {
-        id: 'ob-2',
+        id: 'b2-2',
         type: 'image',
-        labelBn: '৩য় বেডরুম (উত্তর-পূর্ব কোণ)',
-        driveFileId: '',
-        previewUrl:
-          'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1000&q=80',
-      },
-      {
-        id: 'ob-3',
-        type: 'image',
-        labelBn: 'খোলামেলা বারান্দা ও বাইরের ভিউ',
+        labelBn: 'বেডরুম ২-এর সংযুক্ত বারান্দা',
         driveFileId: '',
         previewUrl:
           'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1000&q=80',
@@ -449,9 +440,32 @@ export const defaultRoomMediaSections = [
     ],
   },
   {
+    id: 'sec-bed-3',
+    category: 'bed-3',
+    titleBn: 'বেডরুম ৩ (উত্তর-পশ্চিম কোণ — বাথরুম ও বারান্দাসহ)',
+    items: [
+      {
+        id: 'b3-1',
+        type: 'image',
+        labelBn: 'বেডরুম ৩ ও সংযুক্ত বারান্দা',
+        driveFileId: '',
+        previewUrl:
+          'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1000&q=80',
+      },
+      {
+        id: 'b3-2',
+        type: 'image',
+        labelBn: 'বেডরুম ৩-এর এটাচড হাই-কমোড বাথরুম',
+        driveFileId: '',
+        previewUrl:
+          'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=1000&q=80',
+      },
+    ],
+  },
+  {
     id: 'sec-kitchen-bath',
     category: 'kitchen-bath',
-    titleBn: '৪. কিচেন ও কমন বাথরুম',
+    titleBn: 'কিচেন ও কমন টয়লেট',
     items: [
       {
         id: 'kb-1',
@@ -464,15 +478,7 @@ export const defaultRoomMediaSections = [
       {
         id: 'kb-2',
         type: 'image',
-        labelBn: 'কিচেন কেবিনেট ও দেয়ালের টাইলস',
-        driveFileId: '',
-        previewUrl:
-          'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=1000&q=80',
-      },
-      {
-        id: 'kb-3',
-        type: 'image',
-        labelBn: 'কমন বাথরুম (সার্বক্ষণিক পানির সুবিধা)',
+        labelBn: 'কমন টয়লেট ও বাথরুম (সার্বক্ষণিক পানির সুবিধা)',
         driveFileId: '',
         previewUrl:
           'https://images.unsplash.com/photo-1620626011761-996317b8d101?auto=format&fit=crop&w=1000&q=80',

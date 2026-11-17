@@ -22,14 +22,6 @@ function getMediaFullUrl(item) {
   return item.previewUrl;
 }
 
-const ROOM_FILTER_TABS = [
-  { id: 'all', labelBn: 'সব রুম' },
-  { id: 'drawing', labelBn: 'ড্রয়িং ও ডাইনিং' },
-  { id: 'master', labelBn: 'মাস্টার বেডরুম' },
-  { id: 'other-bedrooms', labelBn: 'অন্যান্য বেডরুম' },
-  { id: 'kitchen-bath', labelBn: 'কিচেন ও বাথরুম' },
-];
-
 /** Subtle L-shaped Kantajew/Alpana corner motif for Puthichitro cards. */
 function CardAlpanaCorner({ pos }) {
   return (
@@ -53,6 +45,8 @@ function CardAlpanaCorner({ pos }) {
 
 /**
  * Page 3 — Clean, Zero-Redundancy Flat Media & Full Details Page (/flat/:unitId)
+ * Dynamically renders the Main Walkthrough Video (if present) and the exact
+ * Admin-organized Room-by-Room Photo & Video sections from the shared store.
  */
 export default function FlatDetailsPage() {
   const { building, floors } = useBuilding();
@@ -88,27 +82,33 @@ export default function FlatDetailsPage() {
   );
 
   // Room filter tab state & Fullscreen Lightbox state
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeTabId, setActiveTabId] = useState('all');
   const [lightboxIndex, setLightboxIndex] = useState(null);
 
   // Reset filter & lightbox when switching units
   useEffect(() => {
-    setActiveTab('all');
+    setActiveTabId('all');
     setLightboxIndex(null);
   }, [normalizedId]);
 
-  const sections = matchedUnit?.mediaSections || defaultRoomMediaSections;
-  const filteredSections =
-    activeTab === 'all'
-      ? sections
-      : sections.filter((sec) => sec.category === activeTab);
+  const is2Bed = matchedUnit?.bedrooms === 2;
+  const sections = Array.isArray(matchedUnit?.mediaSections)
+    ? matchedUnit.mediaSections
+    : defaultRoomMediaSections.filter((sec) => !(is2Bed && sec.id === 'sec-bed-3'));
 
-  // Flattened list of all visible media items for Lightbox Next/Prev navigation
-  const flatMediaList = filteredSections.flatMap((sec) =>
-    sec.items.map((item) => ({
-      ...item,
-      sectionTitleBn: sec.titleBn,
-    }))
+  const filteredSections =
+    activeTabId === 'all'
+      ? sections
+      : sections.filter((sec) => sec.id === activeTabId);
+
+  // Flattened list of all visible IMAGE items for Lightbox Next/Prev navigation
+  const flatImageList = filteredSections.flatMap((sec, secIdx) =>
+    (sec.items || [])
+      .filter((item) => item.type !== 'video')
+      .map((item) => ({
+        ...item,
+        sectionTitleBn: `${toBanglaDigits(secIdx + 1)}. ${sec.titleBn}`,
+      }))
   );
 
   const closeLightbox = useCallback(() => setLightboxIndex(null), []);
@@ -116,19 +116,23 @@ export default function FlatDetailsPage() {
     (e) => {
       if (e) e.stopPropagation();
       setLightboxIndex((idx) =>
-        idx === null ? null : (idx - 1 + flatMediaList.length) % flatMediaList.length
+        idx === null || flatImageList.length === 0
+          ? null
+          : (idx - 1 + flatImageList.length) % flatImageList.length
       );
     },
-    [flatMediaList.length]
+    [flatImageList.length]
   );
   const showNext = useCallback(
     (e) => {
       if (e) e.stopPropagation();
       setLightboxIndex((idx) =>
-        idx === null ? null : (idx + 1) % flatMediaList.length
+        idx === null || flatImageList.length === 0
+          ? null
+          : (idx + 1) % flatImageList.length
       );
     },
-    [flatMediaList.length]
+    [flatImageList.length]
   );
 
   // Keyboard navigation for Fullscreen Lightbox
@@ -219,13 +223,18 @@ export default function FlatDetailsPage() {
   const balconiesCount = matchedUnit.balconies || (isCompactUnit ? 2 : 3);
   const monthlyRent = matchedUnit.rent || 12000;
   const rentFormatted = formatTaka(monthlyRent);
+  const inclusiveBills = matchedUnit.inclusiveBills !== false;
 
-  const availableFromLabel = matchedUnit.availableFrom
-    ? `${monthBn(matchedUnit.availableFrom)} ২০২৭ থেকে`
-    : 'জানুয়ারি ২০২৭ থেকে';
+  const rawFromText =
+    matchedUnit.availableFromFullBn ||
+    (matchedUnit.availableFrom ? `${monthBn(matchedUnit.availableFrom)} ২০২৭` : 'জানুয়ারি ২০২৭');
+  const availableFromLabel = rawFromText.endsWith('থেকে')
+    ? rawFromText
+    : `${rawFromText} থেকে`;
 
-  const externalDriveUrl =
-    building.contact.externalMediaUrl || 'http://tiny.cc/FlatsPhotosAndVideo';
+  const hasMainVideo = Boolean(
+    matchedUnit.driveVideoId || matchedUnit.mainVideoUrl
+  );
 
   const whatsappMessage = `আসসালামু আলাইকুম, আমি ওয়েবসাইটে আপনাদের ইউনিট ${matchedUnit.id}-এর বিস্তারিত ও ভিডিও দেখে যোগাযোগ করছি। বাসাটি সরাসরি দেখতে চাই।`;
   const whatsappUrl = `https://wa.me/${building.contact.whatsapp}?text=${encodeURIComponent(
@@ -245,7 +254,7 @@ export default function FlatDetailsPage() {
   ];
 
   const activeLightboxItem =
-    lightboxIndex !== null ? flatMediaList[lightboxIndex] : null;
+    lightboxIndex !== null ? flatImageList[lightboxIndex] : null;
 
   return (
     <div className="fd-page">
@@ -308,95 +317,139 @@ export default function FlatDetailsPage() {
       <main className="fd-grid">
         {/* ----------------- LEFT COLUMN (65%): Video + Room Gallery ----------------- */}
         <div className="fd-col-left">
-          {/* 1. Clean Walkthrough Video Card */}
-          <section className="fd-puthi-card fd-video-card" aria-label="পুরো ফ্ল্যাটের ভিডিও">
-            <div className="fd-puthi-card__inner-rule" aria-hidden="true" />
-            <CardAlpanaCorner pos="tl" />
-            <CardAlpanaCorner pos="tr" />
-            <CardAlpanaCorner pos="bl" />
-            <CardAlpanaCorner pos="br" />
+          {/* 1. Clean Walkthrough Video Card (Gracefully hidden if no main video is set) */}
+          {hasMainVideo && (
+            <section className="fd-puthi-card fd-video-card" aria-label="পুরো ফ্ল্যাটের ভিডিও">
+              <div className="fd-puthi-card__inner-rule" aria-hidden="true" />
+              <CardAlpanaCorner pos="tl" />
+              <CardAlpanaCorner pos="tr" />
+              <CardAlpanaCorner pos="bl" />
+              <CardAlpanaCorner pos="br" />
 
-            <h2 className="fd-card-title">🎥 পুরো ফ্ল্যাটের ভিডিও</h2>
+              <h2 className="fd-card-title">🎥 পুরো ফ্ল্যাটের ভিডিও</h2>
 
-            <div className="fd-video-frame">
-              {matchedUnit.driveVideoId ? (
-                <iframe
-                  title={`ইউনিট ${matchedUnit.id} পুরো ফ্ল্যাটের ভিডিও`}
-                  src={`https://drive.google.com/file/d/${matchedUnit.driveVideoId}/preview`}
-                  allow="autoplay; fullscreen"
-                  allowFullScreen
-                />
-              ) : (
-                <a
-                  href={externalDriveUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="fd-video-cover"
-                  aria-label="পুরো ফ্ল্যাটের ভিডিও চালু করুন"
-                >
-                  <span className="fd-video-cover__play" aria-hidden="true">
-                    ▶
-                  </span>
-                  <span className="fd-video-cover__cta">
-                    ভিডিও প্লে করুন ↗
-                  </span>
-                </a>
-              )}
-            </div>
-          </section>
+              <div className="fd-video-frame">
+                {matchedUnit.driveVideoId ? (
+                  <iframe
+                    title={`ইউনিট ${matchedUnit.id} পুরো ফ্ল্যাটের ভিডিও`}
+                    src={`https://drive.google.com/file/d/${matchedUnit.driveVideoId}/preview`}
+                    allow="autoplay; fullscreen"
+                    allowFullScreen
+                  />
+                ) : (
+                  <video
+                    src={matchedUnit.mainVideoUrl}
+                    controls
+                    preload="metadata"
+                  />
+                )}
+              </div>
+            </section>
+          )}
 
           {/* 2. Clean Room-by-Room Photo & Video Gallery */}
           <section className="fd-gallery-section" aria-label="রুম অনুযায়ী ছবি ও ভিডিও">
-            {/* Quick Filter Tabs */}
+            {/* Dynamic Quick Filter Tabs */}
             <div className="fd-filter-tabs" role="tablist" aria-label="রুম ফিল্টার">
-              {ROOM_FILTER_TABS.map((tab) => (
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTabId === 'all'}
+                className={`fd-filter-tab ${
+                  activeTabId === 'all' ? 'fd-filter-tab--active' : ''
+                }`}
+                onClick={() => setActiveTabId('all')}
+              >
+                সব রুম
+              </button>
+              {sections.map((sec) => (
                 <button
-                  key={tab.id}
+                  key={sec.id}
                   type="button"
                   role="tab"
-                  aria-selected={activeTab === tab.id}
+                  aria-selected={activeTabId === sec.id}
                   className={`fd-filter-tab ${
-                    activeTab === tab.id ? 'fd-filter-tab--active' : ''
+                    activeTabId === sec.id ? 'fd-filter-tab--active' : ''
                   }`}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => setActiveTabId(sec.id)}
                 >
-                  {tab.labelBn}
+                  {sec.titleBn.replace(/\s*\(.*\)/, '')}
                 </button>
               ))}
             </div>
 
             {/* Clean Room Section Cards */}
             <div className="fd-room-sections">
-              {filteredSections.map((section) => (
-                <article key={section.id} className="fd-puthi-card fd-room-card">
-                  <div className="fd-puthi-card__inner-rule" aria-hidden="true" />
-                  <h3 className="fd-room-card__title">{section.titleBn}</h3>
+              {filteredSections.map((section) => {
+                const originalIndex = sections.findIndex((s) => s.id === section.id);
+                const numberedTitle = /^\d|^[\u09E6-\u09EF]/.test(section.titleBn)
+                  ? section.titleBn
+                  : `${toBanglaDigits(originalIndex + 1)}. ${section.titleBn}`;
 
-                  <div className="fd-media-grid">
-                    {section.items.map((item) => {
-                      const globalIdx = flatMediaList.findIndex((m) => m.id === item.id);
-                      return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          className="fd-media-thumb"
-                          onClick={() => setLightboxIndex(globalIdx)}
-                          aria-label={`${section.titleBn} — ${item.labelBn || 'ছবি বড় করে দেখুন'}`}
-                        >
-                          <img
-                            src={getMediaThumbUrl(item)}
-                            alt={item.labelBn || section.titleBn}
-                            loading="lazy"
-                          />
-                          <span className="fd-media-thumb__zoom" aria-hidden="true">
-                            🔍
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </article>
-              ))}
+                return (
+                  <article key={section.id} className="fd-puthi-card fd-room-card">
+                    <div className="fd-puthi-card__inner-rule" aria-hidden="true" />
+                    <h3 className="fd-room-card__title">{numberedTitle}</h3>
+
+                    <div className="fd-media-grid">
+                      {(section.items || []).map((item) => {
+                        if (item.type === 'video') {
+                          const videoSrc = item.driveFileId
+                            ? `https://drive.google.com/file/d/${item.driveFileId}/preview`
+                            : item.previewUrl;
+
+                          return (
+                            <div
+                              key={item.id}
+                              className="fd-media-thumb fd-media-thumb--video"
+                            >
+                              {item.driveFileId ? (
+                                <iframe
+                                  title={item.labelBn || section.titleBn}
+                                  src={videoSrc}
+                                  allow="autoplay; fullscreen"
+                                  allowFullScreen
+                                />
+                              ) : (
+                                <video
+                                  src={videoSrc}
+                                  controls
+                                  preload="metadata"
+                                />
+                              )}
+                              <span className="fd-media-video-tag">🎥 ভিডিও</span>
+                            </div>
+                          );
+                        }
+
+                        const globalImgIdx = flatImageList.findIndex(
+                          (m) => m.id === item.id
+                        );
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            className="fd-media-thumb"
+                            onClick={() => setLightboxIndex(globalImgIdx)}
+                            aria-label={`${section.titleBn} — ${
+                              item.labelBn || 'ছবি বড় করে দেখুন'
+                            }`}
+                          >
+                            <img
+                              src={getMediaThumbUrl(item)}
+                              alt={item.labelBn || section.titleBn}
+                              loading="lazy"
+                            />
+                            <span className="fd-media-thumb__zoom" aria-hidden="true">
+                              🔍
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </article>
+                );
+              })}
             </div>
           </section>
         </div>
@@ -417,9 +470,11 @@ export default function FlatDetailsPage() {
               <p className="fd-receipt-rent__amount">
                 মাসিক ভাড়া: <strong>{rentFormatted}</strong>
               </p>
-              <div className="fd-inclusive-badge">
-                ✅ গ্যাস, পানি ও ময়লার বিল ভাড়ার অন্তর্ভুক্ত
-              </div>
+              {inclusiveBills && (
+                <div className="fd-inclusive-badge">
+                  ✅ গ্যাস, পানি ও ময়লার বিল ভাড়ার অন্তর্ভুক্ত
+                </div>
+              )}
             </div>
 
             {/* Single-Item Info Row */}
@@ -507,7 +562,7 @@ export default function FlatDetailsPage() {
             <figcaption className="fd-lightbox__caption">
               <span>{activeLightboxItem.sectionTitleBn}</span>
               <span className="fd-lightbox__counter">
-                {toBanglaDigits(lightboxIndex + 1)} / {toBanglaDigits(flatMediaList.length)}
+                {toBanglaDigits(lightboxIndex + 1)} / {toBanglaDigits(flatImageList.length)}
               </span>
             </figcaption>
           </figure>
