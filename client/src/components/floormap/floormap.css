@@ -531,6 +531,28 @@
   max-height: 600px;
 }
 
+/* Completely disable browser blue focus/selection box on all SVG elements & units */
+.bp-stage,
+.bp-svg,
+.bp-svg *,
+.bp-svg *:focus,
+.bp-svg *:focus-visible,
+.bp-svg *:active,
+.bp-unit,
+.bp-unit:focus,
+.bp-unit:focus-visible,
+.bp-unit:active,
+.bp-room-cta,
+.bp-room-cta:focus,
+.bp-room-cta:focus-visible,
+.bp-room-cta:active {
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
 .bp-unit--owner {
   cursor: default;
 }
@@ -541,11 +563,6 @@
 
 .bp-unit--occupied {
   cursor: pointer;
-}
-
-.bp-unit--available:focus-visible,
-.bp-unit--occupied:focus-visible {
-  outline: none;
 }
 
 .bp-room-cta {

@@ -182,19 +182,26 @@ export default function FloorBBlueprint({ floor }) {
             strokeLinejoin="round"
           />
 
-          <line x1="432" y1="258" x2="432" y2="306" stroke="#8C857B" strokeWidth="3.5" strokeDasharray="5 4" />
-          <line x1="518" y1="240" x2="558" y2="240" stroke="#8C857B" strokeWidth="3.5" strokeDasharray="5 4" />
+          {/* B1 Entry Doorways from Stairs (matching architectural door symbols) */}
+          <rect x="429" y="258" width="6" height="48" fill="#FAF7F2" stroke="#7A736A" strokeWidth="1.4" opacity="0.65" />
+          <rect x="518" y="237" width="40" height="6" fill="#FAF7F2" stroke="#7A736A" strokeWidth="1.4" opacity="0.65" />
 
-          <g className="bp-owner-text" transform="translate(310, 322)">
+          {/* Centered Solid Pill Badge for "ইউনিট B1 — বাড়িওয়ালা" (Teak Bronze-Brown #5C4033) */}
+          <g className="bp-owner-badge" transform="translate(310, 316)">
+            <rect
+              x="-92"
+              y="-17"
+              width="184"
+              height="32"
+              rx="8"
+              fill="#5C4033"
+            />
             <text
               x="0"
-              y="0"
+              y="5"
               textAnchor="middle"
-              fill="#3E3A35"
-              stroke="#EAE3D5"
-              strokeWidth="7"
-              paintOrder="stroke fill"
-              fontSize="18.5"
+              fill="#FFFFFF"
+              fontSize="14"
               fontWeight="700"
               fontFamily="var(--font-heading)"
             >
@@ -325,11 +332,8 @@ export default function FloorBBlueprint({ floor }) {
             strokeLinejoin="round"
           />
 
-          {/* 3 Square Entry Pillars on the Staircase Entry Wall (x=570) */}
-          <g fill="#2B5B84" stroke="#1F2421" strokeWidth="1.2">
-            <rect x="565" y="242" width="10" height="10" rx="1.5" />
-            <rect x="565" y="294" width="10" height="10" rx="1.5" />
-          </g>
+          {/* B2 Entry Doorway on the Staircase Right Wall (x=570, matching C2/D3/E3 door symbol) */}
+          <rect x="567" y="264" width="6" height="44" fill="#FFFDF9" stroke={b2AccentColor} strokeWidth="1.5" />
 
           {/* Labels inside B2 */}
           <g fill="#1F2421" textAnchor="middle" className="bp-b2-labels">
