@@ -2,13 +2,16 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import FloorCompassFrame from '../../components/floormap/FloorCompassFrame.jsx';
 import FloorBBlueprint from '../../components/floormap/FloorBBlueprint.jsx';
 import FloorCBlueprint from '../../components/floormap/FloorCBlueprint.jsx';
+import FloorDEBlueprint from '../../components/floormap/FloorDEBlueprint.jsx';
 import { building, floors } from '../../data/mockBuilding.js';
 import '../../components/floormap/floormap.css';
 
-// Modular blueprint registry: new floor CAD components (D, E, A) plug in here step by step.
+// Modular blueprint registry: Floor A plugs in here next.
 const FLOOR_BLUEPRINTS = {
   B: FloorBBlueprint,
   C: FloorCBlueprint,
+  D: FloorDEBlueprint,
+  E: FloorDEBlueprint,
 };
 
 /** Hand-drawn ornamental Alpana divider (~~~ ❖ ~~~) placed beneath the page title. */

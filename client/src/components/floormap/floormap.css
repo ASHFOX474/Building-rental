@@ -168,6 +168,11 @@
   border-color: var(--available);
 }
 
+.fmap-legend__swatch--ochre {
+  background: #fef7e6;
+  border-color: #b45309;
+}
+
 .fmap-legend__swatch--tenant {
   background: #fffdf9;
   border-color: var(--terracotta);

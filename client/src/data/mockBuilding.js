@@ -54,8 +54,14 @@ export const floors = [
     floorNumber: 5,
     nameBn: '৫ম তলা',
     titleBn: '৫ম তলা (ফ্লোর E: ইউনিট E1, E2 ও E3)',
-    blueprintReady: false,
+    blueprintReady: true,
     isVisible: true,
+    legendPills: [
+      { swatch: 'green', textBn: 'ইউনিট E1 (বাম পাশ)' },
+      { swatch: 'ochre', textBn: 'ইউনিট E2 (মাঝখান)' },
+      { swatch: 'tenant', textBn: 'ইউনিট E3 (ডান পাশ)' },
+      { swatch: 'stairs', textBn: 'সিঁড়ি ঘর' },
+    ],
     units: [
       {
         id: 'E1',
@@ -63,7 +69,7 @@ export const floors = [
         status: 'available',
         rent: 10500,
         availableFrom: 'april',
-        roomsSummaryBn: '৩টি বেডরুম • ড্রয়িং-ডাইনিং • ২টি বাথরুম • ২টি বারান্দা • কিচেন',
+        roomsSummaryBn: '৩টি বেডরুম • ড্রয়িং-ডাইনিং • ২টি বাথরুম • ৩টি বারান্দা • কিচেন',
         facingBn: 'দক্ষিণ-পূর্ব মুখী (প্রচুর আলো-বাতাস)',
       },
       { id: 'E2', widthPct: 24, status: 'occupied', rent: 6500 },
@@ -75,8 +81,14 @@ export const floors = [
     floorNumber: 4,
     nameBn: '৪র্থ তলা',
     titleBn: '৪র্থ তলা (ফ্লোর D: ইউনিট D1, D2 ও D3)',
-    blueprintReady: false,
+    blueprintReady: true,
     isVisible: true,
+    legendPills: [
+      { swatch: 'green', textBn: 'ইউনিট D1 (বাম পাশ)' },
+      { swatch: 'ochre', textBn: 'ইউনিট D2 (মাঝখান)' },
+      { swatch: 'tenant', textBn: 'ইউনিট D3 (ডান পাশ)' },
+      { swatch: 'stairs', textBn: 'সিঁড়ি ঘর' },
+    ],
     units: [
       { id: 'D1', widthPct: 38, status: 'occupied', rent: 10500 },
       { id: 'D2', widthPct: 24, status: 'occupied', rent: 6500 },
