@@ -1,7 +1,8 @@
 /* ==========================================================================
    Page 2: Interactive Architectural Floor Map View (Terracotta & Chuna)
    Infused with Bangladeshi Heritage Alpana, Kantajew Terracotta Corner Motifs,
-   Puthichitro Double-Ruled Frame, and Whispering Nature Flourishes.
+   Puthichitro Double-Ruled Frame, Whispering Nature Flourishes, and Dynamic
+   Availability Status & Privacy Popovers.
    ========================================================================== */
 
 .fmap-page {
@@ -99,6 +100,11 @@
   background: var(--terracotta);
 }
 
+.fmap-switcher__dot--open {
+  background: var(--available);
+  box-shadow: 0 0 0 2px rgba(45, 106, 79, 0.25);
+}
+
 .fmap-header__title {
   margin: 0;
   font-size: clamp(24px, 4vw, 34px);
@@ -126,12 +132,12 @@
   transform: scaleX(1.03);
 }
 
-/* 3-Pill Legend */
+/* Dynamic Status Legend Pills */
 .fmap-legend {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 8px 14px;
+  gap: 8px 12px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -140,14 +146,29 @@
 .fmap-legend__pill {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   padding: 5px 14px;
   border: 1.5px solid rgba(31, 36, 33, 0.25);
   border-radius: 999px;
   background: var(--surface-sand);
   color: var(--ink);
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 600;
+  transition: transform 0.15s, background-color 0.15s, border-color 0.15s;
+}
+
+.fmap-legend__pill--available {
+  background: var(--available-bg);
+  border-color: var(--available);
+  color: #1b4332;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 1px 2px 0 rgba(45, 106, 79, 0.22);
+}
+
+.fmap-legend__pill--available:hover {
+  background: #d8efe0;
+  transform: translateY(-1px);
 }
 
 .fmap-legend__swatch {
@@ -219,7 +240,6 @@
   flex-direction: column;
   gap: 6px;
   padding: 20px 24px;
-  /* Outer thicker terracotta-ink line of the Puthichitro double border */
   border: 2.2px solid #b5532e;
   border-radius: 18px;
   background: radial-gradient(
@@ -294,7 +314,6 @@
 
 /* ==========================================================================
    4 L-Shaped Ornamental Corner Motifs (Kantajew Terracotta & Alpana)
-   Max 46x46px, idle opacity 0.25, natural dawn reveal + ambient hover breath
    ========================================================================== */
 
 .alpana-corner {
@@ -343,7 +362,6 @@
   --rot: 180deg;
 }
 
-/* Ambient Focus Hover: breathe to 0.35 opacity & expand ~2px into corners */
 .fmap-box:hover .alpana-corner--tl {
   opacity: 0.35;
   --tx: -2px;
@@ -368,7 +386,6 @@
   --ty: 2px;
 }
 
-/* Unit Highlight: right corners near Unit B2 gently pulse to guide the eye */
 .fmap-box--has-available .alpana-corner--tr .alpana-corner__svg,
 .fmap-box--has-available .alpana-corner--br .alpana-corner__svg {
   animation: alpana-unit-pulse 4.2s ease-in-out 1.4s infinite;
@@ -415,7 +432,6 @@
   min-width: 0;
 }
 
-/* Integrated Directional Edge Labels */
 .fmap-box__edge {
   position: relative;
   z-index: 2;
@@ -455,7 +471,6 @@
   padding: 0 4px;
 }
 
-/* Hand-Drawn Whispering Nature Motifs */
 .nature-motif {
   flex-shrink: 0;
   opacity: 0.38;
@@ -501,10 +516,11 @@
 }
 
 /* ==========================================================================
-   SVG Blueprint Stage & Interactive Unit B2
+   SVG Blueprint Stage, Availability Badge & Occupied Unit Popover
    ========================================================================== */
 
 .bp-stage {
+  position: relative;
   width: 100%;
 }
 
@@ -519,16 +535,100 @@
   cursor: default;
 }
 
-.bp-unit--tenant {
+.bp-unit--available {
   cursor: pointer;
 }
 
-.bp-unit--tenant:focus-visible {
+.bp-unit--occupied {
+  cursor: pointer;
+}
+
+.bp-unit--available:focus-visible,
+.bp-unit--occupied:focus-visible {
   outline: none;
 }
 
 .bp-room-cta {
   cursor: pointer;
+}
+
+/* Subtle pulse on the green dot inside the "ভাড়া হবে" SVG badge */
+.bp-tolet-badge__dot {
+  animation: tolet-dot-pulse 2s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes tolet-dot-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(1.22);
+  }
+}
+
+/* Floating Popover / Toast Badge over Occupied Units (Hover & Mobile Tap) */
+.occupied-popover {
+  position: absolute;
+  z-index: 10;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  width: max-content;
+  max-width: min(310px, 86vw);
+  animation: occupied-pop-in 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.occupied-popover__card {
+  padding: 12px 18px;
+  border: 2px solid var(--terracotta);
+  border-radius: 15px;
+  background: rgba(31, 36, 33, 0.95);
+  color: #faf7f2;
+  text-align: center;
+  box-shadow: 0 10px 28px rgba(31, 36, 33, 0.32), 3px 3px 0 var(--terracotta);
+}
+
+.occupied-popover__unit-chip {
+  display: inline-block;
+  margin-bottom: 4px;
+  padding: 1px 10px;
+  border-radius: 999px;
+  background: var(--terracotta);
+  color: #ffffff;
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.occupied-popover__title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 15.5px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #faf7f2;
+}
+
+.occupied-popover__sub {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  color: #e6dfd2;
+  line-height: 1.35;
+}
+
+@keyframes occupied-pop-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -44%) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
 }
 
 /* ---------- Responsive Layout ---------- */
@@ -574,7 +674,9 @@
   .alpana-corner,
   .alpana-corner__svg,
   .nature-motif,
-  .fmap-title-divider__svg {
+  .fmap-title-divider__svg,
+  .bp-tolet-badge__dot,
+  .occupied-popover {
     animation: none !important;
     transition: none !important;
   }

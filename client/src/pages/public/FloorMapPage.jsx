@@ -3,7 +3,9 @@ import FloorCompassFrame from '../../components/floormap/FloorCompassFrame.jsx';
 import FloorBBlueprint from '../../components/floormap/FloorBBlueprint.jsx';
 import FloorCBlueprint from '../../components/floormap/FloorCBlueprint.jsx';
 import FloorDEBlueprint from '../../components/floormap/FloorDEBlueprint.jsx';
+import { isUnitAvailable } from '../../components/floormap/UnitStatusElements.jsx';
 import { building, floors } from '../../data/mockBuilding.js';
+import { monthBn } from '../../lib/bangla.js';
 import '../../components/floormap/floormap.css';
 
 // Modular blueprint registry: Floor A plugs in here next.
@@ -20,12 +22,10 @@ function AlpanaTitleDivider() {
     <div className="fmap-title-divider" aria-hidden="true">
       <svg viewBox="0 0 260 22" className="fmap-title-divider__svg" fill="none">
         <g stroke="#C85A32" strokeLinecap="round" strokeLinejoin="round">
-          {/* Left flowing wave & kalka scroll */}
           <path d="M 8,11 C 28,5 44,17 64,11 C 80,6 94,15 110,11" strokeWidth="1.35" />
           <path d="M 48,11 C 54,6 62,6 66,11" strokeWidth="0.9" opacity="0.7" />
           <circle cx="115" cy="11" r="1.6" fill="#C85A32" stroke="none" />
 
-          {/* Center lotus diamond motif (❖) */}
           <path
             d="M 130,3 L 138,11 L 130,19 L 122,11 Z"
             fill="#C85A32"
@@ -38,7 +38,6 @@ function AlpanaTitleDivider() {
           <circle cx="125" cy="16" r="1" fill="#C85A32" stroke="none" />
           <circle cx="135" cy="16" r="1" fill="#C85A32" stroke="none" />
 
-          {/* Right flowing wave & kalka scroll */}
           <circle cx="145" cy="11" r="1.6" fill="#C85A32" stroke="none" />
           <path d="M 150,11 C 166,15 180,6 196,11 C 216,17 232,5 252,11" strokeWidth="1.35" />
           <path d="M 194,11 C 198,6 206,6 212,11" strokeWidth="0.9" opacity="0.7" />
@@ -46,6 +45,65 @@ function AlpanaTitleDivider() {
       </svg>
     </div>
   );
+}
+
+/**
+ * Builds the dynamic legend pills for a floor based on each unit's live
+ * availability status (`available`, `occupied`, or `owner`).
+ */
+function buildDynamicLegendPills(floor) {
+  const unitCount = floor.units.length;
+  const pills = floor.units.map((unit, idx) => {
+    // Architectural border swatch color matching the blueprint zone
+    let zoneSwatch = 'tenant';
+    if (unit.status === 'owner') {
+      zoneSwatch = 'owner';
+    } else if (unitCount === 3) {
+      zoneSwatch = idx === 0 ? 'green' : idx === 1 ? 'ochre' : 'tenant';
+    } else if (unitCount === 2) {
+      zoneSwatch = idx === 0 ? 'green' : 'tenant';
+    }
+
+    if (unit.status === 'owner') {
+      return {
+        key: unit.id,
+        swatch: 'owner',
+        statusDot: '🏠',
+        textBn: `ইউনিট ${unit.id}: বাড়িওয়ালা (মালিকের নিজস্ব বাসস্থান)`,
+        isAvailable: false,
+      };
+    }
+
+    if (isUnitAvailable(unit)) {
+      const fromText = unit.availableFrom ? ` (${monthBn(unit.availableFrom)} হতে)` : '';
+      return {
+        key: unit.id,
+        swatch: zoneSwatch,
+        statusDot: '🟢',
+        textBn: `ইউনিট ${unit.id}: ভাড়া হবে${fromText} — ছবি ও ভিডিও দেখুন`,
+        isAvailable: true,
+        unitId: unit.id,
+      };
+    }
+
+    return {
+      key: unit.id,
+      swatch: zoneSwatch,
+      statusDot: '🔒',
+      textBn: `ইউনিট ${unit.id}: ভাড়া হয়ে গেছে`,
+      isAvailable: false,
+    };
+  });
+
+  pills.push({
+    key: 'stairs',
+    swatch: 'stairs',
+    statusDot: null,
+    textBn: 'সিঁড়ি ঘর ও প্রবেশপথ',
+    isAvailable: false,
+  });
+
+  return pills;
 }
 
 /** Page 2 — Interactive Architectural Floor Map View (ফ্লোর ম্যাপ ভিউ). */
@@ -63,11 +121,13 @@ export default function FloorMapPage() {
     floors.find((f) => String(f.floorNumber) === String(floorNumber)) || floorB;
 
   const ActiveBlueprint = FLOOR_BLUEPRINTS[currentFloor.id];
-  const legendPills = currentFloor.legendPills || floorB.legendPills || [];
+  const displayFloor = ActiveBlueprint ? currentFloor : floorB;
+  const legendPills = buildDynamicLegendPills(displayFloor);
+  const floorHasAvailable = displayFloor.units.some(isUnitAvailable);
 
   return (
     <div className="fmap-page">
-      {/* Top Bar (Back Button + Floor Switcher), Title, Alpana Divider & 3-Pill Legend */}
+      {/* Top Bar (Back Button + Floor Switcher), Title, Alpana Divider & Dynamic Legend Pills */}
       <header className="fmap-header">
         <div className="fmap-header__nav">
           <Link to="/" className="fmap-back-btn">
@@ -78,6 +138,7 @@ export default function FloorMapPage() {
           <nav className="fmap-switcher" aria-label="অন্যান্য তলার ফ্লোর ম্যাপ দেখুন">
             {orderedFloors.map((f) => {
               const isActive = f.id === currentFloor.id;
+              const hasOpen = f.units.some(isUnitAvailable);
               return (
                 <button
                   key={f.id}
@@ -86,8 +147,11 @@ export default function FloorMapPage() {
                   className={`fmap-switcher__btn ${isActive ? 'fmap-switcher__btn--active' : ''}`}
                 >
                   {f.nameBn} ({f.id})
-                  {f.blueprintReady && (
-                    <span className="fmap-switcher__dot" title="অটো-ক্যাড নকশা প্রস্তুত" />
+                  {hasOpen && (
+                    <span
+                      className="fmap-switcher__dot fmap-switcher__dot--open"
+                      title="এই তলায় ফ্ল্যাট খালি আছে (ভাড়া হবে)"
+                    />
                   )}
                 </button>
               );
@@ -101,12 +165,30 @@ export default function FloorMapPage() {
 
         <AlpanaTitleDivider />
 
-        {/* 3-Pill Legend */}
-        <ul className="fmap-legend" aria-label="নকশার রঙের অর্থ">
+        {/* Dynamic Status Legend Pills */}
+        <ul className="fmap-legend" aria-label="ইউনিটের বর্তমান অবস্থা ও রঙের অর্থ">
           {legendPills.map((pill) => (
-            <li key={pill.textBn} className="fmap-legend__pill">
+            <li
+              key={pill.key}
+              className={`fmap-legend__pill ${
+                pill.isAvailable ? 'fmap-legend__pill--available' : ''
+              }`}
+              onClick={
+                pill.isAvailable ? () => navigate(`/flat/${pill.unitId}`) : undefined
+              }
+              role={pill.isAvailable ? 'button' : undefined}
+              tabIndex={pill.isAvailable ? 0 : undefined}
+              onKeyDown={
+                pill.isAvailable
+                  ? (e) => {
+                      if (e.key === 'Enter' || e.key === ' ') navigate(`/flat/${pill.unitId}`);
+                    }
+                  : undefined
+              }
+            >
               <span className={`fmap-legend__swatch fmap-legend__swatch--${pill.swatch}`} />
-              {pill.textBn}
+              {pill.statusDot && <span aria-hidden="true">{pill.statusDot}</span>}
+              <span>{pill.textBn}</span>
             </li>
           ))}
         </ul>
@@ -129,7 +211,10 @@ export default function FloorMapPage() {
           </div>
         )}
 
-        <FloorCompassFrame surroundings={building.surroundings} hasAvailableUnit>
+        <FloorCompassFrame
+          surroundings={building.surroundings}
+          hasAvailableUnit={floorHasAvailable}
+        >
           {ActiveBlueprint ? (
             <ActiveBlueprint floor={currentFloor} />
           ) : (

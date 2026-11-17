@@ -1,48 +1,86 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+  isUnitAvailable,
+  useOccupiedPopup,
+  AvailableStatusBadgeSvg,
+  RoomStatusActionSvg,
+  OccupiedUnitPopover,
+} from './UnitStatusElements.jsx';
 
 /**
  * Reusable 3-Unit Architectural Floorplate for:
  *   - Row D (4th Floor / ৪র্থ তলা: Units D1, D2, D3)
  *   - Row E (5th Floor / ৫ম তলা: Units E1, E2, E3)
  *
- * Reconstructed directly from the 3-unit AutoCAD blueprint:
- *   - Left Unit   (D1 / E1 — Green CAD border -> Deep Leaf Green #2D6A4F, 3 Bedrooms)
- *   - Middle Unit (D2 / E2 — Yellow CAD border -> Golden Ochre #D97706, 2 Bedrooms)
- *   - Right Unit  (D3 / E3 — Red CAD border -> Burnt Terracotta #C85A32, 3 Bedrooms)
+ * Dynamically applies Availability (`ভাড়া হবে`) vs. Occupied Privacy (`ভাড়া হয়ে গেছে`)
+ * per unit from the central building data store.
  */
 export default function FloorDEBlueprint({ floor }) {
   const navigate = useNavigate();
   const [hoveredUnit, setHoveredUnit] = useState(null);
   const [hoveredBtn, setHoveredBtn] = useState(null);
+  const { activePopupUnitId, setHoveredId, triggerTapPopup } = useOccupiedPopup();
 
   const prefix = floor.id === 'E' ? 'E' : 'D';
   const unit1Id = `${prefix}1`;
   const unit2Id = `${prefix}2`;
   const unit3Id = `${prefix}3`;
 
+  const unit1 = floor.units.find((u) => u.id === unit1Id) || { id: unit1Id, status: 'occupied' };
+  const unit2 = floor.units.find((u) => u.id === unit2Id) || { id: unit2Id, status: 'occupied' };
+  const unit3 = floor.units.find((u) => u.id === unit3Id) || { id: unit3Id, status: 'occupied' };
+
+  const u1Available = isUnitAvailable(unit1);
+  const u2Available = isUnitAvailable(unit2);
+  const u3Available = isUnitAvailable(unit3);
+
   // Unit 1 (Left — Green in CAD)
   const u1Accent = '#2D6A4F';
-  const u1Fill = '#FBFDFB';
-  const u1HallFill = '#EFF7F1';
-  const u1VerandaFill = '#E2F1E7';
+  const u1Fill = u1Available ? '#FBFDFB' : '#F3EFE6';
+  const u1HallFill = u1Available ? '#EFF7F1' : '#EAE4D7';
+  const u1VerandaFill = u1Available ? '#E2F1E7' : '#E3DDD0';
+  const u1BathFill = u1Available ? '#EDF2EE' : '#E6E0D3';
 
   // Unit 2 (Middle — Yellow/Ochre in CAD)
   const u2Accent = '#C67D0A';
   const u2Stroke = '#B45309';
-  const u2Fill = '#FFFDF7';
-  const u2HallFill = '#FEF7E6';
-  const u2VerandaFill = '#F9EBC8';
+  const u2Fill = u2Available ? '#FFFDF7' : '#F3EFE6';
+  const u2HallFill = u2Available ? '#FEF7E6' : '#EAE4D7';
+  const u2VerandaFill = u2Available ? '#F9EBC8' : '#E3DDD0';
+  const u2BathFill = u2Available ? '#F3ECE0' : '#E6E0D3';
 
   // Unit 3 (Right — Red/Terracotta in CAD)
   const u3Accent = '#C85A32';
-  const u3Fill = '#FFFDF9';
-  const u3HallFill = '#FAF5EC';
-  const u3VerandaFill = '#F6ECE3';
+  const u3Fill = u3Available ? '#FFFDF9' : '#F3EFE6';
+  const u3HallFill = u3Available ? '#FAF5EC' : '#EAE4D7';
+  const u3VerandaFill = u3Available ? '#F6ECE3' : '#E3DDD0';
+  const u3BathFill = u3Available ? '#F2ECE1' : '#E6E0D3';
 
-  const handleOpenUnit = (unitId, e) => {
-    if (e) e.stopPropagation();
-    navigate(`/flat/${unitId}`);
+  const handleUnitClick = (unit, available, e) => {
+    if (available) {
+      if (e) e.stopPropagation();
+      navigate(`/flat/${unit.id}`);
+    } else {
+      triggerTapPopup(unit.id, e);
+    }
+  };
+
+  const handleUnitEnter = (unit, available) => {
+    setHoveredUnit(unit.id);
+    if (!available) setHoveredId(unit.id);
+  };
+
+  const handleUnitLeave = (unit, available) => {
+    setHoveredUnit(null);
+    if (!available) setHoveredId(null);
+  };
+
+  // Popover anchor positions (in % of the SVG stage) for each of the 3 units
+  const POPOVER_POSITIONS = {
+    [unit1Id]: { left: '28%', top: '53%' },
+    [unit2Id]: { left: '50%', top: '26%' },
+    [unit3Id]: { left: '73%', top: '53%' },
   };
 
   // 1. Exact outer polygon for Left Unit (D1 / E1 — Green border in CAD)
@@ -137,24 +175,29 @@ export default function FloorDEBlueprint({ floor }) {
             1. LEFT UNIT: D1 / E1 (GREEN BORDER IN CAD — 3 BEDROOMS)
            =================================================================== */}
         <g
-          className={`bp-unit bp-unit--tenant ${hoveredUnit === unit1Id ? 'bp-unit--hovered' : ''}`}
+          className={`bp-unit ${u1Available ? 'bp-unit--available' : 'bp-unit--occupied'} ${
+            hoveredUnit === unit1Id ? 'bp-unit--hovered' : ''
+          }`}
           filter="url(#u1-glow)"
-          onClick={(e) => handleOpenUnit(unit1Id, e)}
-          onMouseEnter={() => setHoveredUnit(unit1Id)}
-          onMouseLeave={() => setHoveredUnit(null)}
+          onClick={(e) => handleUnitClick(unit1, u1Available, e)}
+          onMouseEnter={() => handleUnitEnter(unit1, u1Available)}
+          onMouseLeave={() => handleUnitLeave(unit1, u1Available)}
           role="button"
           tabIndex={0}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') handleOpenUnit(unit1Id, e);
+            if (e.key === 'Enter' || e.key === ' ') handleUnitClick(unit1, u1Available, e);
           }}
-          aria-label={`ইউনিট ${unit1Id} — ছবি এবং ভিডিও দেখতে ক্লিক করুন`}
+          aria-label={
+            u1Available
+              ? `ইউনিট ${unit1Id} — ভাড়া হবে, ছবি এবং ভিডিও দেখতে ক্লিক করুন`
+              : `ইউনিট ${unit1Id} — বর্তমানে ভাড়া হয়ে গেছে`
+          }
         >
           {/* Base surface of Unit 1 */}
           <polygon points={u1PolygonPoints} fill={u1Fill} />
 
           {/* Main Drawing & Dining Hall Fill (185..432, 204..356) */}
           <rect x="185" y="204" width="247" height="152" fill={u1HallFill} stroke="none" />
-          {/* Top, right, and bottom walls of Drawing & Dining */}
           <path
             d="M 185,204 L 432,204 L 432,356 L 185,356"
             fill="none"
@@ -164,7 +207,7 @@ export default function FloorDEBlueprint({ floor }) {
 
           {/* Top-Left: Veranda (100..158, 60..126) & Bathroom (100..158, 126..204) */}
           <rect x="100" y="60" width="58" height="66" fill={u1VerandaFill} stroke="#1F2421" strokeWidth="2" />
-          <rect x="100" y="126" width="58" height="78" fill="#EDF2EE" stroke="#1F2421" strokeWidth="2" />
+          <rect x="100" y="126" width="58" height="78" fill={u1BathFill} stroke="#1F2421" strokeWidth="2" />
 
           {/* Top-Left Bedroom 3 (158..286, 60..204) */}
           <rect x="158" y="60" width="128" height="144" fill={u1Fill} stroke="#1F2421" strokeWidth="2.2" />
@@ -173,11 +216,11 @@ export default function FloorDEBlueprint({ floor }) {
           <rect x="230" y="201" width="46" height="6" fill="#FFFFFF" stroke={u1Accent} strokeWidth="1.3" />
 
           {/* Middle-Left Outer Wall: Common Toilet (100..185, 204..278) & Kitchen (100..185, 278..356) */}
-          <rect x="100" y="204" width="85" height="74" fill="#EDF2EE" stroke="#1F2421" strokeWidth="2" />
+          <rect x="100" y="204" width="85" height="74" fill={u1BathFill} stroke="#1F2421" strokeWidth="2" />
           <rect x="182" y="218" width="6" height="34" fill="#FFFFFF" stroke={u1Accent} strokeWidth="1.3" />
 
           {/* Leftmost Kitchen with open entry path at bottom-right (x=185, y=322..356) */}
-          <rect x="100" y="278" width="85" height="78" fill="#F4EFE6" stroke="none" />
+          <rect x="100" y="278" width="85" height="78" fill={u1Available ? '#F4EFE6' : '#E8E2D5'} stroke="none" />
           <path
             d="M 100,278 L 185,278 L 185,322 M 185,356 L 100,356 L 100,278"
             fill="none"
@@ -187,13 +230,11 @@ export default function FloorDEBlueprint({ floor }) {
           />
 
           {/* Bottom-Left: Two Side-by-Side Bedrooms (y=356..500) + Two Protruding Verandas */}
-          {/* Bedroom 1 (100..266, 356..500) */}
           <rect x="100" y="356" width="166" height="144" fill={u1Fill} stroke="#1F2421" strokeWidth="2.2" />
           <rect x="210" y="353" width="46" height="6" fill="#FFFFFF" stroke={u1Accent} strokeWidth="1.3" />
           <rect x="114" y="500" width="138" height="45" fill={u1VerandaFill} stroke="#1F2421" strokeWidth="2" />
           <rect x="198" y="497" width="36" height="6" fill="#FFFFFF" stroke={u1Accent} strokeWidth="1.3" />
 
-          {/* Bedroom 2 (266..432, 356..500) */}
           <rect x="266" y="356" width="166" height="144" fill={u1Fill} stroke="#1F2421" strokeWidth="2.2" />
           <rect x="380" y="353" width="44" height="6" fill="#FFFFFF" stroke={u1Accent} strokeWidth="1.3" />
           <rect x="280" y="500" width="138" height="45" fill={u1VerandaFill} stroke="#1F2421" strokeWidth="2" />
@@ -229,7 +270,7 @@ export default function FloorDEBlueprint({ floor }) {
             <text x="142" y="316" fontSize="13.5" fontWeight="700" fontFamily="var(--font-heading)" fill="#C85A32">কিচেন</text>
             <text x="142" y="331" fontSize="10" fill="#5C5852" fontWeight="600">(রান্নাঘর)</text>
 
-            <text x="308" y="246" fontSize="16" fontWeight="700" fontFamily="var(--font-heading)" fill="#1F2421">
+            <text x="308" y={u1Available ? '262' : '256'} fontSize="16" fontWeight="700" fontFamily="var(--font-heading)" fill="#1F2421">
               ড্রয়িং ও ডাইনিং
             </text>
 
@@ -242,54 +283,50 @@ export default function FloorDEBlueprint({ floor }) {
             <text x="349" y="527" fontSize="12" fontWeight="700" fill={u1Accent}>বারান্দা</text>
           </g>
 
-          {/* Embedded CTA Button inside Left Unit (D1 / E1) Drawing & Dining */}
-          <g
-            className="bp-room-cta"
-            transform="translate(308, 294)"
-            onClick={(e) => handleOpenUnit(unit1Id, e)}
-            onMouseEnter={() => setHoveredBtn(unit1Id)}
-            onMouseLeave={() => setHoveredBtn(null)}
-          >
-            <rect x="-101" y="-19" width="206" height="42" rx="11" fill="#1F2421" />
-            <rect
-              x="-103"
-              y="-22"
-              width="206"
-              height="42"
-              rx="11"
-              fill={hoveredBtn === unit1Id ? '#21523C' : u1Accent}
-              stroke="#1F2421"
-              strokeWidth="2"
+          {/* Prominent "🟢 ভাড়া হবে" Badge when Unit 1 is Available */}
+          {u1Available && (
+            <AvailableStatusBadgeSvg
+              x={308}
+              y={226}
+              availableFrom={unit1.availableFrom}
             />
-            <text
-              x="0"
-              y="4"
-              textAnchor="middle"
-              fill="#FFFFFF"
-              fontSize="14.5"
-              fontWeight="700"
-              fontFamily="var(--font-heading)"
-            >
-              🎥 ছবি এবং ভিডিও দেখুন ➔
-            </text>
-          </g>
+          )}
+
+          {/* Dynamic Room Action: CTA Button if Available, "🔒 ভাড়া হয়ে গেছে" if Occupied */}
+          <RoomStatusActionSvg
+            x={308}
+            y={306}
+            isAvailable={u1Available}
+            accentColor={u1Accent}
+            hoverColor="#21523C"
+            isBtnHovered={hoveredBtn === unit1Id}
+            onMouseEnterBtn={() => setHoveredBtn(unit1Id)}
+            onMouseLeaveBtn={() => setHoveredBtn(null)}
+            onOpenMedia={(e) => handleUnitClick(unit1, true, e)}
+          />
         </g>
 
         {/* ===================================================================
             2. MIDDLE UNIT: D2 / E2 (YELLOW BORDER IN CAD — 2 BEDROOMS)
            =================================================================== */}
         <g
-          className={`bp-unit bp-unit--tenant ${hoveredUnit === unit2Id ? 'bp-unit--hovered' : ''}`}
+          className={`bp-unit ${u2Available ? 'bp-unit--available' : 'bp-unit--occupied'} ${
+            hoveredUnit === unit2Id ? 'bp-unit--hovered' : ''
+          }`}
           filter="url(#u2-glow)"
-          onClick={(e) => handleOpenUnit(unit2Id, e)}
-          onMouseEnter={() => setHoveredUnit(unit2Id)}
-          onMouseLeave={() => setHoveredUnit(null)}
+          onClick={(e) => handleUnitClick(unit2, u2Available, e)}
+          onMouseEnter={() => handleUnitEnter(unit2, u2Available)}
+          onMouseLeave={() => handleUnitLeave(unit2, u2Available)}
           role="button"
           tabIndex={0}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') handleOpenUnit(unit2Id, e);
+            if (e.key === 'Enter' || e.key === ' ') handleUnitClick(unit2, u2Available, e);
           }}
-          aria-label={`ইউনিট ${unit2Id} — ছবি এবং ভিডিও দেখতে ক্লিক করুন`}
+          aria-label={
+            u2Available
+              ? `ইউনিট ${unit2Id} — ভাড়া হবে, ছবি এবং ভিডিও দেখতে ক্লিক করুন`
+              : `ইউনিট ${unit2Id} — বর্তমানে ভাড়া হয়ে গেছে`
+          }
         >
           {/* Base surface of Middle Unit (D2 / E2) */}
           <polygon points={u2PolygonPoints} fill={u2Fill} />
@@ -298,7 +335,7 @@ export default function FloorDEBlueprint({ floor }) {
           <rect x="432" y="110" width="138" height="130" fill={u2HallFill} stroke="#1F2421" strokeWidth="2.2" />
 
           {/* Top-Center Edge: Kitchen (432..502, 60..110) with open path at bottom-left & Common Toilet (502..570, 60..110) */}
-          <rect x="432" y="60" width="70" height="50" fill="#F7EFE2" stroke="none" />
+          <rect x="432" y="60" width="70" height="50" fill={u2Available ? '#F7EFE2' : '#E8E2D5'} stroke="none" />
           <path
             d="M 432,110 L 432,60 L 502,60 L 502,110 L 464,110"
             fill="none"
@@ -306,20 +343,19 @@ export default function FloorDEBlueprint({ floor }) {
             strokeWidth="2"
             strokeLinecap="square"
           />
-          <rect x="502" y="60" width="68" height="50" fill="#F3ECE0" stroke="#1F2421" strokeWidth="2" />
+          <rect x="502" y="60" width="68" height="50" fill={u2BathFill} stroke="#1F2421" strokeWidth="2" />
           <rect x="536" y="107" width="28" height="6" fill="#FFFFFF" stroke={u2Stroke} strokeWidth="1.3" />
 
           {/* Left Wing of Middle Unit: Veranda (286..340, 60..104), Bathroom (340..432, 60..104) & Bedroom 1 (286..432, 104..204) */}
           <rect x="286" y="60" width="54" height="44" fill={u2VerandaFill} stroke="#1F2421" strokeWidth="2" />
-          <rect x="340" y="60" width="92" height="44" fill="#F3ECE0" stroke="#1F2421" strokeWidth="2" />
+          <rect x="340" y="60" width="92" height="44" fill={u2BathFill} stroke="#1F2421" strokeWidth="2" />
           <rect x="286" y="104" width="146" height="100" fill={u2Fill} stroke="#1F2421" strokeWidth="2.2" />
           <rect x="292" y="101" width="26" height="6" fill="#FFFFFF" stroke={u2Stroke} strokeWidth="1.3" />
           <rect x="348" y="101" width="28" height="6" fill="#FFFFFF" stroke={u2Stroke} strokeWidth="1.3" />
-          {/* Door on right wall (x=432) opening into Middle Unit's Drawing & Dining */}
           <rect x="429" y="140" width="6" height="38" fill="#FFFFFF" stroke={u2Stroke} strokeWidth="1.3" />
 
           {/* Right Wing of Middle Unit: Bathroom (570..660, 60..118), Veranda (660..735, 60..102) & Bedroom 2 (570..735, 118/102..204) */}
-          <rect x="570" y="60" width="90" height="58" fill="#F3ECE0" stroke="#1F2421" strokeWidth="2" />
+          <rect x="570" y="60" width="90" height="58" fill={u2BathFill} stroke="#1F2421" strokeWidth="2" />
           <rect x="660" y="60" width="75" height="42" fill={u2VerandaFill} stroke="#1F2421" strokeWidth="2" />
           <path
             d="M 570,118 L 660,118 L 660,102 L 735,102 L 735,204 L 570,204 Z"
@@ -329,7 +365,6 @@ export default function FloorDEBlueprint({ floor }) {
           />
           <rect x="630" y="115" width="24" height="6" fill="#FFFFFF" stroke={u2Stroke} strokeWidth="1.3" />
           <rect x="664" y="99" width="26" height="6" fill="#FFFFFF" stroke={u2Stroke} strokeWidth="1.3" />
-          {/* Door on left wall (x=570) opening into Middle Unit's Drawing & Dining */}
           <rect x="567" y="160" width="6" height="34" fill="#FFFFFF" stroke={u2Stroke} strokeWidth="1.3" />
 
           {/* Outer Golden Ochre / Amber Border of Middle Unit (Yellow border in CAD) */}
@@ -346,65 +381,54 @@ export default function FloorDEBlueprint({ floor }) {
 
           {/* Labels inside Middle Unit (D2 / E2) */}
           <g fill="#1F2421" textAnchor="middle" className="bp-u2-labels">
-            {/* Left Wing: Veranda, Bathroom & Bedroom 1 */}
             <text x="313" y="86" fontSize="10.5" fontWeight="700" fill={u2Stroke}>বারান্দা</text>
             <text x="386" y="86" fontSize="11" fontWeight="700">বাথরুম</text>
             <text x="359" y="148" fontSize="14.5" fontWeight="700" fontFamily="var(--font-heading)">বেডরুম ১</text>
             <text x="359" y="165" fontSize="10.5" fill="#5C5852" fontWeight="600">(পশ্চিম মুখী)</text>
 
-            {/* Top-Center Kitchen & Common Toilet */}
             <text x="467" y="89" fontSize="12" fontWeight="700" fontFamily="var(--font-heading)" fill="#C85A32">কিচেন</text>
             <text x="536" y="82" fontSize="10.5" fontWeight="700">কমন</text>
             <text x="536" y="96" fontSize="10.5" fontWeight="700">টয়লেট</text>
 
             {/* Unit D2 / E2 Badge + Drawing & Dining Label */}
-            <rect x="457" y="117" width="88" height="22" rx="5" fill={u2Stroke} />
-            <text x="501" y="132" fill="#FFFFFF" fontSize="11.5" fontWeight="700" fontFamily="var(--font-heading)">
+            <rect x="457" y="116" width="88" height="22" rx="5" fill={u2Stroke} />
+            <text x="501" y="131" fill="#FFFFFF" fontSize="11.5" fontWeight="700" fontFamily="var(--font-heading)">
               ইউনিট {unit2Id}
             </text>
 
-            <text x="501" y="159" fontSize="13.5" fontWeight="700" fontFamily="var(--font-heading)" fill="#1F2421">
+            <text x="501" y="156" fontSize="13.5" fontWeight="700" fontFamily="var(--font-heading)" fill="#1F2421">
               ড্রয়িং ও ডাইনিং
             </text>
 
-            {/* Right Wing: Bathroom, Veranda & Bedroom 2 */}
             <text x="615" y="93" fontSize="11.5" fontWeight="700">বাথরুম</text>
             <text x="697" y="85" fontSize="11" fontWeight="700" fill={u2Stroke}>বারান্দা</text>
             <text x="652" y="156" fontSize="14.5" fontWeight="700" fontFamily="var(--font-heading)">বেডরুম ২</text>
             <text x="652" y="173" fontSize="10.5" fill="#5C5852" fontWeight="600">(পশ্চিম মুখী)</text>
           </g>
 
-          {/* Compact Embedded CTA Button inside Middle Unit (D2 / E2) Drawing & Dining */}
-          <g
-            className="bp-room-cta"
-            transform="translate(501, 198)"
-            onClick={(e) => handleOpenUnit(unit2Id, e)}
-            onMouseEnter={() => setHoveredBtn(unit2Id)}
-            onMouseLeave={() => setHoveredBtn(null)}
-          >
-            <rect x="-59" y="-15" width="122" height="34" rx="9" fill="#1F2421" />
-            <rect
-              x="-61"
-              y="-17"
-              width="122"
-              height="34"
-              rx="9"
-              fill={hoveredBtn === unit2Id ? '#92400E' : u2Stroke}
-              stroke="#1F2421"
-              strokeWidth="1.8"
+          {/* Prominent "🟢 ভাড়া হবে" Badge when Unit 2 is Available */}
+          {u2Available && (
+            <AvailableStatusBadgeSvg
+              x={501}
+              y={174}
+              availableFrom={unit2.availableFrom}
+              compact
             />
-            <text
-              x="0"
-              y="4"
-              textAnchor="middle"
-              fill="#FFFFFF"
-              fontSize="11"
-              fontWeight="700"
-              fontFamily="var(--font-heading)"
-            >
-              🎥 ছবি ও ভিডিও ➔
-            </text>
-          </g>
+          )}
+
+          {/* Dynamic Room Action inside Middle Unit (D2 / E2) Drawing & Dining */}
+          <RoomStatusActionSvg
+            x={501}
+            y={u2Available ? 208 : 198}
+            isAvailable={u2Available}
+            accentColor={u2Stroke}
+            hoverColor="#92400E"
+            isBtnHovered={hoveredBtn === unit2Id}
+            onMouseEnterBtn={() => setHoveredBtn(unit2Id)}
+            onMouseLeaveBtn={() => setHoveredBtn(null)}
+            onOpenMedia={(e) => handleUnitClick(unit2, true, e)}
+            compact
+          />
         </g>
 
         {/* ===================================================================
@@ -454,17 +478,23 @@ export default function FloorDEBlueprint({ floor }) {
             4. RIGHT UNIT: D3 / E3 (RED BORDER IN CAD — 3 BEDROOMS)
            =================================================================== */}
         <g
-          className={`bp-unit bp-unit--tenant ${hoveredUnit === unit3Id ? 'bp-unit--hovered' : ''}`}
+          className={`bp-unit ${u3Available ? 'bp-unit--available' : 'bp-unit--occupied'} ${
+            hoveredUnit === unit3Id ? 'bp-unit--hovered' : ''
+          }`}
           filter="url(#u3-glow)"
-          onClick={(e) => handleOpenUnit(unit3Id, e)}
-          onMouseEnter={() => setHoveredUnit(unit3Id)}
-          onMouseLeave={() => setHoveredUnit(null)}
+          onClick={(e) => handleUnitClick(unit3, u3Available, e)}
+          onMouseEnter={() => handleUnitEnter(unit3, u3Available)}
+          onMouseLeave={() => handleUnitLeave(unit3, u3Available)}
           role="button"
           tabIndex={0}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') handleOpenUnit(unit3Id, e);
+            if (e.key === 'Enter' || e.key === ' ') handleUnitClick(unit3, u3Available, e);
           }}
-          aria-label={`ইউনিট ${unit3Id} — ছবি এবং ভিডিও দেখতে ক্লিক করুন`}
+          aria-label={
+            u3Available
+              ? `ইউনিট ${unit3Id} — ভাড়া হবে, ছবি এবং ভিডিও দেখতে ক্লিক করুন`
+              : `ইউনিট ${unit3Id} — বর্তমানে ভাড়া হয়ে গেছে`
+          }
         >
           {/* Base warm surface of Right Unit (D3 / E3) */}
           <polygon points={u3PolygonPoints} fill={u3Fill} />
@@ -472,7 +502,7 @@ export default function FloorDEBlueprint({ floor }) {
           {/* Top-Right Bedroom 3 (735..848, 60..204) + Attached Veranda & Bathroom */}
           <rect x="735" y="60" width="113" height="144" fill={u3Fill} stroke="#1F2421" strokeWidth="2.2" />
           <rect x="848" y="60" width="52" height="62" fill={u3VerandaFill} stroke="#1F2421" strokeWidth="2" />
-          <rect x="848" y="122" width="52" height="82" fill="#F2ECE1" stroke="#1F2421" strokeWidth="2" />
+          <rect x="848" y="122" width="52" height="82" fill={u3BathFill} stroke="#1F2421" strokeWidth="2" />
           <rect x="845" y="96" width="6" height="22" fill="#FFFDF9" stroke={u3Accent} strokeWidth="1.3" />
           <rect x="845" y="130" width="6" height="26" fill="#FFFDF9" stroke={u3Accent} strokeWidth="1.3" />
           <rect x="738" y="201" width="44" height="6" fill="#FFFDF9" stroke={u3Accent} strokeWidth="1.3" />
@@ -487,7 +517,7 @@ export default function FloorDEBlueprint({ floor }) {
           />
 
           {/* Middle-Right Wall: Kitchen (824..900, 204..286) with open path at top-left & Common Toilet (824..900, 286..356) */}
-          <rect x="824" y="204" width="76" height="82" fill="#F7EFE4" stroke="none" />
+          <rect x="824" y="204" width="76" height="82" fill={u3Available ? '#F7EFE4' : '#E8E2D5'} stroke="none" />
           <path
             d="M 824,204 L 900,204 L 900,286 L 824,286 L 824,238"
             fill="none"
@@ -495,7 +525,7 @@ export default function FloorDEBlueprint({ floor }) {
             strokeWidth="2"
             strokeLinecap="square"
           />
-          <rect x="824" y="286" width="76" height="70" fill="#F2ECE1" stroke="#1F2421" strokeWidth="2" />
+          <rect x="824" y="286" width="76" height="70" fill={u3BathFill} stroke="#1F2421" strokeWidth="2" />
           <rect x="821" y="316" width="6" height="32" fill="#FFFDF9" stroke={u3Accent} strokeWidth="1.3" />
 
           {/* Bottom-Right Two Bedrooms (y=356..500) + Two East Verandas */}
@@ -534,7 +564,7 @@ export default function FloorDEBlueprint({ floor }) {
             <text x="874" y="91" transform="rotate(-90 874 91)" fontSize="11" fontWeight="700" fill="#2D6A4F">বারান্দা</text>
             <text x="874" y="163" transform="rotate(-90 874 163)" fontSize="11.5" fontWeight="700">বাথরুম</text>
 
-            <text x="697" y="246" fontSize="16" fontWeight="700" fontFamily="var(--font-heading)" fill="#1F2421">
+            <text x="697" y={u3Available ? '262' : '256'} fontSize="16" fontWeight="700" fontFamily="var(--font-heading)" fill="#1F2421">
               ড্রয়িং ও ডাইনিং রুম
             </text>
 
@@ -553,39 +583,35 @@ export default function FloorDEBlueprint({ floor }) {
             <text x="816" y="527" fontSize="12" fontWeight="700" fill="#2D6A4F">বারান্দা</text>
           </g>
 
-          {/* Embedded CTA Button inside Right Unit (D3 / E3) Drawing & Dining */}
-          <g
-            className="bp-room-cta"
-            transform="translate(697, 294)"
-            onClick={(e) => handleOpenUnit(unit3Id, e)}
-            onMouseEnter={() => setHoveredBtn(unit3Id)}
-            onMouseLeave={() => setHoveredBtn(null)}
-          >
-            <rect x="-101" y="-19" width="206" height="42" rx="11" fill="#1F2421" />
-            <rect
-              x="-103"
-              y="-22"
-              width="206"
-              height="42"
-              rx="11"
-              fill={hoveredBtn === unit3Id ? '#B34B25' : u3Accent}
-              stroke="#1F2421"
-              strokeWidth="2"
+          {/* Prominent "🟢 ভাড়া হবে" Badge when Unit 3 is Available */}
+          {u3Available && (
+            <AvailableStatusBadgeSvg
+              x={697}
+              y={226}
+              availableFrom={unit3.availableFrom}
             />
-            <text
-              x="0"
-              y="4"
-              textAnchor="middle"
-              fill="#FFFFFF"
-              fontSize="14.5"
-              fontWeight="700"
-              fontFamily="var(--font-heading)"
-            >
-              🎥 ছবি এবং ভিডিও দেখুন ➔
-            </text>
-          </g>
+          )}
+
+          {/* Dynamic Room Action inside Right Unit (D3 / E3) Drawing & Dining */}
+          <RoomStatusActionSvg
+            x={697}
+            y={306}
+            isAvailable={u3Available}
+            accentColor={u3Accent}
+            hoverColor="#B34B25"
+            isBtnHovered={hoveredBtn === unit3Id}
+            onMouseEnterBtn={() => setHoveredBtn(unit3Id)}
+            onMouseLeaveBtn={() => setHoveredBtn(null)}
+            onOpenMedia={(e) => handleUnitClick(unit3, true, e)}
+          />
         </g>
       </svg>
+
+      {/* Floating Hover (Desktop) & Tap (Mobile) Popover for Occupied Units */}
+      <OccupiedUnitPopover
+        activeUnit={activePopupUnitId}
+        position={POPOVER_POSITIONS[activePopupUnitId]}
+      />
     </div>
   );
 }
