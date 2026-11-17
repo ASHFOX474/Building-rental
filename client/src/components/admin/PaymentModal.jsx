@@ -109,6 +109,7 @@ export default function PaymentModal({
         className="adm-puthi-card adm-modal"
         onClick={(e) => e.stopPropagation()}
       >
+        <div className="adm-modal__sheet-handle" aria-hidden="true" />
         <div className="adm-modal__header">
           <div>
             <span className="adm-modal__floor-tag">

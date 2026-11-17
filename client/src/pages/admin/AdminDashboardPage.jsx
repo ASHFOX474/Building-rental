@@ -21,9 +21,24 @@ function isInitiallyUnlocked() {
 }
 
 const ADMIN_TABS = [
-  { id: 'ledger', labelBn: '📖 ১. ভাড়ার খাতা (মাসের হিসাব)' },
-  { id: 'tolet', labelBn: '🏠 ২. টু-লেট ও ছবি আপলোড' },
-  { id: 'settings', labelBn: '🏢 ৩. ভবন ও ভাড়াটিয়া সেটিংস' },
+  {
+    id: 'ledger',
+    labelBn: '📖 ১. ভাড়ার খাতা (মাসের হিসাব)',
+    icon: '📖',
+    shortLabelBn: 'ভাড়ার খাতা',
+  },
+  {
+    id: 'tolet',
+    labelBn: '🏠 ২. টু-লেট ও ছবি আপলোড',
+    icon: '🏠',
+    shortLabelBn: 'টু-লেট ও ছবি',
+  },
+  {
+    id: 'settings',
+    labelBn: '🏢 ৩. ভবন ও ভাড়াটিয়া সেটিংস',
+    icon: '🏢',
+    shortLabelBn: 'সেটিংস',
+  },
 ];
 
 /**
@@ -109,7 +124,11 @@ export default function AdminDashboardPage() {
                 className={`adm-tab-btn ${isActive ? 'adm-tab-btn--active' : ''}`}
                 onClick={() => setActiveTab(tab.id)}
               >
-                {tab.labelBn}
+                <span className="adm-tab-btn__desktop">{tab.labelBn}</span>
+                <span className="adm-tab-btn__mobile" aria-hidden="true">
+                  <span className="adm-tab-btn__m-icon">{tab.icon}</span>
+                  <span className="adm-tab-btn__m-text">{tab.shortLabelBn}</span>
+                </span>
               </button>
             );
           })}

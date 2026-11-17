@@ -1065,7 +1065,7 @@ export default function ToLetMediaTab({ initialUnitId = 'E1' }) {
                 accept="video/*"
                 onChange={handleMainVideoFileUpload}
                 disabled={uploadingMainVideo}
-                hidden
+                className="adm-sr-file-input"
               />
               <span className="adm-upload-dropzone__icon" aria-hidden="true">
                 📤
@@ -1416,7 +1416,7 @@ export default function ToLetMediaTab({ initialUnitId = 'E1' }) {
                           handleMultiFileUploadToSection(section, e.target.files);
                           e.target.value = '';
                         }}
-                        hidden
+                        className="adm-sr-file-input"
                       />
                       {isUploadingHere
                         ? `⏳ গুগল ড্রাইভে (${selectedUnit.id}/${section.titleBn}) আপলোড হচ্ছে...`

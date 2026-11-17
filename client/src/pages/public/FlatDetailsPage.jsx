@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { defaultRoomMediaSections, getDefaultSectionsForUnit } from '../../data/mockBuilding.js';
 import { useBuilding } from '../../context/BuildingContext.jsx';
@@ -84,6 +84,7 @@ export default function FlatDetailsPage() {
   // Room filter tab state & Fullscreen Lightbox state
   const [activeTabId, setActiveTabId] = useState('all');
   const [lightboxIndex, setLightboxIndex] = useState(null);
+  const touchStartXRef = useRef(null);
 
   // Reset filter & lightbox when switching units
   useEffect(() => {
@@ -143,6 +144,21 @@ export default function FlatDetailsPage() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [lightboxIndex, closeLightbox, showPrev, showNext]);
+
+  const handleLightboxTouchStart = (e) => {
+    if (e.touches && e.touches.length === 1) {
+      touchStartXRef.current = e.touches[0].clientX;
+    }
+  };
+
+  const handleLightboxTouchEnd = (e) => {
+    if (touchStartXRef.current === null || !e.changedTouches?.length) return;
+    const deltaX = e.changedTouches[0].clientX - touchStartXRef.current;
+    touchStartXRef.current = null;
+    if (Math.abs(deltaX) < 42) return;
+    if (deltaX < 0) showNext();
+    else showPrev();
+  };
 
   // =========================================================================
   // 1. PRIVACY GUARD: Block internal media if unit is Occupied or Owner's flat
@@ -532,6 +548,32 @@ export default function FlatDetailsPage() {
       </main>
 
       {/* =====================================================================
+          MOBILE FIXED BOTTOM STICKY CONTACT BAR (<= 768px ONLY)
+         ===================================================================== */}
+      <div className="fd-mobile-sticky-bar" role="region" aria-label="তাৎক্ষণিক যোগাযোগ">
+        <div className="fd-mobile-sticky-bar__rent">
+          <strong>{rentFormatted}/মাস</strong>
+          {inclusiveBills && <span>(গ্যাস-পানি সহ)</span>}
+        </div>
+        <div className="fd-mobile-sticky-bar__actions">
+          <a
+            href={`tel:${building.contact.phone || '01817526285'}`}
+            className="fd-mobile-bar-btn fd-mobile-bar-btn--call"
+          >
+            📞 কল
+          </a>
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="fd-mobile-bar-btn fd-mobile-bar-btn--wa"
+          >
+            💬 হোয়াটসঅ্যাপ
+          </a>
+        </div>
+      </div>
+
+      {/* =====================================================================
           FULLSCREEN LIGHTBOX MODAL
          ===================================================================== */}
       {activeLightboxItem && (
@@ -541,6 +583,8 @@ export default function FlatDetailsPage() {
           aria-modal="true"
           aria-label="ছবি বড় করে দেখুন"
           onClick={closeLightbox}
+          onTouchStart={handleLightboxTouchStart}
+          onTouchEnd={handleLightboxTouchEnd}
         >
           <button
             type="button"
@@ -557,7 +601,8 @@ export default function FlatDetailsPage() {
             onClick={showPrev}
             aria-label="আগের ছবি"
           >
-            ‹
+            <span className="fd-lightbox__arrow-desktop" aria-hidden="true">‹</span>
+            <span className="fd-lightbox__arrow-mobile" aria-hidden="true">⬅️</span>
           </button>
 
           <figure
@@ -583,7 +628,8 @@ export default function FlatDetailsPage() {
             onClick={showNext}
             aria-label="পরের ছবি"
           >
-            ›
+            <span className="fd-lightbox__arrow-desktop" aria-hidden="true">›</span>
+            <span className="fd-lightbox__arrow-mobile" aria-hidden="true">➡️</span>
           </button>
         </div>
       )}

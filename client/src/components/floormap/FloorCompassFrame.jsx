@@ -114,7 +114,12 @@ function StreetFlourish() {
  * Infused with traditional Bangladeshi Puthichitro double-line border,
  * 4 L-shaped Kantajew/Alpana corner motifs, and whispering nature flourishes.
  */
-export default function FloorCompassFrame({ surroundings, hasAvailableUnit = true, children }) {
+export default function FloorCompassFrame({
+  surroundings,
+  hasAvailableUnit = true,
+  mobileZoom = false,
+  children,
+}) {
   return (
     <section
       className={`fmap-box ${hasAvailableUnit ? 'fmap-box--has-available' : ''}`}
@@ -149,7 +154,7 @@ export default function FloorCompassFrame({ surroundings, hasAvailableUnit = tru
         </div>
 
         {/* Center — Floor Map SVG (Directly in the same box) */}
-        <div className="fmap-box__plan">
+        <div className={`fmap-box__plan ${mobileZoom ? 'fmap-box__plan--zoom' : ''}`}>
           {children}
         </div>
 

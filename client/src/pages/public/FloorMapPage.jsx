@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import FloorCompassFrame from '../../components/floormap/FloorCompassFrame.jsx';
 import FloorABlueprint from '../../components/floormap/FloorABlueprint.jsx';
@@ -129,6 +130,7 @@ export default function FloorMapPage() {
   const { building, floors } = useBuilding();
   const { floorNumber } = useParams();
   const navigate = useNavigate();
+  const [mobileZoom, setMobileZoom] = useState(false);
 
   const orderedFloors = floors
     .filter((f) => f.isVisible !== false)
@@ -218,9 +220,44 @@ export default function FloorMapPage() {
       </header>
 
       <main className="fmap-main">
+        {/* Mobile-only View Mode Toggle (hidden on desktop > 768px) */}
+        <div
+          className="fmap-mobile-zoom-bar"
+          role="group"
+          aria-label="মোবাইল ফ্লোর ম্যাপ দেখার ধরন"
+        >
+          <button
+            type="button"
+            className={`fmap-mobile-zoom-btn ${
+              !mobileZoom ? 'fmap-mobile-zoom-btn--active' : ''
+            }`}
+            onClick={() => setMobileZoom(false)}
+            aria-pressed={!mobileZoom}
+          >
+            📱 পুরো ম্যাপ এক নজরে
+          </button>
+          <button
+            type="button"
+            className={`fmap-mobile-zoom-btn ${
+              mobileZoom ? 'fmap-mobile-zoom-btn--active' : ''
+            }`}
+            onClick={() => setMobileZoom(true)}
+            aria-pressed={mobileZoom}
+          >
+            🔍 বড় করে জুম ভিউ (সোয়াইপ করুন)
+          </button>
+        </div>
+
+        {mobileZoom && (
+          <p className="fmap-mobile-zoom-hint">
+            👈 ম্যাপের ওপর ডানে-বামে সোয়াইপ করে প্রতিটি রুমের নাম স্পষ্ট দেখুন 👉
+          </p>
+        )}
+
         <FloorCompassFrame
           surroundings={building.surroundings}
           hasAvailableUnit={floorHasAvailable}
+          mobileZoom={mobileZoom}
         >
           <ActiveBlueprint floor={currentFloor} />
         </FloorCompassFrame>

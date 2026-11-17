@@ -33,7 +33,7 @@ export default function UnitCell({ floor, unit, side, showRentOnOccupied, dimmed
         </div>
         {/* Compact pulsing badge, replaces the outside callout on narrow phones */}
         <span className={`unit__badge unit__badge--${side}`} aria-hidden="true">
-          ক্লিক করুন
+          ক্লিক করুন ➔
         </span>
       </Link>
     );

@@ -497,6 +497,15 @@ export default function RentLedgerTab({ onSwitchToToLetTab }) {
                           </div>
                         )}
                       </div>
+
+                      {unit.renterPhone && (
+                        <a
+                          href={`tel:${unit.renterPhone}`}
+                          className="adm-mobile-call-btn"
+                        >
+                          📞 কল করুন ({phoneFormattedBn})
+                        </a>
+                      )}
                     </article>
                   );
                 })}

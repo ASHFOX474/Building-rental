@@ -1726,6 +1726,7 @@
 }
 
 .adm-upload-dropzone {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2156,6 +2157,7 @@
 }
 
 .adm-room-upload-btn {
+  position: relative;
   flex: 1;
   min-width: 280px;
   min-height: 54px;
@@ -2682,6 +2684,7 @@
 }
 
 .adm-backup-btn--restore {
+  position: relative;
   background: var(--surface-white);
   color: var(--ink);
 }
@@ -2838,4 +2841,658 @@
 .adm-quota-notice__sync-btn {
   background: var(--available);
   color: #ffffff;
+}
+
+/* ==========================================================================
+   8. ACCESSIBLE FILE INPUT & MOBILE-ONLY POLISH (<= 768px ONLY)
+   Desktop (> 768px) remains 100% unchanged.
+   ========================================================================== */
+
+.adm-sr-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.adm-tab-btn__mobile,
+.adm-mobile-call-btn,
+.adm-modal__sheet-handle {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .adm-page {
+    padding: 12px 10px 36px;
+    font-size: 17px;
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
+  .adm-puthi-card {
+    padding: 16px 12px;
+    border-radius: 16px;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  /* ---- PIN Pad Login Screen: Fit All Controls on 1 Mobile Screen ---- */
+  .adm-login-page {
+    padding: 10px 10px 14px;
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
+  .adm-login-topbar {
+    width: 100%;
+    margin: 0 auto 8px;
+  }
+
+  .adm-login-topbar .adm-back-btn {
+    min-height: 40px;
+    padding: 6px 12px;
+    font-size: 14.5px;
+  }
+
+  .adm-pin-card {
+    width: 100%;
+    padding: 14px 12px 12px;
+  }
+
+  .adm-pin-card__title {
+    font-size: 20px;
+    margin-bottom: 2px;
+  }
+
+  .adm-pin-card__subtitle {
+    font-size: 14.5px;
+    margin-bottom: 10px;
+  }
+
+  .adm-pin-boxes {
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .adm-pin-box {
+    width: 50px;
+    height: 50px;
+    font-size: 24px;
+    border-radius: 12px;
+  }
+
+  .adm-pin-error {
+    padding: 6px 10px;
+    font-size: 14.5px;
+    margin-bottom: 8px;
+  }
+
+  .adm-keypad {
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .adm-key-btn {
+    min-height: 50px;
+    font-size: 22px;
+    border-radius: 12px;
+  }
+
+  .adm-key-btn--action {
+    font-size: 14px;
+    padding: 4px 2px;
+  }
+
+  .adm-remember-row {
+    font-size: 15px;
+    gap: 8px;
+  }
+
+  .adm-remember-row input {
+    width: 20px;
+    height: 20px;
+  }
+
+  .adm-pin-hint {
+    font-size: 13.5px;
+    margin-top: 4px;
+  }
+
+  /* ---- Top Bar & 3-Column Sticky Tabs ---- */
+  .adm-header {
+    margin-bottom: 14px;
+  }
+
+  .adm-topbar {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .adm-topbar__title {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    font-size: 20px;
+    line-height: 1.25;
+  }
+
+  .adm-back-btn,
+  .adm-logout-btn {
+    min-height: 44px;
+    padding: 6px 12px;
+    font-size: 14.5px;
+  }
+
+  .adm-back-btn {
+    justify-self: start;
+  }
+
+  .adm-tabs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    position: sticky;
+    top: 6px;
+    z-index: 40;
+    padding: 4px;
+    border-radius: 15px;
+    background: rgba(250, 247, 242, 0.94);
+    backdrop-filter: blur(6px);
+  }
+
+  .adm-tab-btn {
+    min-height: 60px;
+    padding: 7px 4px;
+    border-radius: 12px;
+  }
+
+  .adm-tab-btn__desktop {
+    display: none;
+  }
+
+  .adm-tab-btn__mobile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+  }
+
+  .adm-tab-btn__m-icon {
+    font-size: 20px;
+    line-height: 1;
+  }
+
+  .adm-tab-btn__m-text {
+    font-size: 12.5px;
+    font-weight: 700;
+    line-height: 1.2;
+    text-align: center;
+  }
+
+  /* ---- Tab 1: Rent Ledger Mobile Layout ---- */
+  .adm-month-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 12px;
+    border-radius: 15px;
+  }
+
+  .adm-month-bar__current {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  .adm-month-bar__title {
+    font-size: 21px;
+  }
+
+  .adm-month-bar__btn {
+    width: 100%;
+    min-height: 46px;
+    padding: 8px 10px;
+    font-size: 14.5px;
+  }
+
+  .adm-summary-board {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .adm-summary-card {
+    padding: 14px 12px;
+    border-radius: 15px;
+  }
+
+  .adm-summary-card__heading {
+    font-size: 16.5px;
+  }
+
+  .adm-summary-card__amount {
+    font-size: clamp(24px, 7.2vw, 30px);
+    margin: 4px 0;
+    white-space: nowrap;
+  }
+
+  .adm-summary-card__sub {
+    font-size: 14px;
+  }
+
+  .adm-filters {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .adm-filter-pill {
+    min-height: 46px;
+    padding: 8px 10px;
+    border-radius: 13px;
+    font-size: 14px;
+    line-height: 1.25;
+    text-align: center;
+  }
+
+  .adm-ledger-card {
+    padding: 14px 12px;
+    gap: 12px;
+    border-radius: 15px;
+  }
+
+  .adm-ledger-card--owner {
+    padding: 12px;
+  }
+
+  .adm-ledger-card__tenant {
+    font-size: 19px;
+  }
+
+  .adm-ledger-card__phone-num {
+    font-size: 17px;
+  }
+
+  .adm-ledger-card__rent-line {
+    font-size: 16.5px;
+  }
+
+  .adm-ledger-card__rent-line strong {
+    font-size: 19px;
+  }
+
+  .adm-call-inline-btn {
+    display: none;
+  }
+
+  .adm-state-box {
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .adm-state-box__main,
+  .adm-state-box__unpaid-badge {
+    font-size: 17.5px;
+  }
+
+  .adm-state-box__meta {
+    font-size: 15px;
+  }
+
+  .adm-state-box__actions {
+    flex-direction: column;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .adm-receive-rent-btn {
+    width: 100%;
+    min-height: 54px;
+    padding: 12px;
+    font-size: 18px;
+  }
+
+  .adm-collect-rest-btn,
+  .adm-tolet-jump-btn {
+    width: 100%;
+    min-height: 54px;
+    font-size: 17.5px;
+  }
+
+  .adm-edit-btn {
+    width: 100%;
+    min-height: 48px;
+    align-self: stretch;
+    text-align: center;
+    font-size: 16px;
+  }
+
+  .adm-mobile-call-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    min-height: 54px;
+    padding: 10px 14px;
+    border: 2.2px solid var(--ink);
+    border-radius: 13px;
+    background: var(--surface-sand);
+    color: var(--ink);
+    font-family: var(--font-heading);
+    font-size: 18px;
+    font-weight: 700;
+    text-decoration: none;
+    box-shadow: 2px 3px 0 var(--ink);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .adm-mobile-call-btn:active {
+    transform: translate(1px, 2px);
+    box-shadow: 1px 1px 0 var(--ink);
+  }
+
+  /* ---- Slide-Up Mobile Bottom Sheet Modal ("ভাড়া জমা নিন") ---- */
+  .adm-modal-backdrop {
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .adm-modal {
+    width: 100%;
+    max-width: 100%;
+    max-height: 90vh;
+    border-radius: 22px 22px 0 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-right: 0;
+    padding: 12px 14px calc(22px + env(safe-area-inset-bottom, 0px));
+    animation: adm-sheet-up 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .adm-modal__sheet-handle {
+    display: block;
+    width: 46px;
+    height: 5px;
+    margin: 0 auto 10px;
+    border-radius: 999px;
+    background: rgba(31, 36, 33, 0.25);
+  }
+
+  .adm-modal__header {
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+  }
+
+  .adm-modal__floor-tag {
+    font-size: 14px;
+  }
+
+  .adm-modal__title {
+    font-size: 18.5px;
+  }
+
+  .adm-modal__close {
+    min-height: 44px;
+    padding: 6px 12px;
+    font-size: 15px;
+  }
+
+  .adm-modal__form {
+    gap: 12px;
+  }
+
+  .adm-fieldset {
+    padding: 12px;
+  }
+
+  .adm-fieldset__legend {
+    font-size: 17px;
+  }
+
+  .adm-method-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .adm-method-card {
+    min-height: 62px;
+    padding: 8px 4px;
+    font-size: 14px;
+    text-align: center;
+  }
+
+  .adm-method-card__icon {
+    font-size: 20px;
+  }
+
+  .adm-radio-card {
+    min-height: 50px;
+    padding: 10px 12px;
+    font-size: 16px;
+  }
+
+  .adm-punctuality-btn {
+    min-height: 48px;
+    font-size: 15.5px;
+  }
+
+  .adm-save-btn {
+    min-height: 56px;
+    font-size: 19px;
+  }
+
+  /* ---- Tab 2 & Tab 3 Mobile Reflow & Safe Tap Targets ---- */
+  .adm-toast {
+    padding: 10px 12px;
+    font-size: 15.5px;
+  }
+
+  .adm-step-title {
+    font-size: 19.5px;
+  }
+
+  .adm-sub-note {
+    font-size: 15px;
+  }
+
+  .adm-selector-floor-row {
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .adm-selector-floor-row__units {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .adm-unit-select-btn {
+    min-height: 68px;
+    padding: 8px 10px;
+  }
+
+  .adm-unit-select-btn__id {
+    font-size: 16.5px;
+  }
+
+  .adm-unit-select-btn__status {
+    font-size: 13.5px;
+  }
+
+  .adm-unit-select-btn__media {
+    font-size: 12.5px;
+  }
+
+  .adm-giant-toggle-btn {
+    min-height: 58px;
+    padding: 12px;
+    font-size: 17.5px;
+  }
+
+  .adm-preview-link-btn,
+  .adm-sync-drive-btn,
+  .adm-sync-all-btn,
+  .adm-add-story-btn {
+    width: 100%;
+    min-width: 0;
+    min-height: 50px;
+    justify-content: center;
+    text-align: center;
+    font-size: 16px;
+  }
+
+  .adm-rent-stepper {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 6px;
+  }
+
+  .adm-step-btn {
+    min-height: 48px;
+    padding: 8px 10px;
+    font-size: 15px;
+  }
+
+  .adm-rent-stepper__input {
+    min-width: 0;
+    min-height: 48px;
+    font-size: 21px;
+  }
+
+  .adm-room-sec-card {
+    padding: 14px 12px;
+    min-width: 0;
+  }
+
+  .adm-room-sec-card__title {
+    font-size: 19px;
+  }
+
+  /* Safe spacing between Up/Down reorder buttons and full-width Delete Section button */
+  .adm-room-sec-card__controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .adm-sec-ctrl-btn {
+    min-height: 46px;
+    padding: 8px 10px;
+    font-size: 14.5px;
+  }
+
+  .adm-sec-ctrl-btn--delete {
+    grid-column: 1 / -1;
+    margin-top: 6px;
+  }
+
+  .adm-room-media-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .adm-media-delete-btn {
+    min-height: 44px;
+    padding: 6px 14px;
+    font-size: 14.5px;
+  }
+
+  .adm-media-zoom-btn {
+    min-height: 44px;
+    padding: 6px 12px;
+    font-size: 14px;
+  }
+
+  .adm-room-add-zone {
+    flex-direction: column;
+  }
+
+  .adm-room-upload-btn,
+  .adm-room-link-toggle-btn,
+  .adm-drive-link-inline__input,
+  .adm-drive-link-inline__btn,
+  .adm-drive-link-inline__cancel,
+  .adm-custom-room-row__input,
+  .adm-custom-room-row__add,
+  .adm-room-link-panel__url,
+  .adm-room-link-panel__caption,
+  .adm-room-link-panel__submit,
+  .adm-sec-rename-row__input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .adm-room-upload-btn,
+  .adm-room-link-toggle-btn {
+    min-height: 54px;
+    padding: 12px 14px;
+    font-size: 16px;
+  }
+
+  .adm-upload-dropzone {
+    padding: 20px 14px;
+  }
+
+  .adm-upload-dropzone__title {
+    font-size: 17px;
+  }
+
+  .adm-upload-dropzone__sub {
+    font-size: 14.5px;
+  }
+
+  .adm-quota-notice__actions {
+    flex-direction: column;
+  }
+
+  .adm-quota-notice__open-btn,
+  .adm-quota-notice__sync-btn {
+    width: 100%;
+    font-size: 16px;
+  }
+
+  .adm-settings-floor-block {
+    padding: 12px 10px;
+  }
+
+  .adm-settings-unit-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .adm-settings-unit-card {
+    padding: 14px 12px;
+    min-width: 0;
+  }
+
+  .adm-floor-vis-row {
+    padding: 12px;
+  }
+
+  .adm-vis-toggle-btn {
+    width: 100%;
+    font-size: 16px;
+  }
+}
+
+@keyframes adm-sheet-up {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

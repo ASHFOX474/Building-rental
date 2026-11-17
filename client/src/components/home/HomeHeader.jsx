@@ -9,6 +9,11 @@ export default function HomeHeader({ building, availableCount, onlyAvailable, on
         {building.name} <span className="home-header__area">— {building.area}</span>
       </h1>
       <p className="home-header__perks">{building.perks.join(' • ')}</p>
+      <ul className="home-header__perks-mobile" aria-label="বিল্ডিংয়ের সুবিধাসমূহ">
+        {building.perks.map((perk) => (
+          <li key={perk}>{perk}</li>
+        ))}
+      </ul>
 
       <div className="home-header__bar">
         <p className="home-header__count">

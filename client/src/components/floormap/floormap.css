@@ -524,6 +524,12 @@
   width: 100%;
 }
 
+/* Mobile-only zoom toggle bar & swipe hint (strictly hidden on desktop > 768px) */
+.fmap-mobile-zoom-bar,
+.fmap-mobile-zoom-hint {
+  display: none;
+}
+
 .bp-svg {
   display: block;
   width: 100%;
@@ -662,15 +668,157 @@
   }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
   .fmap-page {
-    padding: 16px 10px 28px;
+    padding: 12px 10px 30px;
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
+  .fmap-header__nav {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .fmap-back-btn {
+    align-self: flex-start;
+    min-height: 44px;
+    font-size: 14px;
+    padding: 6px 12px;
+  }
+
+  .fmap-switcher {
+    width: 100%;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 5px;
+  }
+
+  .fmap-switcher::-webkit-scrollbar {
+    display: none;
+  }
+
+  .fmap-switcher__btn {
+    flex: 0 0 auto;
+    min-height: 42px;
+    white-space: nowrap;
+    font-size: 13.5px;
+    padding: 6px 12px;
+  }
+
+  .fmap-header__title {
+    font-size: clamp(20px, 5.2vw, 25px);
+  }
+
+  .fmap-legend {
+    gap: 6px;
+  }
+
+  .fmap-legend__pill {
+    font-size: 12px;
+    padding: 5px 10px;
+  }
+
+  .fmap-mobile-zoom-bar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin: 0 auto 10px;
+  }
+
+  .fmap-mobile-zoom-btn {
+    min-height: 46px;
+    padding: 8px 8px;
+    border: 1.8px solid var(--ink);
+    border-radius: 12px;
+    background: var(--surface-white);
+    color: var(--ink);
+    font-family: var(--font-heading);
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.25;
+    text-align: center;
+    cursor: pointer;
+    box-shadow: 2px 2px 0 rgba(31, 36, 33, 0.22);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .fmap-mobile-zoom-btn--active {
+    background: var(--terracotta);
+    color: #ffffff;
+    box-shadow: 2px 2px 0 var(--ink);
+  }
+
+  .fmap-mobile-zoom-hint {
+    display: block;
+    margin: -2px 0 10px;
+    text-align: center;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--terracotta);
   }
 
   .fmap-box {
-    padding: 16px 12px;
+    padding: 14px 10px;
+    border-radius: 15px;
   }
 
+  .fmap-box__edge {
+    flex-wrap: wrap;
+    font-size: 12.5px;
+    gap: 6px;
+    line-height: 1.35;
+  }
+
+  .bp-svg {
+    max-height: none;
+  }
+
+  .fmap-box__plan--zoom {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x pan-y;
+    border: 1.5px dashed rgba(200, 90, 50, 0.42);
+    border-radius: 10px;
+    background: #faf7f2;
+    padding: 4px;
+  }
+
+  .fmap-box__plan--zoom .bp-stage {
+    width: 780px;
+    min-width: 780px;
+  }
+
+  /* Center Occupied Toast safely inside mobile viewport so it never clips off edges */
+  .occupied-popover {
+    position: fixed;
+    left: 50% !important;
+    top: auto !important;
+    bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%);
+    width: calc(100vw - 28px);
+    max-width: 340px;
+    z-index: 950;
+    animation: occupied-pop-mobile 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+@keyframes occupied-pop-mobile {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 16px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+@media (max-width: 600px) {
   .alpana-corner {
     width: 36px;
     height: 36px;
@@ -679,11 +827,6 @@
   .nature-motif--foliage,
   .nature-motif--flourish {
     display: none;
-  }
-
-  .fmap-legend__pill {
-    font-size: 12.5px;
-    padding: 4px 10px;
   }
 }
 

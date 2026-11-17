@@ -854,7 +854,7 @@ export default function BuildingSettingsTab({ onSwitchToToLetTab }) {
                     type="file"
                     accept=".json,application/json"
                     onChange={handleRestoreBackupFile}
-                    hidden
+                    className="adm-sr-file-input"
                   />
                   📤 ব্যাকআপ ফাইল থেকে তথ্য ফিরিয়ে আনুন (Restore)
                 </label>
