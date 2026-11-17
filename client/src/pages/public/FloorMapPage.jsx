@@ -121,7 +121,11 @@ export default function FloorMapPage() {
   const currentFloor =
     floors.find((f) => String(f.floorNumber) === String(floorNumber)) || floorB;
 
-  const ActiveBlueprint = FLOOR_BLUEPRINTS[currentFloor.id];
+  const ActiveBlueprint =
+    FLOOR_BLUEPRINTS[currentFloor.id] ||
+    (currentFloor.floorNumber >= 6 || currentFloor.units.length === 3
+      ? FloorDEBlueprint
+      : null);
   const displayFloor = ActiveBlueprint ? currentFloor : floorB;
   const legendPills = buildDynamicLegendPills(displayFloor);
   const floorHasAvailable = displayFloor.units.some(isUnitAvailable);

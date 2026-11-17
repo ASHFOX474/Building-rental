@@ -55,9 +55,8 @@ export default function RentLedgerTab({ onSwitchToToLetTab }) {
 
   const monthRecords = paymentsByMonth[selectedMonth] || {};
 
-  // Floors ordered 5th floor (E) down to 1st floor (A)
+  // Floors ordered from highest floor down to 1st floor (includes hidden floors in Admin)
   const orderedFloors = floors
-    .filter((f) => f.isVisible !== false)
     .slice()
     .sort((a, b) => b.floorNumber - a.floorNumber);
 

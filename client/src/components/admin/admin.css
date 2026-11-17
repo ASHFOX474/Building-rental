@@ -2299,3 +2299,402 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* ==========================================================================
+   6. TAB 3: BUILDING & TENANT SETTINGS (BuildingSettingsTab)
+   ========================================================================== */
+
+.adm-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.adm-settings-floors {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.adm-settings-floor-block {
+  padding: 18px;
+  border: 2px solid rgba(31, 36, 33, 0.22);
+  border-radius: 18px;
+  background: var(--bg-chuna);
+}
+
+.adm-settings-floor-block__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.adm-hidden-floor-chip {
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--unpaid-bg);
+  border: 1.5px solid var(--unpaid);
+  color: var(--unpaid);
+  font-family: var(--font-heading);
+  font-size: 15.5px;
+  font-weight: 700;
+}
+
+.adm-settings-unit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+}
+
+.adm-settings-unit-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px;
+  border: 2px solid var(--ink);
+  border-radius: 16px;
+  background: var(--surface-white);
+}
+
+.adm-settings-unit-card--vacant {
+  border-color: var(--available);
+  background: #f5fbf7;
+}
+
+.adm-settings-unit-card--owner {
+  background: var(--surface-sand);
+  border-color: #7a736a;
+}
+
+.adm-settings-unit-card__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.adm-settings-status-pill {
+  padding: 3px 12px;
+  border-radius: 999px;
+  font-family: var(--font-heading);
+  font-size: 15.5px;
+  font-weight: 700;
+}
+
+.adm-settings-status-pill--vacant {
+  background: var(--available-bg);
+  border: 1.5px solid var(--available);
+  color: #1b4332;
+}
+
+.adm-settings-status-pill--occupied {
+  background: var(--occupied-bg);
+  color: #3e3a35;
+}
+
+.adm-settings-status-pill--owner {
+  background: #eae3d5;
+  color: #5c4033;
+}
+
+.adm-settings-unit-card__owner-text {
+  margin: 4px 0;
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.adm-settings-unit-card__owner-text small {
+  display: block;
+  font-size: 16px;
+  color: var(--text-muted);
+}
+
+.adm-settings-unit-dl {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 11px;
+  background: var(--bg-chuna);
+  border: 1.4px solid rgba(31, 36, 33, 0.14);
+}
+
+.adm-settings-unit-dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 17.5px;
+}
+
+.adm-settings-unit-dl dt {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.adm-settings-unit-dl dd {
+  margin: 0;
+  font-weight: 700;
+  color: var(--ink);
+  text-align: right;
+}
+
+.adm-settings-unit-dl__rent {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  color: var(--terracotta) !important;
+}
+
+.adm-settings-unit-card__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.adm-unit-edit-btn {
+  min-height: 50px;
+  width: 100%;
+  padding: 10px 16px;
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  background: var(--terracotta);
+  color: #ffffff;
+  font-family: var(--font-heading);
+  font-size: 18.5px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 2px 3px 0 var(--ink);
+}
+
+.adm-unit-edit-btn:hover {
+  background: #b34b25;
+}
+
+.adm-unit-edit-btn--secondary {
+  background: var(--surface-sand);
+  color: var(--ink);
+}
+
+.adm-unit-edit-btn--secondary:hover {
+  background: #e5dec9;
+}
+
+/* Quick Move-Out Box inside Unit Edit Modal */
+.adm-moveout-box {
+  padding: 14px 16px;
+  border: 2px dashed var(--terracotta);
+  border-radius: 14px;
+  background: #fff8f3;
+  text-align: center;
+}
+
+.adm-moveout-box__hint {
+  margin: 0 0 10px;
+  font-size: 17px;
+  color: var(--ink);
+}
+
+.adm-moveout-btn {
+  min-height: 52px;
+  width: 100%;
+  padding: 10px 16px;
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  background: var(--terracotta);
+  color: #ffffff;
+  font-family: var(--font-heading);
+  font-size: 19px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 2px 3px 0 var(--ink);
+}
+
+/* ---------- Section 2: Dynamic Building Story & Floor Visibility ---------- */
+.adm-story-sec-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.adm-add-story-btn {
+  min-height: 56px;
+  padding: 12px 22px;
+  border: 2.2px solid var(--ink);
+  border-radius: 14px;
+  background: var(--available);
+  color: #ffffff;
+  font-family: var(--font-heading);
+  font-size: 19.5px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 3px 4px 0 var(--ink);
+}
+
+.adm-add-story-btn:hover {
+  background: #21523c;
+}
+
+.adm-floor-visibility-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.adm-floor-vis-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  border: 2px solid var(--ink);
+  border-radius: 15px;
+  background: var(--bg-chuna);
+}
+
+.adm-floor-vis-row__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.adm-floor-vis-row__title {
+  font-family: var(--font-heading);
+  font-size: 21px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.adm-floor-vis-row__units {
+  font-size: 17px;
+  color: var(--text-muted);
+}
+
+.adm-floor-vis-row__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.adm-vis-toggle-btn {
+  min-height: 50px;
+  padding: 8px 18px;
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 2px 3px 0 var(--ink);
+}
+
+.adm-vis-toggle-btn--shown {
+  background: var(--available-bg);
+  border-color: var(--available);
+  color: #1b4332;
+}
+
+.adm-vis-toggle-btn--hidden {
+  background: var(--unpaid-bg);
+  border-color: var(--unpaid);
+  color: var(--unpaid);
+}
+
+/* ---------- Section 3: Contact Numbers, Admin PIN & Data Backup ---------- */
+.adm-safety-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.adm-safety-col {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.adm-safety-box {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  border: 2px solid rgba(31, 36, 33, 0.22);
+  border-radius: 16px;
+  background: var(--bg-chuna);
+}
+
+.adm-safety-box__title {
+  margin: 0;
+  font-size: 22px;
+  color: var(--ink);
+}
+
+.adm-safety-box__desc {
+  margin: 0;
+  font-size: 17px;
+  color: var(--text-muted);
+}
+
+.adm-pin-change-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.adm-backup-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.adm-backup-btn {
+  min-height: 52px;
+  width: 100%;
+  padding: 10px 16px;
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 2px 3px 0 var(--ink);
+}
+
+.adm-backup-btn--download {
+  background: var(--available);
+  color: #ffffff;
+}
+
+.adm-backup-btn--restore {
+  background: var(--surface-white);
+  color: var(--ink);
+}
+
+.adm-backup-btn--reset {
+  background: var(--unpaid-bg);
+  border-color: var(--unpaid);
+  color: var(--unpaid);
+}
+
+@media (max-width: 920px) {
+  .adm-safety-grid,
+  .adm-pin-change-row {
+    grid-template-columns: 1fr;
+  }
+}

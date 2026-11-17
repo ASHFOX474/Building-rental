@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import AdminPinLogin from '../../components/admin/AdminPinLogin.jsx';
 import RentLedgerTab from '../../components/admin/RentLedgerTab.jsx';
 import ToLetMediaTab from '../../components/admin/ToLetMediaTab.jsx';
+import BuildingSettingsTab from '../../components/admin/BuildingSettingsTab.jsx';
 import { useBuilding } from '../../context/BuildingContext.jsx';
 import '../../components/admin/admin.css';
 
@@ -128,23 +129,7 @@ export default function AdminDashboardPage() {
         )}
 
         {activeTab === 'settings' && (
-          <section className="adm-puthi-card adm-placeholder-card">
-            <div className="adm-puthi-card__inner-rule" aria-hidden="true" />
-            <span className="adm-placeholder-card__badge">পরবর্তী ধাপ (Part 3)</span>
-            <h2 className="adm-placeholder-card__title">
-              🏢 ৩. ভবন ও ভাড়াটিয়া সেটিংস
-            </h2>
-            <p className="adm-placeholder-card__desc">
-              এই ট্যাবে প্রতিটি ফ্ল্যাটের ভাড়াটিয়ার নাম, মোবাইল নম্বর, মাসিক ভাড়ার পরিমাণ পরিবর্তন এবং বিল্ডিংয়ের তলা ও ফ্ল্যাট নিয়ন্ত্রণের সুবিধা <strong>Part 3</strong>-তে যুক্ত হবে।
-            </p>
-            <button
-              type="button"
-              className="adm-back-to-ledger-btn"
-              onClick={() => setActiveTab('ledger')}
-            >
-              ⬅️ ভাড়ার খাতায় ফিরে যান
-            </button>
-          </section>
+          <BuildingSettingsTab onSwitchToToLetTab={handleJumpToToLet} />
         )}
       </main>
     </div>

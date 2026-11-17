@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { defaultRoomMediaSections } from '../../data/mockBuilding.js';
 import { useBuilding } from '../../context/BuildingContext.jsx';
 import { isUnitAvailable } from '../../components/floormap/UnitStatusElements.jsx';
-import { formatTaka, monthBn, toBanglaDigits } from '../../lib/bangla.js';
+import { formatTaka, monthBn, toBanglaDigits, formatPhoneBn } from '../../lib/bangla.js';
 import '../../components/flatdetails/flatdetails.css';
 
 /** Resolve a media item's thumbnail URL (Google Drive thumbnail endpoint or fallback preview). */
@@ -500,12 +500,20 @@ export default function FlatDetailsPage() {
             {/* Side-by-Side Bangla Call Buttons + Full-Width WhatsApp Button */}
             <div className="fd-contact-actions">
               <div className="fd-call-grid">
-                <a href="tel:01817526285" className="fd-btn fd-btn--call">
-                  📞 ০১৮১৭-৫২৬২৮৫
+                <a
+                  href={`tel:${building.contact.phone || '01817526285'}`}
+                  className="fd-btn fd-btn--call"
+                >
+                  📞 {formatPhoneBn(building.contact.phone || '01817526285')}
                 </a>
-                <a href="tel:01815023898" className="fd-btn fd-btn--call">
-                  📞 ০১৮১৫-০২৩৮৯৮
-                </a>
+                {building.contact.phoneSecondary && (
+                  <a
+                    href={`tel:${building.contact.phoneSecondary}`}
+                    className="fd-btn fd-btn--call"
+                  >
+                    📞 {formatPhoneBn(building.contact.phoneSecondary)}
+                  </a>
+                )}
               </div>
 
               <a

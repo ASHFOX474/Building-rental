@@ -22,7 +22,7 @@ export default function FloorDEBlueprint({ floor }) {
   const [hoveredBtn, setHoveredBtn] = useState(null);
   const { activePopupUnitId, setHoveredId, triggerTapPopup } = useOccupiedPopup();
 
-  const prefix = floor.id === 'E' ? 'E' : 'D';
+  const prefix = floor.id || 'D';
   const unit1Id = `${prefix}1`;
   const unit2Id = `${prefix}2`;
   const unit3Id = `${prefix}3`;

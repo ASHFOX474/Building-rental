@@ -1,14 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { useBuilding } from '../../context/BuildingContext.jsx';
 import { toBanglaDigits, toAsciiDigits } from '../../lib/bangla.js';
-
-const DEFAULT_PIN = '1234';
 
 /**
  * Elderly-friendly ATM / bKash-style 4-Digit PIN Login Screen for /admin.
  * Supports both giant on-screen Bangla touch buttons and physical keyboard input.
  */
 export default function AdminPinLogin({ onUnlock }) {
+  const { adminPin } = useBuilding();
+  const activePin = adminPin || '1234';
   const [pin, setPin] = useState('');
   const [rememberDevice, setRememberDevice] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
@@ -20,11 +21,11 @@ export default function AdminPinLogin({ onUnlock }) {
         if (prev.length >= 4) return prev;
         const next = prev + asciiDigit;
         if (next.length === 4) {
-          if (next === DEFAULT_PIN) {
+          if (next === activePin) {
             setTimeout(() => onUnlock(rememberDevice), 120);
           } else {
             setTimeout(() => {
-              setErrorMsg('❌ পিন সঠিক নয়! সঠিক পিন (১২৩৪) চাপুন।');
+              setErrorMsg(`❌ পিন সঠিক নয়! সঠিক পিন চাপুন।`);
               setPin('');
             }, 220);
           }
@@ -32,7 +33,7 @@ export default function AdminPinLogin({ onUnlock }) {
         return next;
       });
     },
-    [onUnlock, rememberDevice]
+    [onUnlock, rememberDevice, activePin]
   );
 
   const handleBackspace = useCallback(() => {
@@ -167,7 +168,7 @@ export default function AdminPinLogin({ onUnlock }) {
           <span>এই ডিভাইসে লগইন মনে রাখুন</span>
         </label>
 
-        <p className="adm-pin-hint">ডেমো পিন: ১২৩৪</p>
+        <p className="adm-pin-hint">বর্তমান পিন: {toBanglaDigits(activePin)}</p>
       </section>
     </div>
   );
