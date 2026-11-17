@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { building, floors, defaultRoomMediaSections } from '../../data/mockBuilding.js';
+import { defaultRoomMediaSections } from '../../data/mockBuilding.js';
+import { useBuilding } from '../../context/BuildingContext.jsx';
 import { isUnitAvailable } from '../../components/floormap/UnitStatusElements.jsx';
 import { formatTaka, monthBn, toBanglaDigits } from '../../lib/bangla.js';
 import '../../components/flatdetails/flatdetails.css';
@@ -54,6 +55,7 @@ function CardAlpanaCorner({ pos }) {
  * Page 3 — Clean, Zero-Redundancy Flat Media & Full Details Page (/flat/:unitId)
  */
 export default function FlatDetailsPage() {
+  const { building, floors } = useBuilding();
   const { flatId } = useParams();
   const normalizedId = String(flatId || '').toUpperCase();
 

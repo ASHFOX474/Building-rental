@@ -4,12 +4,13 @@ import Building from '../../components/building/Building.jsx';
 import HomeHeader from '../../components/home/HomeHeader.jsx';
 import LocationCard from '../../components/home/LocationCard.jsx';
 import ContactCard from '../../components/home/ContactCard.jsx';
-import { building, floors } from '../../data/mockBuilding.js';
+import { useBuilding } from '../../context/BuildingContext.jsx';
 import { stackFloors } from '../../lib/building.js';
 import '../../components/home/home.css';
 
 /** Page 1 — Public Home Page: the hand-drawn building array. */
 export default function HomePage() {
+  const { building, floors } = useBuilding();
   const [onlyAvailable, setOnlyAvailable] = useState(false);
 
   const availableCount = stackFloors(floors)
@@ -44,7 +45,13 @@ export default function HomePage() {
         </section>
       </main>
 
-      <footer className="home__footer">© {building.name}, {building.area}</footer>
+      <footer className="home__footer">
+        <span>© {building.name}, {building.area}</span>
+        <span className="home__footer-dot" aria-hidden="true">•</span>
+        <Link to="/admin" className="home__admin-link">
+          🔒 বাড়িওয়ালা লগইন (Admin)
+        </Link>
+      </footer>
     </div>
   );
 }

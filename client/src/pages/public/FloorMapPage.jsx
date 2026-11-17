@@ -4,7 +4,7 @@ import FloorBBlueprint from '../../components/floormap/FloorBBlueprint.jsx';
 import FloorCBlueprint from '../../components/floormap/FloorCBlueprint.jsx';
 import FloorDEBlueprint from '../../components/floormap/FloorDEBlueprint.jsx';
 import { isUnitAvailable } from '../../components/floormap/UnitStatusElements.jsx';
-import { building, floors } from '../../data/mockBuilding.js';
+import { useBuilding } from '../../context/BuildingContext.jsx';
 import { monthBn } from '../../lib/bangla.js';
 import '../../components/floormap/floormap.css';
 
@@ -108,6 +108,7 @@ function buildDynamicLegendPills(floor) {
 
 /** Page 2 — Interactive Architectural Floor Map View (ফ্লোর ম্যাপ ভিউ). */
 export default function FloorMapPage() {
+  const { building, floors } = useBuilding();
   const { floorNumber } = useParams();
   const navigate = useNavigate();
 

@@ -1,15 +1,8 @@
-// Mock data for the public website. Will be replaced by GET /api/public/building.
-//
-// Floors are a dynamic array: add / remove / hide a floor here (later: from the
-// Admin Panel) and the building illustration re-stacks itself automatically.
-// Each floor's `units[].widthPct` must sum to 100. Matching cumulative
-// percentages on different floors makes their divider lines align vertically:
-//   E1+E2 = D1+D2 = C1 = B1 = 62%  ->  one continuous line down the building.
-//
-// Unit `status`:
-//   'available' -> To-Let (clickable, gets a "ক্লিক করুন" callout)
-//   'occupied'  -> rented by a tenant
-//   'owner'     -> landlord's own flat (বাড়িওয়ালা), never for rent
+// Central initial data for the public website and the private family Admin Panel (/admin).
+// Persisted in localStorage via BuildingContext so any change in /admin immediately
+// updates Page 1 (/), Page 2 (/floor/:id), and Page 3 (/flat/:unitId).
+
+export const STORAGE_SCHEMA_VERSION = 'moni-lodge-v1';
 
 export const building = {
   name: 'মনি লজ',
@@ -19,7 +12,6 @@ export const building = {
     '২৪ ঘণ্টা পানি ও সিসিটিভি নিরাপত্তা',
     'বর্ষায় জলাবদ্ধতামুক্ত রাস্তা',
   ],
-  // Owner setting: show rent amount on occupied flats too, or only "ভাড়া হয়ে গেছে".
   showRentOnOccupied: true,
 
   location: {
@@ -32,7 +24,6 @@ export const building = {
       'আলিপুরের দিকে রাস্তা ধরে মাত্র ৩–৪ মিনিট হাঁটার দূরত্বে।',
       'মারকাজুল হেকমাহ ইন্টারন্যাশনাল মাদ্রাসার পাশে।',
     ],
-    // Plain Google Maps embed (no API key needed), pinned via the Plus Code of "Moni Lodge".
     mapEmbedUrl: 'https://www.google.com/maps?q=Moni+Lodge,+V34V%2B4RG,+Noakhali&output=embed',
     mapLinkUrl: 'https://maps.app.goo.gl/ftChnHJmQ6modLxo9',
   },
@@ -49,7 +40,6 @@ export const building = {
     externalMediaUrl: 'http://tiny.cc/FlatsPhotosAndVideo',
   },
 
-  // Surrounding environment context for the architectural floor map (Top = West)
   surroundings: {
     westTopBn: '⬅️ পশ্চিম দিক — আমাদের নিজস্ব খালি জায়গা (খোলামেলা পরিবেশ)',
     eastBottomBn: '🛣️ সামনের রাস্তা (পূর্ব দিক) — রাস্তার ওপারে ভবন',
@@ -84,6 +74,8 @@ export const floors = [
         washrooms: 2,
         balconies: 3,
         driveVideoId: '',
+        renterNameBn: '',
+        renterPhone: '',
         roomsSummaryBn: '৩টি বেডরুম • ড্রয়িং-ডাইনিং • ২টি বাথরুম • ৩টি বারান্দা • কিচেন',
         facingBn: 'দক্ষিণ-পূর্ব মুখী (প্রচুর আলো-বাতাস)',
       },
@@ -91,10 +83,12 @@ export const floors = [
         id: 'E2',
         widthPct: 24,
         status: 'occupied',
-        rent: 8500,
+        rent: 9500,
         bedrooms: 2,
         washrooms: 2,
         balconies: 2,
+        renterNameBn: 'জনাব তানভীর আহমেদ',
+        renterPhone: '01712345678',
       },
       {
         id: 'E3',
@@ -104,6 +98,8 @@ export const floors = [
         bedrooms: 3,
         washrooms: 2,
         balconies: 3,
+        renterNameBn: 'জনাব মো. কামরুল হাসান',
+        renterPhone: '01819223344',
       },
     ],
   },
@@ -129,15 +125,19 @@ export const floors = [
         bedrooms: 3,
         washrooms: 2,
         balconies: 3,
+        renterNameBn: 'জনাব ডা. মাহবুবুর রহমান',
+        renterPhone: '01711889900',
       },
       {
         id: 'D2',
         widthPct: 24,
         status: 'occupied',
-        rent: 8500,
+        rent: 9500,
         bedrooms: 2,
         washrooms: 2,
         balconies: 2,
+        renterNameBn: 'জনাব সাইফুল ইসলাম',
+        renterPhone: '01814556677',
       },
       {
         id: 'D3',
@@ -150,6 +150,8 @@ export const floors = [
         washrooms: 2,
         balconies: 3,
         driveVideoId: '',
+        renterNameBn: '',
+        renterPhone: '',
         roomsSummaryBn: '৩টি বেডরুম • ড্রয়িং-ডাইনিং • ২টি বাথরুম • ৩টি বারান্দা • কিচেন',
         facingBn: 'উত্তর-পূর্ব মুখী (দুই দিকেই রাস্তা ও খোলা জায়গা)',
       },
@@ -181,10 +183,12 @@ export const floors = [
         id: 'C1',
         widthPct: 62,
         status: 'occupied',
-        rent: 16000,
+        rent: 15000,
         bedrooms: 5,
         washrooms: 4,
         balconies: 4,
+        renterNameBn: 'জনাব আলহাজ্ব আবদুল করিম',
+        renterPhone: '01715667788',
       },
       {
         id: 'C2',
@@ -194,6 +198,8 @@ export const floors = [
         bedrooms: 3,
         washrooms: 2,
         balconies: 3,
+        renterNameBn: 'জনাব মো. রফিকুল ইসলাম',
+        renterPhone: '01817445566',
       },
     ],
   },
@@ -236,6 +242,8 @@ export const floors = [
         bedrooms: 3,
         washrooms: 2,
         balconies: 3,
+        renterNameBn: 'জনাব আনোয়ার হোসেন',
+        renterPhone: '01911223344',
         roomsSummaryBn: '৩টি বেডরুম • ড্রয়িং-ডাইনিং • ২টি বাথরুম • ৩টি বারান্দা • কিচেন',
         facingBn: 'উত্তর-পূর্ব মুখী (দুই দিকেই রাস্তা ও খোলা জায়গা)',
         tenantTypeBn: 'শুধুমাত্র ফ্যামিলি',
@@ -250,15 +258,102 @@ export const floors = [
     blueprintReady: false,
     isVisible: true,
     units: [
-      { id: 'A1', widthPct: 45, status: 'occupied', rent: 11000, bedrooms: 3, washrooms: 2, balconies: 2 },
-      { id: 'A2', widthPct: 55, status: 'occupied', rent: 12000, bedrooms: 3, washrooms: 2, balconies: 3 },
+      {
+        id: 'A1',
+        widthPct: 45,
+        status: 'occupied',
+        rent: 11000,
+        bedrooms: 3,
+        washrooms: 2,
+        balconies: 2,
+        renterNameBn: 'জনাব নাজমুল হুদা',
+        renterPhone: '01716778899',
+      },
+      {
+        id: 'A2',
+        widthPct: 55,
+        status: 'occupied',
+        rent: 12000,
+        bedrooms: 3,
+        washrooms: 2,
+        balconies: 3,
+        renterNameBn: 'জনাব মো. জহির উদ্দিন',
+        renterPhone: '01818990011',
+      },
     ],
   },
 ];
 
+// Initial monthly rent ledger records (keyed by 'YYYY-MM' -> unitId).
+// Pre-populated with varied states (ON_TIME, LATE, PARTIAL, and UNPAID) for 2026-11.
+export const initialPaymentsByMonth = {
+  '2026-11': {
+    E3: {
+      paidAmount: 12000,
+      paymentDate: '2026-11-06',
+      method: 'bKash',
+      paidOnTime: true,
+      note: '',
+    },
+    E2: {
+      paidAmount: 6000,
+      paymentDate: '2026-11-05',
+      method: 'Cash',
+      paidOnTime: true,
+      note: 'প্রথম কিস্তি জমা, বাকি ৩,৫০০ টাকা ২০ তারিখে দেবেন',
+    },
+    D1: {
+      paidAmount: 12000,
+      paymentDate: '2026-11-05',
+      method: 'Bank',
+      paidOnTime: true,
+      note: '',
+    },
+    // D2 is UNPAID (৳ ৯,৫০০ বাকি)
+    C1: {
+      paidAmount: 15000,
+      paymentDate: '2026-11-08',
+      method: 'Cash',
+      paidOnTime: true,
+      note: '',
+    },
+    // C2 is UNPAID (৳ ১২,০০০ বাকি)
+    B2: {
+      paidAmount: 12000,
+      paymentDate: '2026-11-15',
+      method: 'Cash',
+      paidOnTime: false,
+      note: '১০ তারিখের পরে দিয়েছেন',
+    },
+    A1: {
+      paidAmount: 8000,
+      paymentDate: '2026-11-07',
+      method: 'bKash',
+      paidOnTime: true,
+      note: 'প্রথম কিস্তি বিকাশে দিয়েছেন',
+    },
+    A2: {
+      paidAmount: 12000,
+      paymentDate: '2026-11-09',
+      method: 'bKash',
+      paidOnTime: true,
+      note: '',
+    },
+  },
+  '2026-10': {
+    E2: { paidAmount: 9500, paymentDate: '2026-10-07', method: 'Cash', paidOnTime: true, note: '' },
+    E3: { paidAmount: 12000, paymentDate: '2026-10-06', method: 'bKash', paidOnTime: true, note: '' },
+    D1: { paidAmount: 12000, paymentDate: '2026-10-04', method: 'Bank', paidOnTime: true, note: '' },
+    D2: { paidAmount: 9500, paymentDate: '2026-10-14', method: 'Cash', paidOnTime: false, note: '' },
+    C1: { paidAmount: 15000, paymentDate: '2026-10-08', method: 'Cash', paidOnTime: true, note: '' },
+    C2: { paidAmount: 12000, paymentDate: '2026-10-09', method: 'bKash', paidOnTime: true, note: '' },
+    B2: { paidAmount: 12000, paymentDate: '2026-10-05', method: 'Cash', paidOnTime: true, note: '' },
+    A1: { paidAmount: 11000, paymentDate: '2026-10-10', method: 'Cash', paidOnTime: true, note: '' },
+    A2: { paidAmount: 12000, paymentDate: '2026-10-07', method: 'bKash', paidOnTime: true, note: '' },
+  },
+};
+
 // Default Admin-Organized Room-by-Room Media Sections for available flats.
-// When a real `driveFileId` is set from the Admin Panel, the frontend loads:
-//   https://drive.google.com/thumbnail?id=${driveFileId}&sz=w1000
 export const defaultRoomMediaSections = [
   {
     id: 'sec-drawing',

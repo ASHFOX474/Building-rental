@@ -313,10 +313,36 @@
 }
 
 .home__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 12px;
   margin-top: 32px;
   text-align: center;
   color: var(--text-muted);
-  font-size: 13px;
+  font-size: 14px;
+}
+
+.home__admin-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border: 1.4px solid rgba(31, 36, 33, 0.25);
+  border-radius: 999px;
+  background: var(--surface-sand);
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 13.5px;
+  text-decoration: none;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.home__admin-link:hover {
+  border-color: var(--terracotta);
+  background: #fdf8f2;
+  color: var(--terracotta);
 }
 
 @media (max-width: 760px) {

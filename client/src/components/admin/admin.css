@@ -1,0 +1,1235 @@
+/* ==========================================================================
+   Private Family Admin Panel (/admin) — Elderly-Friendly High-Contrast Theme
+   Terracotta & Chuna Palette + Large Legible Bangla Typography (18px–34px)
+   ========================================================================== */
+
+.adm-page,
+.adm-login-page {
+  min-height: 100vh;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 20px 16px 56px;
+  font-size: 19px;
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+/* ---------- Puthichitro Double-Bordered Card ---------- */
+.adm-puthi-card {
+  position: relative;
+  padding: 26px 24px;
+  border: 2.2px solid #b5532e;
+  border-radius: 20px;
+  background: var(--surface-white);
+  box-shadow: 0 6px 20px rgba(31, 36, 33, 0.07);
+}
+
+.adm-puthi-card__inner-rule {
+  position: absolute;
+  inset: 6px;
+  border: 1px solid rgba(200, 90, 50, 0.3);
+  border-radius: 14px;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   1. GIANT 4-DIGIT PIN LOGIN SCREEN
+   ========================================================================== */
+
+.adm-login-topbar {
+  max-width: 500px;
+  margin: 0 auto 14px;
+}
+
+.adm-pin-card {
+  max-width: 500px;
+  margin: 0 auto;
+  text-align: center;
+  background: linear-gradient(180deg, #ffffff 0%, #faf5ec 100%);
+}
+
+.adm-pin-card--shake {
+  animation: adm-shake 0.38s ease-in-out;
+}
+
+@keyframes adm-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-8px);
+  }
+  75% {
+    transform: translateX(8px);
+  }
+}
+
+.adm-pin-card__title {
+  margin: 0 0 6px;
+  font-size: clamp(25px, 4vw, 31px);
+  color: var(--ink);
+}
+
+.adm-pin-card__subtitle {
+  margin: 0 0 20px;
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* 4 Large PIN Indicator Boxes */
+.adm-pin-boxes {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.adm-pin-box {
+  width: 64px;
+  height: 68px;
+  border: 2.5px solid var(--ink);
+  border-radius: 14px;
+  background: var(--bg-chuna);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  color: var(--text-muted);
+  transition: all 0.15s;
+}
+
+.adm-pin-box--filled {
+  border-color: var(--available);
+  background: var(--available-bg);
+  color: var(--available);
+  transform: scale(1.04);
+}
+
+.adm-pin-error {
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  border: 2px solid var(--unpaid);
+  border-radius: 12px;
+  background: var(--unpaid-bg);
+  color: var(--unpaid);
+  font-weight: 700;
+  font-size: 18px;
+}
+
+/* Giant 3x4 Touch Keypad */
+.adm-keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.adm-key-btn {
+  min-height: 64px;
+  border: 2px solid var(--ink);
+  border-radius: 15px;
+  background: var(--surface-white);
+  color: var(--ink);
+  font-family: var(--font-heading);
+  font-size: 28px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 2px 3px 0 var(--ink);
+  transition: transform 0.08s, background-color 0.12s;
+  user-select: none;
+}
+
+.adm-key-btn:hover {
+  background: var(--surface-sand);
+}
+
+.adm-key-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0 1px 0 var(--ink);
+  background: #e5dec9;
+}
+
+.adm-key-btn--action {
+  font-size: 18px;
+  background: var(--surface-sand);
+  color: var(--terracotta);
+}
+
+.adm-remember-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.adm-remember-row input {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--available);
+}
+
+.adm-pin-hint {
+  margin: 10px 0 0;
+  font-size: 16px;
+  color: var(--text-muted);
+}
+
+/* ==========================================================================
+   2. ADMIN HEADER & 3 GIANT TOP TABS
+   ========================================================================== */
+
+.adm-header {
+  margin-bottom: 22px;
+}
+
+.adm-topbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.adm-topbar__title {
+  margin: 0;
+  font-size: clamp(23px, 3.4vw, 30px);
+  text-align: center;
+  color: var(--ink);
+}
+
+.adm-back-btn,
+.adm-logout-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 50px;
+  padding: 8px 18px;
+  border: 2px solid var(--ink);
+  border-radius: 13px;
+  background: var(--surface-white);
+  color: var(--ink);
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 2px 3px 0 var(--ink);
+  transition: transform 0.1s, background-color 0.15s;
+}
+
+.adm-back-btn:hover {
+  background: var(--surface-sand);
+}
+
+.adm-logout-btn {
+  background: #fee2e2;
+  border-color: var(--unpaid);
+  color: var(--unpaid);
+}
+
+.adm-logout-btn:hover {
+  background: #fecaca;
+}
+
+/* 3 Giant Top Tabs */
+.adm-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.adm-tab-btn {
+  min-height: 58px;
+  padding: 12px 16px;
+  border: 2.2px solid var(--ink);
+  border-radius: 15px;
+  background: var(--surface-sand);
+  color: var(--ink);
+  font-family: var(--font-heading);
+  font-size: 19px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 2px 3px 0 rgba(31, 36, 33, 0.25);
+  transition: all 0.15s;
+}
+
+.adm-tab-btn:hover {
+  background: #e6dfd2;
+}
+
+.adm-tab-btn--active {
+  background: var(--terracotta);
+  color: #ffffff;
+  border-color: var(--ink);
+  box-shadow: 3px 4px 0 var(--ink);
+}
+
+/* ==========================================================================
+   3. TAB 1: MONTHLY RENT LEDGER ("📖 ভাড়ার খাতা")
+   ========================================================================== */
+
+.adm-ledger {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* A. Month / Year Switcher Bar */
+.adm-month-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 20px;
+  border: 2px solid var(--ink);
+  border-radius: 18px;
+  background: var(--surface-sand);
+}
+
+.adm-month-bar__current {
+  text-align: center;
+}
+
+.adm-month-bar__label {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.adm-month-bar__title {
+  margin: 0;
+  font-size: clamp(24px, 3.5vw, 30px);
+  color: var(--ink);
+}
+
+.adm-month-bar__btn {
+  min-height: 52px;
+  padding: 10px 20px;
+  border: 2px solid var(--ink);
+  border-radius: 13px;
+  background: var(--surface-white);
+  color: var(--ink);
+  font-family: var(--font-heading);
+  font-size: 18.5px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 2px 3px 0 var(--ink);
+}
+
+.adm-month-bar__btn:hover {
+  background: #fdf8f2;
+}
+
+/* B. Top Financial Summary Board (3 Big Cards) */
+.adm-summary-board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.adm-summary-card {
+  padding: 20px 18px;
+  border: 2.5px solid var(--ink);
+  border-radius: 18px;
+  text-align: center;
+  box-shadow: 3px 4px 0 rgba(31, 36, 33, 0.14);
+}
+
+.adm-summary-card--expected {
+  background: var(--surface-white);
+}
+
+.adm-summary-card--collected {
+  background: var(--available-bg);
+  border-color: var(--available);
+}
+
+.adm-summary-card--due {
+  background: var(--unpaid-bg);
+  border-color: var(--unpaid);
+}
+
+.adm-summary-card__heading {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.adm-summary-card__amount {
+  margin: 6px 0;
+  font-family: var(--font-heading);
+  font-size: clamp(28px, 3.8vw, 35px);
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.adm-summary-card--expected .adm-summary-card__amount {
+  color: var(--ink);
+}
+
+.adm-summary-card--collected .adm-summary-card__amount {
+  color: var(--available);
+}
+
+.adm-summary-card--due .adm-summary-card__amount {
+  color: var(--unpaid);
+}
+
+.adm-summary-card__sub {
+  display: block;
+  font-size: 16.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* C. 1-Click Filter Pills */
+.adm-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.adm-filter-pill {
+  min-height: 52px;
+  padding: 10px 18px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: var(--surface-white);
+  color: var(--ink);
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.adm-filter-pill:hover {
+  background: var(--surface-sand);
+}
+
+.adm-filter-pill--active {
+  background: var(--ink);
+  color: #ffffff;
+}
+
+.adm-filter-pill--active-due {
+  background: var(--unpaid);
+  border-color: var(--ink);
+  color: #ffffff;
+}
+
+.adm-filter-pill--active-paid {
+  background: var(--available);
+  border-color: var(--ink);
+  color: #ffffff;
+}
+
+.adm-filter-pill--active-vacant {
+  background: var(--terracotta);
+  border-color: var(--ink);
+  color: #ffffff;
+}
+
+/* D. Floor-by-Floor Rent Ledger Cards */
+.adm-floor-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.adm-floor-section__header {
+  margin-bottom: 10px;
+}
+
+.adm-floor-section__badge {
+  display: inline-block;
+  padding: 5px 16px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: var(--surface-sand);
+  font-family: var(--font-heading);
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.adm-unit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.adm-ledger-card {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 18px;
+  align-items: center;
+  padding: 20px 22px;
+  border: 2.2px solid var(--ink);
+  border-radius: 18px;
+  background: var(--surface-white);
+  box-shadow: 0 3px 10px rgba(31, 36, 33, 0.05);
+}
+
+/* Card Border Accents by State */
+.adm-ledger-card--on_time {
+  border-left: 8px solid var(--available);
+}
+
+.adm-ledger-card--late {
+  border-left: 8px solid var(--ochre);
+}
+
+.adm-ledger-card--partial {
+  border-left: 8px solid var(--ochre);
+  background: #fffdf8;
+}
+
+.adm-ledger-card--unpaid {
+  border-left: 8px solid var(--unpaid);
+  background: #fffafa;
+}
+
+/* Owner Unit Card */
+.adm-ledger-card--owner {
+  grid-template-columns: 1fr;
+  background: var(--surface-sand);
+  border-color: #7a736a;
+  padding: 16px 22px;
+}
+
+.adm-ledger-card__owner-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+}
+
+.adm-ledger-card__owner-title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 21px;
+  font-weight: 700;
+  color: #3e3a35;
+}
+
+/* Vacant / To-Let Unit Card */
+.adm-ledger-card--vacant {
+  border-style: dashed;
+  border-color: var(--available);
+  background: #f4fbf6;
+}
+
+.adm-vacant-chip {
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--available-bg);
+  border: 1.5px solid var(--available);
+  color: var(--available);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.adm-ledger-card__vacant-title {
+  margin: 6px 0 4px;
+  font-family: var(--font-heading);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--available);
+}
+
+.adm-tolet-jump-btn {
+  min-height: 52px;
+  width: 100%;
+  padding: 10px 18px;
+  border: 2px solid var(--ink);
+  border-radius: 13px;
+  background: var(--available);
+  color: #ffffff;
+  font-family: var(--font-heading);
+  font-size: 18.5px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 2px 3px 0 var(--ink);
+}
+
+/* Left Side of Occupied Tenant Card */
+.adm-ledger-card__top-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.adm-unit-tag {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 8px;
+  background: var(--terracotta);
+  color: #ffffff;
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.adm-unit-tag--owner {
+  background: #5c4033;
+}
+
+.adm-unit-tag--vacant {
+  background: var(--available);
+}
+
+.adm-ledger-card__tenant {
+  margin: 8px 0 6px;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.adm-ledger-card__phone-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.adm-ledger-card__phone-num {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.adm-call-inline-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 42px;
+  padding: 5px 14px;
+  border: 1.8px solid var(--ink);
+  border-radius: 10px;
+  background: var(--surface-sand);
+  color: var(--ink);
+  font-family: var(--font-heading);
+  font-size: 17px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.adm-call-inline-btn:hover {
+  background: var(--terracotta);
+  color: #ffffff;
+}
+
+.adm-ledger-card__rent-line {
+  margin: 0;
+  font-size: 19px;
+  color: var(--ink);
+}
+
+.adm-ledger-card__rent-line strong {
+  font-family: var(--font-heading);
+  font-size: 22px;
+  color: var(--terracotta);
+}
+
+.adm-ledger-card__rule-note {
+  font-size: 16px;
+  color: var(--text-muted);
+}
+
+/* Right Side: 4 Clear Visual Payment States */
+.adm-state-box {
+  padding: 16px 18px;
+  border-radius: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.adm-state-box--ontime {
+  background: var(--available-bg);
+  border: 2px solid var(--available);
+}
+
+.adm-state-box--late {
+  background: var(--late-bg);
+  border: 2px solid var(--late);
+}
+
+.adm-state-box--partial {
+  background: #fff3d6;
+  border: 2px solid var(--late);
+}
+
+.adm-state-box--unpaid {
+  background: var(--unpaid-bg);
+  border: 2px solid var(--unpaid);
+}
+
+.adm-state-box__main {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 21px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.adm-state-box--ontime .adm-state-box__main {
+  color: #1b4332;
+}
+
+.adm-state-box--late .adm-state-box__main {
+  color: #92400e;
+}
+
+.adm-state-box__due-highlight {
+  color: var(--unpaid);
+}
+
+.adm-state-box__meta {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.adm-state-box__note {
+  margin: 0;
+  font-size: 16px;
+  color: var(--text-muted);
+}
+
+.adm-state-box__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.adm-state-box__unpaid-badge {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 21px;
+  font-weight: 700;
+  color: var(--unpaid);
+}
+
+/* Action Buttons inside Cards */
+.adm-receive-rent-btn {
+  min-height: 56px;
+  width: 100%;
+  padding: 12px 18px;
+  border: 2.2px solid var(--ink);
+  border-radius: 13px;
+  background: var(--available);
+  color: #ffffff;
+  font-family: var(--font-heading);
+  font-size: 21px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 3px 4px 0 var(--ink);
+  transition: transform 0.1s, background-color 0.15s;
+}
+
+.adm-receive-rent-btn:hover {
+  background: #21523c;
+}
+
+.adm-receive-rent-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+
+.adm-collect-rest-btn {
+  flex: 1;
+  min-height: 52px;
+  padding: 10px 16px;
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  background: var(--terracotta);
+  color: #ffffff;
+  font-family: var(--font-heading);
+  font-size: 19px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 2px 3px 0 var(--ink);
+}
+
+.adm-edit-btn {
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 6px 14px;
+  border: 1.6px solid var(--ink);
+  border-radius: 10px;
+  background: var(--surface-white);
+  color: var(--ink);
+  font-family: var(--font-heading);
+  font-size: 16.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.adm-edit-btn:hover {
+  background: var(--surface-sand);
+}
+
+/* ==========================================================================
+   4. PAYMENT ENTRY / EDIT MODAL ("ভাড়া জমা নিন")
+   ========================================================================== */
+
+.adm-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(20, 23, 21, 0.78);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.adm-modal {
+  width: 100%;
+  max-width: 680px;
+  max-height: 92vh;
+  overflow-y: auto;
+  background: var(--bg-chuna);
+  padding: 24px;
+}
+
+.adm-modal__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 2px dashed rgba(31, 36, 33, 0.2);
+  margin-bottom: 16px;
+}
+
+.adm-modal__floor-tag {
+  display: inline-block;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--terracotta);
+}
+
+.adm-modal__title {
+  margin: 4px 0 0;
+  font-size: clamp(22px, 3vw, 26px);
+  color: var(--ink);
+}
+
+.adm-modal__close {
+  min-height: 46px;
+  padding: 6px 14px;
+  border: 2px solid var(--ink);
+  border-radius: 11px;
+  background: var(--surface-white);
+  font-family: var(--font-heading);
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.adm-modal__rest-banner {
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border: 2px solid var(--late);
+  border-radius: 12px;
+  background: var(--late-bg);
+  font-size: 18.5px;
+  color: var(--ink);
+  text-align: center;
+}
+
+.adm-modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.adm-fieldset {
+  margin: 0;
+  padding: 16px;
+  border: 1.8px solid rgba(31, 36, 33, 0.25);
+  border-radius: 15px;
+  background: var(--surface-white);
+}
+
+.adm-fieldset__legend {
+  padding: 0 8px;
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* 3 Giant Payment Method Cards */
+.adm-method-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.adm-method-card {
+  min-height: 68px;
+  padding: 10px;
+  border: 2px solid var(--ink);
+  border-radius: 13px;
+  background: var(--bg-chuna);
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-family: var(--font-heading);
+  font-size: 17.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.adm-method-card__icon {
+  font-size: 24px;
+}
+
+.adm-method-card--active {
+  background: var(--available-bg);
+  border-color: var(--available);
+  border-width: 2.5px;
+  box-shadow: 2px 3px 0 var(--available);
+}
+
+/* 2 Giant Amount Radio Buttons */
+.adm-amount-radios {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.adm-radio-card {
+  min-height: 56px;
+  padding: 12px 16px;
+  border: 2px solid var(--ink);
+  border-radius: 13px;
+  background: var(--bg-chuna);
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-heading);
+  font-size: 19px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.adm-radio-card--active-green {
+  background: var(--available-bg);
+  border-color: var(--available);
+  border-width: 2.5px;
+}
+
+.adm-radio-card--active-amber {
+  background: var(--late-bg);
+  border-color: var(--late);
+  border-width: 2.5px;
+}
+
+/* Partial Payment Input Box */
+.adm-partial-box {
+  margin-top: 14px;
+  padding: 14px;
+  border: 2px dashed var(--late);
+  border-radius: 13px;
+  background: #fffdf7;
+}
+
+.adm-partial-box__label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.adm-partial-box__input {
+  width: 100%;
+  min-height: 54px;
+  padding: 8px 14px;
+  border: 2px solid var(--ink);
+  border-radius: 11px;
+  font-family: var(--font-heading);
+  font-size: 26px;
+  font-weight: 700;
+  background: var(--surface-white);
+}
+
+.adm-partial-presets {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.adm-partial-presets__lbl {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.adm-preset-chip {
+  min-height: 42px;
+  padding: 6px 14px;
+  border: 1.8px solid var(--ink);
+  border-radius: 999px;
+  background: var(--surface-white);
+  font-family: var(--font-heading);
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.adm-preset-chip--active {
+  background: var(--terracotta);
+  color: #ffffff;
+}
+
+.adm-partial-box__due {
+  margin: 12px 0 0;
+  font-family: var(--font-heading);
+  font-size: 22px;
+  color: var(--unpaid);
+}
+
+/* Date & Punctuality Controls */
+.adm-date-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.adm-date-row__label {
+  font-weight: 700;
+  font-size: 18.5px;
+}
+
+.adm-date-row__input {
+  min-height: 50px;
+  padding: 8px 14px;
+  border: 2px solid var(--ink);
+  border-radius: 11px;
+  font-family: var(--font-body);
+  font-size: 18px;
+  font-weight: 600;
+  background: var(--bg-chuna);
+}
+
+.adm-punctuality-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.adm-punctuality-btn {
+  min-height: 52px;
+  padding: 10px 14px;
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  background: var(--bg-chuna);
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.adm-punctuality-btn--ontime {
+  background: var(--available-bg);
+  border-color: var(--available);
+  color: #1b4332;
+}
+
+.adm-punctuality-btn--late {
+  background: var(--late-bg);
+  border-color: var(--late);
+  color: #92400e;
+}
+
+.adm-note-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.adm-note-row__label {
+  font-weight: 700;
+  font-size: 17.5px;
+}
+
+.adm-note-row__input {
+  min-height: 50px;
+  padding: 8px 14px;
+  border: 1.8px solid var(--ink);
+  border-radius: 11px;
+  font-size: 18px;
+  font-family: var(--font-body);
+  background: var(--bg-chuna);
+}
+
+/* Huge Save Button */
+.adm-save-btn {
+  min-height: 60px;
+  width: 100%;
+  padding: 12px 20px;
+  border: 2.5px solid var(--ink);
+  border-radius: 15px;
+  background: var(--available);
+  color: #ffffff;
+  font-family: var(--font-heading);
+  font-size: 23px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 3px 4px 0 var(--ink);
+}
+
+.adm-save-btn:hover {
+  background: #21523c;
+}
+
+/* Reset / Undo Payment Zone */
+.adm-modal__reset-zone {
+  padding-top: 10px;
+  border-top: 1.5px dashed rgba(31, 36, 33, 0.2);
+  text-align: center;
+}
+
+.adm-reset-trigger-btn {
+  min-height: 46px;
+  padding: 8px 16px;
+  border: 1.8px solid var(--unpaid);
+  border-radius: 11px;
+  background: var(--unpaid-bg);
+  color: var(--unpaid);
+  font-family: var(--font-heading);
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.adm-reset-confirm {
+  padding: 12px;
+  border: 2px solid var(--unpaid);
+  border-radius: 12px;
+  background: var(--unpaid-bg);
+  font-weight: 700;
+  color: var(--unpaid);
+}
+
+.adm-reset-confirm__btns {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.adm-reset-confirm__yes,
+.adm-reset-confirm__no {
+  min-height: 46px;
+  padding: 8px 18px;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  font-family: var(--font-heading);
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.adm-reset-confirm__yes {
+  background: var(--unpaid);
+  color: #ffffff;
+}
+
+.adm-reset-confirm__no {
+  background: var(--surface-white);
+  color: var(--ink);
+}
+
+/* ---------- Placeholder Cards for Tabs 2 & 3 ---------- */
+.adm-placeholder-card {
+  text-align: center;
+  max-width: 760px;
+  margin: 24px auto;
+  padding: 36px 24px;
+}
+
+.adm-placeholder-card__badge {
+  display: inline-block;
+  margin-bottom: 10px;
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: var(--surface-sand);
+  border: 1.5px solid var(--terracotta);
+  color: var(--terracotta);
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.adm-placeholder-card__title {
+  margin: 0 0 12px;
+  font-size: 26px;
+}
+
+.adm-placeholder-card__desc {
+  max-width: 580px;
+  margin: 0 auto 22px;
+  color: var(--text-muted);
+}
+
+.adm-back-to-ledger-btn {
+  min-height: 52px;
+  padding: 10px 22px;
+  border: 2px solid var(--ink);
+  border-radius: 13px;
+  background: var(--terracotta);
+  color: #ffffff;
+  font-family: var(--font-heading);
+  font-size: 19px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 2px 3px 0 var(--ink);
+}
+
+/* ---------- Responsive Layout ---------- */
+@media (max-width: 920px) {
+  .adm-tabs,
+  .adm-summary-board,
+  .adm-ledger-card {
+    grid-template-columns: 1fr;
+  }
+
+  .adm-method-grid,
+  .adm-punctuality-grid {
+    grid-template-columns: 1fr;
+  }
+}
