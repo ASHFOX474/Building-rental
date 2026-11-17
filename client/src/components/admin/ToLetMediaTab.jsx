@@ -84,7 +84,7 @@ function countUnitMedia(unit) {
 
 /** Format the Google Drive folder hierarchy path for a floor and unit. */
 function getDriveFolderHierarchyLabel(floor, unitId) {
-  constengFloorOrdinal =
+  const engFloorOrdinal =
     floor.floorNumber === 5
       ? '4th Floor'
       : floor.floorNumber === 4
@@ -94,15 +94,7 @@ function getDriveFolderHierarchyLabel(floor, unitId) {
       : floor.floorNumber === 2
       ? '1st Floor'
       : 'Ground Floor';
-  return `All flats images and video / ${thengFloorOrdinal(floor.floorNumber)} - ${floor.nameBn} (Floor ${floor.id}) / ${unitId}`;
-}
-
-function thengFloorOrdinal(floorNumber) {
-  if (floorNumber === 5) return '4th Floor';
-  if (floorNumber === 4) return '3rd Floor';
-  if (floorNumber === 3) return '2nd Floor';
-  if (floorNumber === 2) return '1st Floor';
-  return 'Ground Floor';
+  return `All flats images and video / ${engFloorOrdinal} - ${floor.nameBn} (Floor ${floor.id}) / ${unitId}`;
 }
 
 /**
