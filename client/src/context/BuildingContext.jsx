@@ -6,6 +6,11 @@ import {
   initialPaymentsByMonth,
 } from '../data/mockBuilding.js';
 import { toBanglaDigits } from '../lib/bangla.js';
+import {
+  fetchDriveStatus,
+  syncAllUnitsFromDriveApi,
+  syncUnitFromDriveApi,
+} from '../api/driveApi.js';
 
 const BUILDING_STORAGE_KEY = 'moni_lodge_building_v1';
 const FLOORS_STORAGE_KEY = 'moni_lodge_floors_v1';
@@ -63,6 +68,18 @@ export function BuildingProvider({ children }) {
     } catch {
       return '1234';
     }
+  });
+
+  const [driveStatus, setDriveStatus] = useState({
+    loading: true,
+    connected: false,
+    authMode: 'service-account',
+    serviceAccountEmail: null,
+    rootFolderId: '',
+    rootFolderName: '',
+    rootFolderUrl: '',
+    lastSyncedAt: null,
+    error: '',
   });
 
   useEffect(() => {
@@ -154,6 +171,95 @@ export function BuildingProvider({ children }) {
       }))
     );
   }, []);
+
+  /** Scan all floors & units from Google Drive and update matching units in state. */
+  const syncAllFromDrive = useCallback(async ({ overwriteEmpty = true } = {}) => {
+    try {
+      const statusRes = await fetchDriveStatus();
+      const syncRes = await syncAllUnitsFromDriveApi();
+
+      setFloors((prevFloors) =>
+        prevFloors.map((floor) => ({
+          ...floor,
+          units: floor.units.map((unit) => {
+            const driveUnit = syncRes.units?.[unit.id];
+            if (!driveUnit) return unit;
+
+            const hasDriveContent =
+              driveUnit.mediaSections.length > 0 || Boolean(driveUnit.driveVideoId);
+
+            if (!overwriteEmpty && !hasDriveContent) {
+              return {
+                ...unit,
+                driveFolderId: driveUnit.driveFolderId,
+                driveFolderUrl: driveUnit.driveFolderUrl,
+              };
+            }
+
+            return {
+              ...unit,
+              driveFolderId: driveUnit.driveFolderId,
+              driveFolderUrl: driveUnit.driveFolderUrl,
+              driveVideoId: driveUnit.driveVideoId,
+              mainVideoFileName: driveUnit.mainVideoFileName,
+              mainVideoUrl: '',
+              mediaSections: driveUnit.mediaSections,
+            };
+          }),
+        }))
+      );
+
+      setDriveStatus({
+        loading: false,
+        connected: true,
+        authMode: statusRes.authMode,
+        serviceAccountEmail: statusRes.serviceAccountEmail,
+        rootFolderId: statusRes.rootFolderId,
+        rootFolderName: statusRes.rootFolderName,
+        rootFolderUrl: statusRes.rootFolderUrl,
+        lastSyncedAt: syncRes.syncedAt,
+        error: '',
+      });
+
+      return syncRes;
+    } catch (err) {
+      setDriveStatus((prev) => ({
+        ...prev,
+        loading: false,
+        connected: false,
+        error: err.message || 'Google Drive connection failed',
+      }));
+      throw err;
+    }
+  }, []);
+
+  /** Scan a single unit folder from Google Drive and apply its live folders/files. */
+  const syncUnitFromDrive = useCallback(async (unitId, explicitFolderId = '') => {
+    const data = await syncUnitFromDriveApi(unitId, explicitFolderId);
+    updateUnit(unitId, {
+      driveFolderId: data.driveFolderId,
+      driveFolderUrl: data.driveFolderUrl,
+      driveVideoId: data.driveVideoId,
+      mainVideoFileName: data.mainVideoFileName,
+      mainVideoUrl: '',
+      mediaSections: data.mediaSections,
+    });
+    setDriveStatus((prev) => ({
+      ...prev,
+      connected: true,
+      authMode: data.authMode || prev.authMode,
+      lastSyncedAt: data.syncedAt,
+      error: '',
+    }));
+    return data;
+  }, [updateUnit]);
+
+  // Quietly connect & sync existing Google Drive media on app load
+  useEffect(() => {
+    syncAllFromDrive({ overwriteEmpty: false }).catch(() => {
+      // Backend might be offline during static preview; fallback cleanly
+    });
+  }, [syncAllFromDrive]);
 
   /** Toggle whether a floor is visible on the Public Website (`isVisible`). */
   const toggleFloorVisibility = useCallback((floorId) => {
@@ -290,6 +396,9 @@ export function BuildingProvider({ children }) {
         recordRentPayment,
         clearRentPayment,
         updateUnit,
+        driveStatus,
+        syncAllFromDrive,
+        syncUnitFromDrive,
         toggleFloorVisibility,
         addNextStory,
         removeFloor,

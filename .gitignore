@@ -5,10 +5,12 @@ node_modules/
 dist/
 build/
 
-# Environment & secrets (Google OAuth tokens, DB passwords, PIN hash)
+# Environment & secrets (Google OAuth tokens, Service Account keys, DB passwords, PIN hash)
 .env
 .env.*
 !.env.example
+drive-service-account.json
+server/drive-service-account.json
 
 # Logs
 *.log

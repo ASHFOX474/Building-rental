@@ -1,9 +1,16 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useBuilding } from '../../context/BuildingContext.jsx';
-import { defaultRoomMediaSections, getDefaultSectionsForUnit } from '../../data/mockBuilding.js';
+import { getDefaultSectionsForUnit } from '../../data/mockBuilding.js';
 import { isUnitAvailable } from '../floormap/UnitStatusElements.jsx';
 import { formatTaka, toBanglaDigits, toAsciiDigits } from '../../lib/bangla.js';
+import {
+  createDriveRoomFolderApi,
+  renameDriveFolderApi,
+  uploadFilesToDriveApi,
+  deleteDriveItemApi,
+  ensureDriveFilePublicApi,
+} from '../../api/driveApi.js';
 
 /** Extract a clean Google Drive File ID from either a raw ID or a full Drive sharing URL. */
 export function extractDriveFileId(input) {
@@ -17,32 +24,16 @@ export function extractDriveFileId(input) {
   return '';
 }
 
-/** Compress an uploaded image file to a Data URL so it persists cleanly in localStorage. */
-function fileToDataUrl(file) {
-  return new Promise((resolve) => {
-    if (!file.type.startsWith('image/')) {
-      resolve(URL.createObjectURL(file));
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const maxW = 1000;
-        const scale = img.width > maxW ? maxW / img.width : 1;
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.round(img.width * scale);
-        canvas.height = Math.round(img.height * scale);
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL('image/jpeg', 0.82));
-      };
-      img.onerror = () => resolve(e.target.result);
-      img.src = e.target.result;
-    };
-    reader.onerror = () => resolve(URL.createObjectURL(file));
-    reader.readAsDataURL(file);
-  });
+/** Extract a clean Google Drive Folder ID from a folders URL or raw ID. */
+export function extractDriveFolderId(input) {
+  if (!input) return '';
+  const trimmed = String(input).trim();
+  const matchFromFolder = trimmed.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+  if (matchFromFolder) return matchFromFolder[1];
+  const matchFromQuery = trimmed.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if (matchFromQuery) return matchFromQuery[1];
+  if (/^[a-zA-Z0-9_-]{15,}$/.test(trimmed)) return trimmed;
+  return '';
 }
 
 const MONTH_PRESETS = [
@@ -90,10 +81,16 @@ function getDriveFolderHierarchyLabel(floor, unitId) {
 
 /**
  * Tab 2: "🏠 ২. টু-লেট ও ছবি আপলোড"
- * Complete Live To-Let Availability Controller & Google Drive Room-by-Room Media Manager.
+ * Connected to the real Google Drive API via Express (/api/drive/*).
  */
 export default function ToLetMediaTab({ initialUnitId = 'E1' }) {
-  const { floors, updateUnit } = useBuilding();
+  const {
+    floors,
+    updateUnit,
+    driveStatus,
+    syncAllFromDrive,
+    syncUnitFromDrive,
+  } = useBuilding();
 
   // Floors ordered from highest floor down to 1st floor (includes hidden floors in Admin)
   const orderedFloors = floors
@@ -127,9 +124,12 @@ export default function ToLetMediaTab({ initialUnitId = 'E1' }) {
     }
   }
 
-  // UI states for Step 3 (Drive Sync), Step 4 (Main Video), and Step 5 (Room Sections)
-  const [syncingDrive, setSyncingDrive] = useState(false);
+  // UI states for Drive Sync, Main Video, and Room Sections
+  const [syncingUnit, setSyncingUnit] = useState(false);
+  const [syncingAll, setSyncingAll] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState('success'); // 'success' | 'error'
+  const [quotaNotice, setQuotaNotice] = useState(null); // { messageBn, folderUrl, roomName }
   const [replacingMainVideo, setReplacingMainVideo] = useState(false);
   const [uploadingMainVideo, setUploadingMainVideo] = useState(false);
   const [mainDriveLinkInput, setMainDriveLinkInput] = useState('');
@@ -138,6 +138,7 @@ export default function ToLetMediaTab({ initialUnitId = 'E1' }) {
   // Room Section Creator & Editor states
   const [showCustomRoomInput, setShowCustomRoomInput] = useState(false);
   const [customRoomTitle, setCustomRoomTitle] = useState('');
+  const [creatingRoom, setCreatingRoom] = useState(false);
   const [editingSecId, setEditingSecId] = useState(null);
   const [editingSecTitle, setEditingSecTitle] = useState('');
   const [confirmDeleteSecId, setConfirmDeleteSecId] = useState(null);
@@ -148,11 +149,12 @@ export default function ToLetMediaTab({ initialUnitId = 'E1' }) {
   const [newLinkCaption, setNewLinkCaption] = useState('');
   const [lightboxImage, setLightboxImage] = useState(null);
 
-  const showToast = (msg) => {
+  const showToast = (msg, type = 'success') => {
+    setToastType(type);
     setToastMessage(msg);
     setTimeout(() => {
       setToastMessage((cur) => (cur === msg ? '' : cur));
-    }, 4000);
+    }, 5000);
   };
 
   if (!selectedUnit) return null;
@@ -161,13 +163,14 @@ export default function ToLetMediaTab({ initialUnitId = 'E1' }) {
   const unitSections = getInitialSectionsForUnit(selectedUnit);
   const currentRent = Number(selectedUnit.rent) || 12000;
   const inclusiveBills = selectedUnit.inclusiveBills !== false;
-  const currentFromFullBn =
-    selectedUnit.availableFromFullBn || 'এপ্রিল ২০২৭';
-  const hasMainVideo = Boolean(
-    selectedUnit.driveVideoId || selectedUnit.mainVideoUrl
-  );
+  const currentFromFullBn = selectedUnit.availableFromFullBn || 'এপ্রিল ২০২৭';
+  const hasMainVideo = Boolean(selectedUnit.driveVideoId || selectedUnit.mainVideoUrl);
+  const resolvedUnitDriveFolderId =
+    extractDriveFolderId(selectedUnit.driveFolderUrl) || selectedUnit.driveFolderId || '';
+  const unitDriveUrl = resolvedUnitDriveFolderId
+    ? `https://drive.google.com/drive/folders/${resolvedUnitDriveFolderId}`
+    : '';
 
-  // Save updated sections array into the central store for the selected unit
   const saveUnitSections = (nextSections) => {
     updateUnit(selectedUnit.id, { mediaSections: nextSections });
   };
@@ -209,68 +212,112 @@ export default function ToLetMediaTab({ initialUnitId = 'E1' }) {
   };
 
   // =========================================================================
-  // STEP 3 HANDLER: 1-Click Google Drive Folder Auto-Sync
+  // STEP 3 HANDLERS: REAL Google Drive Folder Auto-Sync (Single Unit & All Units)
   // =========================================================================
-  const handleSyncDriveFolder = () => {
-    setSyncingDrive(true);
-    setTimeout(() => {
-      const syncedSections = getInitialSectionsForUnit({
-        ...selectedUnit,
-        mediaSections: null, // Re-sync fresh sections from Drive template
-      });
-      // Merge any custom sections the user already added while ensuring all default Drive folders exist
-      const existingById = new Map(unitSections.map((s) => [s.id, s]));
-      const merged = syncedSections.map((defSec) =>
-        existingById.has(defSec.id) ? existingById.get(defSec.id) : defSec
+  const handleSyncSingleUnit = async () => {
+    setSyncingUnit(true);
+    setQuotaNotice(null);
+    try {
+      const explicitFolderId = extractDriveFolderId(selectedUnit.driveFolderUrl);
+      const data = await syncUnitFromDrive(selectedUnit.id, explicitFolderId);
+      const imgTotal = data.mediaSections.reduce(
+        (sum, s) => sum + s.items.filter((i) => i.type !== 'video').length,
+        0
       );
-      unitSections.forEach((s) => {
-        if (!merged.some((m) => m.id === s.id)) merged.push(s);
-      });
-
-      updateUnit(selectedUnit.id, (u) => ({
-        mediaSections: merged,
-        mainVideoUrl:
-          u.mainVideoUrl ||
-          'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-      }));
-      setSyncingDrive(false);
+      const vidTotal =
+        (data.driveVideoId ? 1 : 0) +
+        data.mediaSections.reduce(
+          (sum, s) => sum + s.items.filter((i) => i.type === 'video').length,
+          0
+        );
       showToast(
-        `✅ গুগল ড্রাইভ থেকে ইউনিট ${selectedUnit.id}-এর সকল রুমের ছবি ও ভিডিও সফলভাবে সিঙ্ক হয়েছে!`
+        `✅ গুগল ড্রাইভ থেকে ইউনিট ${selectedUnit.id}-এর ${toBanglaDigits(
+          data.mediaSections.length
+        )}টি রুম (${toBanglaDigits(imgTotal)}টি ছবি, ${toBanglaDigits(
+          vidTotal
+        )}টি ভিডিও) সিঙ্ক হয়েছে!`
       );
-    }, 900);
+    } catch (err) {
+      showToast(`❌ ${err.message || 'গুগল ড্রাইভ সিঙ্ক করা যায়নি।'}`, 'error');
+    } finally {
+      setSyncingUnit(false);
+    }
+  };
+
+  const handleSyncAllUnits = async () => {
+    setSyncingAll(true);
+    setQuotaNotice(null);
+    try {
+      const data = await syncAllFromDrive({ overwriteEmpty: true });
+      const totalMapped = Object.keys(data.units || {}).length;
+      showToast(
+        `✅ গুগল ড্রাইভ থেকে সব ${toBanglaDigits(totalMapped)}টি ইউনিটের রুম, ছবি ও ভিডিও সিঙ্ক হয়েছে!`
+      );
+    } catch (err) {
+      showToast(`❌ ${err.message || 'গুগল ড্রাইভ সিঙ্ক করা যায়নি।'}`, 'error');
+    } finally {
+      setSyncingAll(false);
+    }
   };
 
   // =========================================================================
-  // STEP 4 HANDLERS: Main Walkthrough Video (Upload / Paste Link / Delete)
+  // STEP 4 HANDLERS: Main Walkthrough Video (Real Drive Upload / Link / Delete)
   // =========================================================================
-  const handleMainVideoFileUpload = (e) => {
+  const handleMainVideoFileUpload = async (e) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file) return;
+
     setUploadingMainVideo(true);
-    const objectUrl = URL.createObjectURL(file);
-    setTimeout(() => {
-      updateUnit(selectedUnit.id, {
-        mainVideoUrl: objectUrl,
-        driveVideoId: '',
-        mainVideoFileName: file.name,
+    setQuotaNotice(null);
+    try {
+      const res = await uploadFilesToDriveApi({
+        files: [file],
+        unitId: selectedUnit.id,
+        unitFolderId: resolvedUnitDriveFolderId,
+        isMainVideo: true,
       });
-      setUploadingMainVideo(false);
+      const uploaded = res.items?.[0];
+      updateUnit(selectedUnit.id, {
+        driveFolderId: res.unitFolderId || resolvedUnitDriveFolderId,
+        driveVideoId: uploaded?.driveFileId || '',
+        mainVideoFileName: uploaded?.fileName || file.name,
+        mainVideoUrl: '',
+      });
       setReplacingMainVideo(false);
-      showToast(
-        `✅ মেইন ভিডিও (${file.name}) সফলভাবে আপলোড ও সংযুক্ত হয়েছে!`
-      );
-    }, 700);
+      showToast(`✅ মেইন ভিডিও (${file.name}) সরাসরি গুগল ড্রাইভে আপলোড হয়েছে!`);
+    } catch (err) {
+      if (err.code === 'DRIVE_STORAGE_QUOTA_EXCEEDED') {
+        setQuotaNotice({
+          roomName: `ইউনিট ${selectedUnit.id} (মেইন ভিডিও)`,
+          folderUrl: err.data?.targetFolderUrl || unitDriveUrl,
+          messageBn: err.message,
+        });
+      }
+      showToast(`⚠️ ${err.message}`, 'error');
+    } finally {
+      setUploadingMainVideo(false);
+    }
   };
 
-  const handleSaveMainDriveLink = () => {
+  const handleSaveMainDriveLink = async () => {
     const trimmed = mainDriveLinkInput.trim();
     if (!trimmed) return;
     const extractedId = extractDriveFileId(trimmed);
     if (extractedId) {
-      updateUnit(selectedUnit.id, {
-        driveVideoId: extractedId,
-        mainVideoUrl: '',
-      });
+      try {
+        const res = await ensureDriveFilePublicApi(extractedId);
+        updateUnit(selectedUnit.id, {
+          driveVideoId: extractedId,
+          mainVideoFileName: res?.file?.name || 'Google Drive Video',
+          mainVideoUrl: '',
+        });
+      } catch {
+        updateUnit(selectedUnit.id, {
+          driveVideoId: extractedId,
+          mainVideoUrl: '',
+        });
+      }
     } else {
       updateUnit(selectedUnit.id, {
         mainVideoUrl: trimmed,
@@ -282,7 +329,16 @@ export default function ToLetMediaTab({ initialUnitId = 'E1' }) {
     showToast(`✅ গুগল ড্রাইভ মেইন ভিডিও সফলভাবে যুক্ত হয়েছে!`);
   };
 
-  const handleDeleteMainVideo = () => {
+  const handleDeleteMainVideo = async () => {
+    const existingDriveId = selectedUnit.driveVideoId;
+    if (existingDriveId) {
+      try {
+        await deleteDriveItemApi(existingDriveId, resolvedUnitDriveFolderId);
+      } catch (err) {
+        showToast(`⚠️ ড্রাইভ থেকে সরাতে সমস্যা: ${err.message}`, 'error');
+        return;
+      }
+    }
     updateUnit(selectedUnit.id, {
       driveVideoId: '',
       mainVideoUrl: '',
@@ -293,7 +349,7 @@ export default function ToLetMediaTab({ initialUnitId = 'E1' }) {
   };
 
   // =========================================================================
-  // STEP 5 HANDLERS: Room-by-Room Media Sections (Add, Rename, Reorder, Delete, Upload)
+  // STEP 5 HANDLERS: Real Drive Subfolders + Photos/Videos Upload & Delete
   // =========================================================================
   const bedroomsCount = selectedUnit.bedrooms || 3;
 
@@ -304,64 +360,95 @@ export default function ToLetMediaTab({ initialUnitId = 'E1' }) {
           { category: 'dining', titleBn: 'ডাইনিং রুম' },
           {
             category: 'bed-1',
-            titleBn: 'বেডরুম (উত্তর-পশ্চিম কোণ — বাথরুম ও বারান্দাসহ)',
+            titleBn: 'বেডরুম (উত্তর-পশ্চিম কোণ)',
           },
-          { category: 'kitchen', titleBn: 'কিচেন (রান্নাঘর)' },
-          { category: 'toilet-bath', titleBn: 'কমন টয়লেট ও বাথরুম' },
+          { category: 'kitchen', titleBn: 'কিচেন' },
+          { category: 'toilet-bath', titleBn: 'কমন টয়লেট' },
           { category: 'veranda', titleBn: 'বারান্দা ও অন্যান্য' },
         ]
       : selectedUnit.id === 'A2'
       ? [
           { category: 'drawing', titleBn: 'ড্রয়িং ও ডাইনিং রুম' },
-          { category: 'bed-1', titleBn: 'বেডরুম ১ (পূর্ব মুখী — বারান্দাসহ)' },
+          { category: 'bed-1', titleBn: 'বেডরুম ১ (পূর্ব মুখী)' },
           {
             category: 'bed-2',
-            titleBn: 'বেডরুম ২ (উত্তর-পূর্ব কোণ — এটাচড বাথরুমসহ)',
+            titleBn: 'বেডরুম ২ (উত্তর-পূর্ব কোণ)',
           },
-          { category: 'kitchen', titleBn: 'কিচেন (রান্নাঘর)' },
-          { category: 'toilet-bath', titleBn: 'কমন টয়লেট ও বাথরুম' },
+          { category: 'kitchen', titleBn: 'কিচেন ও কমন টয়লেট' },
           { category: 'veranda', titleBn: 'বারান্দা ও অন্যান্য' },
         ]
       : [
           { category: 'drawing', titleBn: 'ড্রয়িং ও ডাইনিং রুম' },
-          { category: 'bed-1', titleBn: 'বেডরুম ১ (পূর্ব মুখী — বারান্দাসহ)' },
-          { category: 'bed-2', titleBn: 'বেডরুম ২ (উত্তর-পূর্ব কোণ — বারান্দাসহ)' },
+          { category: 'bed-1', titleBn: 'বেডরুম ১ (পূর্ব মুখী)' },
+          { category: 'bed-2', titleBn: 'বেডরুম ২ (উত্তর-পূর্ব কোণ)' },
           ...(bedroomsCount >= 3
             ? [
                 {
                   category: 'bed-3',
-                  titleBn: 'বেডরুম ৩ (উত্তর-পশ্চিম কোণ — বাথরুম ও বারান্দাসহ)',
+                  titleBn: 'বেডরুম ৩ (উত্তর-পশ্চিম কোণ)',
                 },
               ]
             : []),
           ...(bedroomsCount >= 4
             ? [
-                { category: 'bed-4', titleBn: 'বেডরুম ৪ (পূর্ব মুখী — বারান্দাসহ)' },
+                { category: 'bed-4', titleBn: 'বেডরুম ৪ (পূর্ব মুখী)' },
                 {
                   category: 'bed-5',
-                  titleBn: 'বেডরুম ৫ (পশ্চিম মুখী — বাথরুম ও বারান্দাসহ)',
+                  titleBn: 'বেডরুম ৫ (পশ্চিম মুখী)',
                 },
               ]
             : []),
-          { category: 'kitchen', titleBn: 'কিচেন (রান্নাঘর)' },
-          { category: 'toilet-bath', titleBn: 'কমন টয়লেট ও বাথরুম' },
+          { category: 'kitchen', titleBn: 'কিচেন ও কমন টয়লেট' },
           { category: 'veranda', titleBn: 'বারান্দা ও অন্যান্য' },
         ];
 
-  const handleAddRoomSection = (titleBn, category = 'custom') => {
+  const handleAddRoomSection = async (titleBn, category = 'custom') => {
     const cleanTitle = titleBn.trim();
     if (!cleanTitle) return;
+
+    setCreatingRoom(true);
+    let createdFolderId = '';
+    let resolvedParentId = resolvedUnitDriveFolderId;
+
+    try {
+      const res = await createDriveRoomFolderApi(
+        selectedUnit.id,
+        cleanTitle,
+        resolvedUnitDriveFolderId
+      );
+      createdFolderId = res.folder?.id || '';
+      resolvedParentId = res.unitFolderId || resolvedParentId;
+    } catch (err) {
+      showToast(`⚠️ ড্রাইভ ফোল্ডার তৈরি হয়নি: ${err.message}`, 'error');
+      setCreatingRoom(false);
+      return;
+    }
+
+    // Avoid duplicating section if that Drive folder is already listed
+    if (createdFolderId && unitSections.some((s) => s.driveFolderId === createdFolderId)) {
+      setCreatingRoom(false);
+      setCustomRoomTitle('');
+      setShowCustomRoomInput(false);
+      showToast(`ℹ️ "${cleanTitle}" ফোল্ডারটি ড্রাইভে আগেই তৈরি ছিল ও যুক্ত হয়েছে।`);
+      return;
+    }
+
     const newSection = {
-      id: `sec-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      id: createdFolderId ? `drive-${createdFolderId}` : `sec-${Date.now()}`,
+      driveFolderId: createdFolderId,
       category,
       titleBn: cleanTitle,
       items: [],
     };
     const nextSections = [...unitSections, newSection];
-    saveUnitSections(nextSections);
+    updateUnit(selectedUnit.id, {
+      driveFolderId: resolvedParentId,
+      mediaSections: nextSections,
+    });
+    setCreatingRoom(false);
     setCustomRoomTitle('');
     setShowCustomRoomInput(false);
-    showToast(`➕ "${cleanTitle}" সেকশনটি যোগ করা হয়েছে! এখন ছবি ও ভিডিও আপলোড করুন।`);
+    showToast(`✅ গুগল ড্রাইভে "${cleanTitle}" ফোল্ডার তৈরি হয়েছে!`);
   };
 
   const handleMoveSection = (index, direction) => {
@@ -373,65 +460,122 @@ export default function ToLetMediaTab({ initialUnitId = 'E1' }) {
     saveUnitSections(copy);
   };
 
-  const handleSaveSectionRename = (secId) => {
-    if (!editingSecTitle.trim()) return;
+  const handleSaveSectionRename = async (section) => {
+    const nextName = editingSecTitle.trim();
+    if (!nextName) return;
+
+    if (section.driveFolderId) {
+      try {
+        await renameDriveFolderApi(section.driveFolderId, nextName);
+      } catch (err) {
+        showToast(`⚠️ ড্রাইভ ফোল্ডারের নাম বদলায়নি: ${err.message}`, 'error');
+        return;
+      }
+    }
+
     const next = unitSections.map((s) =>
-      s.id === secId ? { ...s, titleBn: editingSecTitle.trim() } : s
+      s.id === section.id ? { ...s, titleBn: nextName } : s
     );
     saveUnitSections(next);
     setEditingSecId(null);
     setEditingSecTitle('');
+    showToast(`✅ রুম ফোল্ডারের নাম "${nextName}"-এ পরিবর্তন হয়েছে!`);
   };
 
-  const handleDeleteSection = (secId) => {
-    const next = unitSections.filter((s) => s.id !== secId);
+  const handleDeleteSection = async (section) => {
+    if (section.driveFolderId) {
+      try {
+        await deleteDriveItemApi(section.driveFolderId, resolvedUnitDriveFolderId);
+      } catch (err) {
+        showToast(`⚠️ ড্রাইভ ফোল্ডার মোছা যায়নি: ${err.message}`, 'error');
+        setConfirmDeleteSecId(null);
+        return;
+      }
+    }
+    const next = unitSections.filter((s) => s.id !== section.id);
     saveUnitSections(next);
     setConfirmDeleteSecId(null);
-    showToast('🗑️ রুম সেকশনটি মুছে ফেলা হয়েছে।');
+    showToast('🗑️ রুম সেকশন ও গুগল ড্রাইভ ফোল্ডারটি মুছে ফেলা হয়েছে।');
   };
 
-  const handleMultiFileUploadToSection = async (secId, fileList) => {
+  const handleMultiFileUploadToSection = async (section, fileList) => {
     const files = Array.from(fileList || []);
     if (files.length === 0) return;
 
-    setUploadingSecId(secId);
-    const createdItems = [];
-    for (const file of files) {
-      const isVideo = file.type.startsWith('video/');
-      const previewUrl = await fileToDataUrl(file);
-      createdItems.push({
-        id: `item-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-        type: isVideo ? 'video' : 'image',
-        labelBn: file.name.replace(/\.[^/.]+$/, ''),
-        driveFileId: '',
-        previewUrl,
-      });
-    }
+    setUploadingSecId(section.id);
+    setQuotaNotice(null);
 
-    setTimeout(() => {
+    try {
+      const res = await uploadFilesToDriveApi({
+        files,
+        unitId: selectedUnit.id,
+        unitFolderId: resolvedUnitDriveFolderId,
+        roomFolderId: section.driveFolderId || '',
+        roomName: section.titleBn,
+        isMainVideo: false,
+      });
+
+      const uploadedItems = res.items || [];
       const next = unitSections.map((sec) =>
-        sec.id === secId
-          ? { ...sec, items: [...sec.items, ...createdItems] }
+        sec.id === section.id
+          ? {
+              ...sec,
+              driveFolderId: res.targetFolderId || sec.driveFolderId,
+              items: [...sec.items, ...uploadedItems],
+            }
           : sec
       );
-      saveUnitSections(next);
-      setUploadingSecId(null);
+      updateUnit(selectedUnit.id, {
+        driveFolderId: res.unitFolderId || resolvedUnitDriveFolderId,
+        mediaSections: next,
+      });
       showToast(
-        `✅ ${toBanglaDigits(createdItems.length)}টি ফাইল সফলভাবে এই রুমে যোগ হয়েছে!`
+        `✅ ${toBanglaDigits(uploadedItems.length)}টি ফাইল সরাসরি গুগল ড্রাইভে আপলোড হয়েছে!`
       );
-    }, 550);
+    } catch (err) {
+      if (err.code === 'DRIVE_STORAGE_QUOTA_EXCEEDED') {
+        setQuotaNotice({
+          roomName: section.titleBn,
+          folderUrl:
+            err.data?.targetFolderUrl ||
+            (section.driveFolderId
+              ? `https://drive.google.com/drive/folders/${section.driveFolderId}`
+              : unitDriveUrl),
+          messageBn: err.message,
+        });
+      }
+      showToast(`⚠️ ${err.message}`, 'error');
+    } finally {
+      setUploadingSecId(null);
+    }
   };
 
-  const handleAddDriveLinkToSection = (secId) => {
+  const handleAddDriveLinkToSection = async (secId) => {
     const trimmed = newLinkUrl.trim();
     if (!trimmed) return;
     const extractedId = extractDriveFileId(trimmed);
+
+    let detectedType = newLinkType;
+    let detectedName = '';
+    if (extractedId) {
+      try {
+        const res = await ensureDriveFilePublicApi(extractedId);
+        if (res?.file) {
+          detectedType = res.file.type || detectedType;
+          detectedName = res.file.labelBn || '';
+        }
+      } catch {
+        // Keep user selection if metadata fetch fails
+      }
+    }
+
     const newItem = {
-      id: `item-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      type: newLinkType,
+      id: extractedId ? `drive-${extractedId}` : `item-${Date.now()}`,
+      type: detectedType,
       labelBn:
         newLinkCaption.trim() ||
-        (newLinkType === 'video' ? 'রুমের ভিডিও' : 'রুমের ছবি'),
+        detectedName ||
+        (detectedType === 'video' ? 'রুমের ভিডিও' : 'রুমের ছবি'),
       driveFileId: extractedId,
       previewUrl: extractedId ? '' : trimmed,
     };
@@ -442,13 +586,29 @@ export default function ToLetMediaTab({ initialUnitId = 'E1' }) {
     setNewLinkUrl('');
     setNewLinkCaption('');
     setOpenLinkPanelSecId(null);
-    showToast('✅ গুগল ড্রাইভ লিংক সফলভাবে এই রুমে যুক্ত হয়েছে!');
+    showToast('✅ গুগল ড্রাইভ ফাইল পাবলিক করে এই রুমে যুক্ত হয়েছে!');
   };
 
-  const handleDeleteMediaItem = (secId, itemId) => {
+  const handleDeleteMediaItem = async (section, item) => {
+    if (item.driveFileId) {
+      try {
+        const res = await deleteDriveItemApi(
+          item.driveFileId,
+          section.driveFolderId || item.driveFolderId || resolvedUnitDriveFolderId
+        );
+        if (res?.action === 'removed_from_folder') {
+          showToast('🗑️ ফাইলটি গুগল ড্রাইভের এই রুম ফোল্ডার থেকে সরানো হয়েছে।');
+        } else {
+          showToast('🗑️ ফাইলটি গুগল ড্রাইভ থেকে মুছে ফেলা হয়েছে।');
+        }
+      } catch (err) {
+        showToast(`⚠️ ড্রাইভ থেকে মোছা যায়নি: ${err.message}`, 'error');
+        return;
+      }
+    }
     const next = unitSections.map((sec) =>
-      sec.id === secId
-        ? { ...sec, items: sec.items.filter((it) => it.id !== itemId) }
+      sec.id === section.id
+        ? { ...sec, items: sec.items.filter((it) => it.id !== item.id) }
         : sec
     );
     saveUnitSections(next);
@@ -472,7 +632,11 @@ export default function ToLetMediaTab({ initialUnitId = 'E1' }) {
     <div className="adm-tolet">
       {/* Live Toast Notification Banner */}
       {toastMessage && (
-        <div className="adm-toast" role="status" aria-live="polite">
+        <div
+          className={`adm-toast ${toastType === 'error' ? 'adm-toast--error' : ''}`}
+          role="status"
+          aria-live="polite"
+        >
           <span>{toastMessage}</span>
           <button
             type="button"
@@ -527,7 +691,10 @@ export default function ToLetMediaTab({ initialUnitId = 'E1' }) {
                     <button
                       key={unit.id}
                       type="button"
-                      onClick={() => setSelectedUnitId(unit.id)}
+                      onClick={() => {
+                        setSelectedUnitId(unit.id);
+                        setQuotaNotice(null);
+                      }}
                       className={`adm-unit-select-btn ${
                         active ? 'adm-unit-select-btn--active' : ''
                       } ${open ? 'adm-unit-select-btn--open' : ''}`}
@@ -576,10 +743,7 @@ export default function ToLetMediaTab({ initialUnitId = 'E1' }) {
             </h2>
           </div>
 
-          <Link
-            to={`/flat/${selectedUnit.id}`}
-            className="adm-preview-link-btn"
-          >
+          <Link to={`/flat/${selectedUnit.id}`} className="adm-preview-link-btn">
             👁️ পাবলিক পেজে ফ্ল্যাটটি কেমন দেখাচ্ছে দেখুন ↗
           </Link>
         </div>
@@ -620,24 +784,20 @@ export default function ToLetMediaTab({ initialUnitId = 'E1' }) {
             : "🔒 এই ফ্ল্যাটের সকল ছবি ও ভিডিও সাধারণ দর্শকদের কাছ থেকে লুকানো আছে এবং ফ্লোর ম্যাপে 'ভাড়া হয়ে গেছে' দেখাচ্ছে।"}
         </div>
 
-        {/* Rent & Available Month Quick Controls (Zero-Typing Options for Parents) */}
+        {/* Rent & Available Month Quick Controls */}
         <div className="adm-terms-editor-grid">
-          {/* কোন মাস থেকে ভাড়া শুরু হবে? */}
           <div className="adm-term-box">
             <label className="adm-term-box__label">
               📅 কোন মাস থেকে ভাড়া শুরু হবে?
             </label>
             <div className="adm-month-pills">
               {MONTH_PRESETS.map((preset) => {
-                const active =
-                  !customMonthMode && currentFromFullBn === preset.fullBn;
+                const active = !customMonthMode && currentFromFullBn === preset.fullBn;
                 return (
                   <button
                     key={preset.fullBn}
                     type="button"
-                    className={`adm-month-pill ${
-                      active ? 'adm-month-pill--active' : ''
-                    }`}
+                    className={`adm-month-pill ${active ? 'adm-month-pill--active' : ''}`}
                     onClick={() => handleSelectMonthPreset(preset)}
                   >
                     {preset.fullBn}
@@ -646,9 +806,7 @@ export default function ToLetMediaTab({ initialUnitId = 'E1' }) {
               })}
               <button
                 type="button"
-                className={`adm-month-pill ${
-                  customMonthMode ? 'adm-month-pill--active' : ''
-                }`}
+                className={`adm-month-pill ${customMonthMode ? 'adm-month-pill--active' : ''}`}
                 onClick={() => setCustomMonthMode((v) => !v)}
               >
                 ✍️ অন্য মাস লিখুন
@@ -671,12 +829,8 @@ export default function ToLetMediaTab({ initialUnitId = 'E1' }) {
             )}
           </div>
 
-          {/* মাসিক ভাড়া কত (৳)? */}
           <div className="adm-term-box">
-            <label
-              htmlFor="admin-unit-rent-input"
-              className="adm-term-box__label"
-            >
+            <label htmlFor="admin-unit-rent-input" className="adm-term-box__label">
               💰 মাসিক ভাড়া কত (৳)? ({formatTaka(currentRent)})
             </label>
             <div className="adm-rent-stepper">
@@ -706,7 +860,6 @@ export default function ToLetMediaTab({ initialUnitId = 'E1' }) {
               </button>
             </div>
 
-            {/* Inclusive Bills Checkbox */}
             <label className="adm-inclusive-toggle">
               <input
                 type="checkbox"
@@ -724,13 +877,51 @@ export default function ToLetMediaTab({ initialUnitId = 'E1' }) {
       </section>
 
       {/* =====================================================================
-          STEP 3: GOOGLE DRIVE FOLDER MAPPING & 1-CLICK AUTO-SYNC BANNER
+          STEP 3: REAL GOOGLE DRIVE FOLDER CONNECTION & AUTO-SYNC
          ===================================================================== */}
       <section
         className="adm-puthi-card adm-drive-sync-card"
         aria-label="গুগল ড্রাইভ ফোল্ডার কানেকশন ও অটো-সিঙ্ক"
       >
         <div className="adm-puthi-card__inner-rule" aria-hidden="true" />
+
+        <div className="adm-drive-status-bar">
+          <span
+            className={`adm-drive-conn-pill ${
+              driveStatus.connected
+                ? 'adm-drive-conn-pill--ok'
+                : 'adm-drive-conn-pill--off'
+            }`}
+          >
+            {driveStatus.connected
+              ? `🟢 গুগল ড্রাইভ সংযুক্ত (${
+                  driveStatus.authMode === 'oauth2' ? 'OAuth2' : 'Service Account'
+                })`
+              : '⚠️ গুগল ড্রাইভ সার্ভার পাওয়া যায়নি (পোর্ট ৪০০০)'}
+          </span>
+
+          {driveStatus.rootFolderUrl && (
+            <a
+              href={driveStatus.rootFolderUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="adm-drive-open-link"
+            >
+              📁 {driveStatus.rootFolderName || 'All flats images and video'} খুলুন ↗
+            </a>
+          )}
+
+          {unitDriveUrl && (
+            <a
+              href={unitDriveUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="adm-drive-open-link"
+            >
+              📂 ইউনিট {selectedUnit.id}-এর ড্রাইভ ফোল্ডার খুলুন ↗
+            </a>
+          )}
+        </div>
 
         <div className="adm-drive-sync-card__header">
           <div>
@@ -743,21 +934,34 @@ export default function ToLetMediaTab({ initialUnitId = 'E1' }) {
             </p>
           </div>
 
-          <button
-            type="button"
-            className="adm-sync-drive-btn"
-            onClick={handleSyncDriveFolder}
-            disabled={syncingDrive}
-          >
-            {syncingDrive
-              ? '⏳ গুগল ড্রাইভ স্ক্যান হচ্ছে...'
-              : '🔄 গুগল ড্রাইভ ফোল্ডার থেকে ছবি ও ভিডিও সিঙ্ক করুন'}
-          </button>
+          <div className="adm-drive-sync-btns">
+            <button
+              type="button"
+              className="adm-sync-drive-btn"
+              onClick={handleSyncSingleUnit}
+              disabled={syncingUnit || syncingAll}
+            >
+              {syncingUnit
+                ? `⏳ ইউনিট ${selectedUnit.id} সিঙ্ক হচ্ছে...`
+                : `🔄 ইউনিট ${selectedUnit.id}-এর ছবি ও ভিডিও সিঙ্ক করুন`}
+            </button>
+
+            <button
+              type="button"
+              className="adm-sync-all-btn"
+              onClick={handleSyncAllUnits}
+              disabled={syncingUnit || syncingAll}
+            >
+              {syncingAll
+                ? '⏳ সব ফ্ল্যাট সিঙ্ক হচ্ছে...'
+                : '🔄 সব ফ্ল্যাট একসাথে সিঙ্ক করুন'}
+            </button>
+          </div>
         </div>
 
         <div className="adm-drive-folder-input-row">
           <label htmlFor="unit-drive-folder-url" className="adm-drive-folder-input-row__lbl">
-            🔗 ইউনিট {selectedUnit.id}-এর গুগল ড্রাইভ ফোল্ডার লিংক / ID (ঐচ্ছিক):
+            🔗 ইউনিট {selectedUnit.id}-এর গুগল ড্রাইভ ফোল্ডার লিংক / ID (স্বয়ংক্রিয়ভাবে পাওয়া):
           </label>
           <input
             id="unit-drive-folder-url"
@@ -766,14 +970,43 @@ export default function ToLetMediaTab({ initialUnitId = 'E1' }) {
             onChange={(e) =>
               updateUnit(selectedUnit.id, { driveFolderUrl: e.target.value })
             }
-            placeholder="https://drive.google.com/drive/folders/... (অথবা খালি রাখলে উপরের ডিফল্ট ফোল্ডার ব্যবহৃত হবে)"
+            placeholder="https://drive.google.com/drive/folders/..."
             className="adm-drive-folder-input-row__input"
           />
         </div>
+
+        {/* Helpful Google Drive Service Account Quota Notice (only shown if Google returns storageQuotaExceeded) */}
+        {quotaNotice && (
+          <div className="adm-quota-notice" role="alert">
+            <p className="adm-quota-notice__title">
+              ⚠️ গুগল ড্রাইভ সরাসরি আপলোড সীমাবদ্ধতা ({quotaNotice.roomName})
+            </p>
+            <p className="adm-quota-notice__desc">{quotaNotice.messageBn}</p>
+            <div className="adm-quota-notice__actions">
+              {quotaNotice.folderUrl && (
+                <a
+                  href={quotaNotice.folderUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="adm-quota-notice__open-btn"
+                >
+                  📁 সরাসরি এই ড্রাইভ ফোল্ডারে ছবি/ভিডিও রাখুন ↗
+                </a>
+              )}
+              <button
+                type="button"
+                className="adm-quota-notice__sync-btn"
+                onClick={handleSyncSingleUnit}
+              >
+                🔄 রেখে দিয়েছি — এখনই সিঙ্ক করুন
+              </button>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* =====================================================================
-          STEP 4: MAIN WALKTHROUGH VIDEO MANAGER (🎥 পুরো ফ্ল্যাটের মেইন ভিডিও)
+          STEP 4: MAIN WALKTHROUGH VIDEO MANAGER
          ===================================================================== */}
       <section
         className="adm-puthi-card adm-main-video-card"
@@ -803,11 +1036,7 @@ export default function ToLetMediaTab({ initialUnitId = 'E1' }) {
                   allowFullScreen
                 />
               ) : (
-                <video
-                  src={selectedUnit.mainVideoUrl}
-                  controls
-                  preload="metadata"
-                />
+                <video src={selectedUnit.mainVideoUrl} controls preload="metadata" />
               )}
             </div>
 
@@ -835,6 +1064,7 @@ export default function ToLetMediaTab({ initialUnitId = 'E1' }) {
                 type="file"
                 accept="video/*"
                 onChange={handleMainVideoFileUpload}
+                disabled={uploadingMainVideo}
                 hidden
               />
               <span className="adm-upload-dropzone__icon" aria-hidden="true">
@@ -842,7 +1072,7 @@ export default function ToLetMediaTab({ initialUnitId = 'E1' }) {
               </span>
               <span className="adm-upload-dropzone__title">
                 {uploadingMainVideo
-                  ? `⏳ Drive/${selectedUnit.id}/full_video.mp4 আপলোড হচ্ছে...`
+                  ? `⏳ গুগল ড্রাইভে (Drive/${selectedUnit.id}/full_video.mp4) আপলোড হচ্ছে...`
                   : '📤 ফোন বা কম্পিউটার থেকে মেইন ভিডিও ফাইল সিলেক্ট করুন (.mp4)'}
               </span>
               <span className="adm-upload-dropzone__sub">
@@ -851,10 +1081,7 @@ export default function ToLetMediaTab({ initialUnitId = 'E1' }) {
             </label>
 
             <div className="adm-drive-link-inline">
-              <label
-                htmlFor="main-video-drive-link"
-                className="adm-drive-link-inline__lbl"
-              >
+              <label htmlFor="main-video-drive-link" className="adm-drive-link-inline__lbl">
                 অথবা গুগল ড্রাইভ ভিডিওর লিংক / File ID পেস্ট করুন:
               </label>
               <div className="adm-drive-link-inline__row">
@@ -889,7 +1116,7 @@ export default function ToLetMediaTab({ initialUnitId = 'E1' }) {
       </section>
 
       {/* =====================================================================
-          STEP 5: ROOM-BY-ROOM MEDIA SECTIONS (EXACT FLOOR-MAP ROOM NAMES)
+          STEP 5: ROOM-BY-ROOM MEDIA SECTIONS (REAL GOOGLE DRIVE SUBFOLDERS)
          ===================================================================== */}
       <section
         className="adm-puthi-card adm-rooms-manager-card"
@@ -901,23 +1128,22 @@ export default function ToLetMediaTab({ initialUnitId = 'E1' }) {
           ৫. 📸 রুম অনুযায়ী ছবি ও ভিডিও সাজান (ইউনিট {selectedUnit.id})
         </h2>
         <p className="adm-sub-note">
-          ফ্লোর ম্যাপের রুমের নামের সাথে মিল রেখে নিচের যেকোনো বাটনে চাপ দিলে নতুন রুমের সেকশন তৈরি হবে। প্রতিটি রুমে একাধিক ছবি ও ভিডিও যোগ করতে পারবেন।
+          নিচের যেকোনো রুমের বাটনে চাপ দিলে সরাসরি গুগল ড্রাইভে (<code>{selectedUnit.id}/</code>) ওই নামের সাব-ফোল্ডার তৈরি হবে।
         </p>
 
         {/* A. 1-Click Preset Room Section Creator */}
         <div className="adm-preset-rooms-box">
           <span className="adm-preset-rooms-box__label">
-            ➕ ১-ক্লিকে নতুন রুমের সেকশন যোগ করুন:
+            ➕ ১-ক্লিকে গুগল ড্রাইভে নতুন রুমের ফোল্ডার যোগ করুন:
           </span>
           <div className="adm-preset-chips">
             {presetRoomButtons.map((preset) => (
               <button
                 key={preset.titleBn}
                 type="button"
+                disabled={creatingRoom}
                 className="adm-preset-room-btn"
-                onClick={() =>
-                  handleAddRoomSection(preset.titleBn, preset.category)
-                }
+                onClick={() => handleAddRoomSection(preset.titleBn, preset.category)}
               >
                 ➕ {preset.titleBn}
               </button>
@@ -943,318 +1169,330 @@ export default function ToLetMediaTab({ initialUnitId = 'E1' }) {
               />
               <button
                 type="button"
+                disabled={creatingRoom}
                 className="adm-custom-room-row__add"
                 onClick={() => handleAddRoomSection(customRoomTitle, 'custom')}
               >
-                ➕ সেকশন তৈরি করুন
+                {creatingRoom ? '⏳ তৈরি হচ্ছে...' : '➕ ড্রাইভ ফোল্ডার তৈরি করুন'}
               </button>
             </div>
           )}
         </div>
 
         {/* B. Room Section Cards List */}
-        <div className="adm-room-section-list">
-          {unitSections.map((section, secIndex) => {
-            const imgCount = section.items.filter((i) => i.type !== 'video').length;
-            const vidCount = section.items.filter((i) => i.type === 'video').length;
-            const isEditingTitle = editingSecId === section.id;
-            const isConfirmingDelete = confirmDeleteSecId === section.id;
-            const isUploadingHere = uploadingSecId === section.id;
-            const isLinkPanelOpen = openLinkPanelSecId === section.id;
+        {unitSections.length === 0 ? (
+          <div className="adm-empty-room-note">
+            ইউনিট {selectedUnit.id}-এর গুগল ড্রাইভ ফোল্ডারে এখনো কোনো রুম ফোল্ডার নেই। উপরের বাটন থেকে রুম ফোল্ডার তৈরি করুন।
+          </div>
+        ) : (
+          <div className="adm-room-section-list">
+            {unitSections.map((section, secIndex) => {
+              const imgCount = section.items.filter((i) => i.type !== 'video').length;
+              const vidCount = section.items.filter((i) => i.type === 'video').length;
+              const isEditingTitle = editingSecId === section.id;
+              const isConfirmingDelete = confirmDeleteSecId === section.id;
+              const isUploadingHere = uploadingSecId === section.id;
+              const isLinkPanelOpen = openLinkPanelSecId === section.id;
+              const roomDriveUrl = section.driveFolderId
+                ? `https://drive.google.com/drive/folders/${section.driveFolderId}`
+                : unitDriveUrl;
 
-            return (
-              <article key={section.id} className="adm-room-sec-card">
-                {/* 1. Section Header Bar */}
-                <div className="adm-room-sec-card__header">
-                  <div className="adm-room-sec-card__title-wrap">
-                    {isEditingTitle ? (
-                      <div className="adm-sec-rename-row">
+              return (
+                <article key={section.id} className="adm-room-sec-card">
+                  {/* 1. Section Header Bar */}
+                  <div className="adm-room-sec-card__header">
+                    <div className="adm-room-sec-card__title-wrap">
+                      {isEditingTitle ? (
+                        <div className="adm-sec-rename-row">
+                          <input
+                            type="text"
+                            value={editingSecTitle}
+                            onChange={(e) => setEditingSecTitle(e.target.value)}
+                            className="adm-sec-rename-row__input"
+                          />
+                          <button
+                            type="button"
+                            className="adm-sec-rename-row__save"
+                            onClick={() => handleSaveSectionRename(section)}
+                          >
+                            ✅ সেভ
+                          </button>
+                          <button
+                            type="button"
+                            className="adm-sec-rename-row__cancel"
+                            onClick={() => setEditingSecId(null)}
+                          >
+                            বাতিল
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <h3 className="adm-room-sec-card__title">
+                            {toBanglaDigits(secIndex + 1)}. {section.titleBn}
+                          </h3>
+                          <button
+                            type="button"
+                            className="adm-sec-small-btn"
+                            onClick={() => {
+                              setEditingSecId(section.id);
+                              setEditingSecTitle(section.titleBn);
+                            }}
+                          >
+                            ✏️ নাম পরিবর্তন
+                          </button>
+                        </>
+                      )}
+
+                      <span className="adm-sec-count-badge">
+                        🖼️ {toBanglaDigits(imgCount)}টি ছবি • 🎥 {toBanglaDigits(vidCount)}টি ভিডিও
+                      </span>
+
+                      {roomDriveUrl && (
+                        <a
+                          href={roomDriveUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="adm-sec-drive-link"
+                        >
+                          📁 ড্রাইভ ফোল্ডার ↗
+                        </a>
+                      )}
+                    </div>
+
+                    {/* Reorder & Delete Section Buttons */}
+                    <div className="adm-room-sec-card__controls">
+                      <button
+                        type="button"
+                        className="adm-sec-ctrl-btn"
+                        onClick={() => handleMoveSection(secIndex, -1)}
+                        disabled={secIndex === 0}
+                      >
+                        ⬆️ উপরে নিন
+                      </button>
+                      <button
+                        type="button"
+                        className="adm-sec-ctrl-btn"
+                        onClick={() => handleMoveSection(secIndex, 1)}
+                        disabled={secIndex === unitSections.length - 1}
+                      >
+                        ⬇️ নিচে নামান
+                      </button>
+                      <button
+                        type="button"
+                        className="adm-sec-ctrl-btn adm-sec-ctrl-btn--delete"
+                        onClick={() => setConfirmDeleteSecId(section.id)}
+                      >
+                        🗑️ পুরো রুম সেকশন মুছুন
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Section Delete Confirmation Dialog */}
+                  {isConfirmingDelete && (
+                    <div className="adm-sec-delete-confirm" role="alert">
+                      <p>
+                        ⚠️ আপনি কি নিশ্চিত <strong>&ldquo;{section.titleBn}&rdquo;</strong>-এর সেকশন ও এর ভেতরের সব ছবি/ভিডিও গুগল ড্রাইভ থেকে মুছে ফেলতে চান?
+                      </p>
+                      <div className="adm-sec-delete-confirm__btns">
+                        <button
+                          type="button"
+                          className="adm-reset-confirm__yes"
+                          onClick={() => handleDeleteSection(section)}
+                        >
+                          হ্যাঁ, মুছে ফেলুন
+                        </button>
+                        <button
+                          type="button"
+                          className="adm-reset-confirm__no"
+                          onClick={() => setConfirmDeleteSecId(null)}
+                        >
+                          না, থাকুক
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 2. Grid of Existing Photos & Videos Inside This Room */}
+                  {section.items.length > 0 ? (
+                    <div className="adm-room-media-grid">
+                      {section.items.map((item) => {
+                        const isVideo = item.type === 'video';
+                        const thumbOrVideoSrc = item.driveFileId
+                          ? isVideo
+                            ? `https://drive.google.com/file/d/${item.driveFileId}/preview`
+                            : `https://drive.google.com/thumbnail?id=${item.driveFileId}&sz=w1000`
+                          : item.previewUrl;
+
+                        return (
+                          <div key={item.id} className="adm-media-item-card">
+                            <div className="adm-media-item-card__preview">
+                              {isVideo ? (
+                                item.driveFileId ? (
+                                  <iframe
+                                    title={item.labelBn || section.titleBn}
+                                    src={thumbOrVideoSrc}
+                                    allow="autoplay; fullscreen"
+                                    allowFullScreen
+                                  />
+                                ) : (
+                                  <video src={thumbOrVideoSrc} controls preload="metadata" />
+                                )
+                              ) : (
+                                <img
+                                  src={thumbOrVideoSrc}
+                                  alt={item.labelBn || section.titleBn}
+                                  loading="lazy"
+                                />
+                              )}
+
+                              <span
+                                className={`adm-media-type-badge ${
+                                  isVideo
+                                    ? 'adm-media-type-badge--video'
+                                    : 'adm-media-type-badge--image'
+                                }`}
+                              >
+                                {isVideo ? '🎥 ভিডিও' : '🖼️ ছবি'}
+                              </span>
+
+                              {!isVideo && (
+                                <button
+                                  type="button"
+                                  className="adm-media-zoom-btn"
+                                  onClick={() =>
+                                    setLightboxImage({
+                                      src: item.driveFileId
+                                        ? `https://drive.google.com/thumbnail?id=${item.driveFileId}&sz=w1600`
+                                        : thumbOrVideoSrc,
+                                      caption: item.labelBn || section.titleBn,
+                                    })
+                                  }
+                                >
+                                  🔍 বড় করে দেখুন
+                                </button>
+                              )}
+
+                              <button
+                                type="button"
+                                className="adm-media-delete-btn"
+                                onClick={() => handleDeleteMediaItem(section, item)}
+                              >
+                                🗑️ ডিলিট
+                              </button>
+                            </div>
+
+                            <input
+                              type="text"
+                              value={item.labelBn || ''}
+                              onChange={(e) =>
+                                handleUpdateItemCaption(
+                                  section.id,
+                                  item.id,
+                                  e.target.value
+                                )
+                              }
+                              placeholder="ছবির সংক্ষিপ্ত ক্যাপশন (ঐচ্ছিক)"
+                              className="adm-media-caption-input"
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="adm-empty-room-note">
+                      এই রুমে এখনো কোনো ছবি বা ভিডিও নেই। নিচের বাটনে চাপ দিয়ে যোগ করুন।
+                    </p>
+                  )}
+
+                  {/* 3. Add New Photos or Videos to This Room */}
+                  <div className="adm-room-add-zone">
+                    <label className="adm-room-upload-btn">
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*,video/*"
+                        disabled={Boolean(uploadingSecId)}
+                        onChange={(e) => {
+                          handleMultiFileUploadToSection(section, e.target.files);
+                          e.target.value = '';
+                        }}
+                        hidden
+                      />
+                      {isUploadingHere
+                        ? `⏳ গুগল ড্রাইভে (${selectedUnit.id}/${section.titleBn}) আপলোড হচ্ছে...`
+                        : '📷 🎥 ফোন বা কম্পিউটার থেকে এই রুমের ছবি ও ভিডিও যোগ করুন (একাধিক সিলেক্ট করা যাবে)'}
+                    </label>
+
+                    <button
+                      type="button"
+                      className="adm-room-link-toggle-btn"
+                      onClick={() =>
+                        setOpenLinkPanelSecId(isLinkPanelOpen ? null : section.id)
+                      }
+                    >
+                      🔗 গুগল ড্রাইভের ছবি বা ভিডিওর লিংক যোগ করুন
+                    </button>
+                  </div>
+
+                  {isLinkPanelOpen && (
+                    <div className="adm-room-link-panel">
+                      <div className="adm-room-link-panel__types">
+                        <button
+                          type="button"
+                          className={`adm-type-pill ${
+                            newLinkType === 'image' ? 'adm-type-pill--active' : ''
+                          }`}
+                          onClick={() => setNewLinkType('image')}
+                        >
+                          🖼️ ছবি (Image)
+                        </button>
+                        <button
+                          type="button"
+                          className={`adm-type-pill ${
+                            newLinkType === 'video' ? 'adm-type-pill--active' : ''
+                          }`}
+                          onClick={() => setNewLinkType('video')}
+                        >
+                          🎥 ভিডিও (Video)
+                        </button>
+                      </div>
+
+                      <div className="adm-room-link-panel__inputs">
                         <input
                           type="text"
-                          value={editingSecTitle}
-                          onChange={(e) => setEditingSecTitle(e.target.value)}
-                          className="adm-sec-rename-row__input"
+                          value={newLinkUrl}
+                          onChange={(e) => setNewLinkUrl(e.target.value)}
+                          placeholder="গুগল ড্রাইভ শেয়ার লিংক বা File ID পেস্ট করুন..."
+                          className="adm-room-link-panel__url"
+                        />
+                        <input
+                          type="text"
+                          value={newLinkCaption}
+                          onChange={(e) => setNewLinkCaption(e.target.value)}
+                          placeholder="ক্যাপশন (ঐচ্ছিক)"
+                          className="adm-room-link-panel__caption"
                         />
                         <button
                           type="button"
-                          className="adm-sec-rename-row__save"
-                          onClick={() => handleSaveSectionRename(section.id)}
+                          className="adm-room-link-panel__submit"
+                          onClick={() => handleAddDriveLinkToSection(section.id)}
                         >
-                          ✅ সেভ
-                        </button>
-                        <button
-                          type="button"
-                          className="adm-sec-rename-row__cancel"
-                          onClick={() => setEditingSecId(null)}
-                        >
-                          বাতিল
+                          ➕ এই রুমে যুক্ত করুন
                         </button>
                       </div>
-                    ) : (
-                      <>
-                        <h3 className="adm-room-sec-card__title">
-                          {toBanglaDigits(secIndex + 1)}. {section.titleBn}
-                        </h3>
-                        <button
-                          type="button"
-                          className="adm-sec-small-btn"
-                          onClick={() => {
-                            setEditingSecId(section.id);
-                            setEditingSecTitle(section.titleBn);
-                          }}
-                        >
-                          ✏️ নাম পরিবর্তন
-                        </button>
-                      </>
-                    )}
-
-                    <span className="adm-sec-count-badge">
-                      🖼️ {toBanglaDigits(imgCount)}টি ছবি • 🎥 {toBanglaDigits(vidCount)}টি ভিডিও
-                    </span>
-                  </div>
-
-                  {/* Reorder & Delete Section Buttons */}
-                  <div className="adm-room-sec-card__controls">
-                    <button
-                      type="button"
-                      className="adm-sec-ctrl-btn"
-                      onClick={() => handleMoveSection(secIndex, -1)}
-                      disabled={secIndex === 0}
-                    >
-                      ⬆️ উপরে নিন
-                    </button>
-                    <button
-                      type="button"
-                      className="adm-sec-ctrl-btn"
-                      onClick={() => handleMoveSection(secIndex, 1)}
-                      disabled={secIndex === unitSections.length - 1}
-                    >
-                      ⬇️ নিচে নামান
-                    </button>
-                    <button
-                      type="button"
-                      className="adm-sec-ctrl-btn adm-sec-ctrl-btn--delete"
-                      onClick={() => setConfirmDeleteSecId(section.id)}
-                    >
-                      🗑️ পুরো রুম সেকশন মুছুন
-                    </button>
-                  </div>
-                </div>
-
-                {/* Section Delete Confirmation Dialog */}
-                {isConfirmingDelete && (
-                  <div className="adm-sec-delete-confirm" role="alert">
-                    <p>
-                      ⚠️ আপনি কি নিশ্চিত <strong>&ldquo;{section.titleBn}&rdquo;</strong>-এর সেকশন ও এর ভেতরের সব ছবি/ভিডিও মুছে ফেলতে চান?
-                    </p>
-                    <div className="adm-sec-delete-confirm__btns">
-                      <button
-                        type="button"
-                        className="adm-reset-confirm__yes"
-                        onClick={() => handleDeleteSection(section.id)}
-                      >
-                        হ্যাঁ, মুছে ফেলুন
-                      </button>
-                      <button
-                        type="button"
-                        className="adm-reset-confirm__no"
-                        onClick={() => setConfirmDeleteSecId(null)}
-                      >
-                        না, থাকুক
-                      </button>
                     </div>
-                  </div>
-                )}
-
-                {/* 2. Grid of Existing Photos & Videos Inside This Room */}
-                {section.items.length > 0 ? (
-                  <div className="adm-room-media-grid">
-                    {section.items.map((item) => {
-                      const isVideo = item.type === 'video';
-                      const thumbOrVideoSrc = item.driveFileId
-                        ? isVideo
-                          ? `https://drive.google.com/file/d/${item.driveFileId}/preview`
-                          : `https://drive.google.com/thumbnail?id=${item.driveFileId}&sz=w1000`
-                        : item.previewUrl;
-
-                      return (
-                        <div key={item.id} className="adm-media-item-card">
-                          <div className="adm-media-item-card__preview">
-                            {isVideo ? (
-                              item.driveFileId ? (
-                                <iframe
-                                  title={item.labelBn || section.titleBn}
-                                  src={thumbOrVideoSrc}
-                                  allow="autoplay; fullscreen"
-                                  allowFullScreen
-                                />
-                              ) : (
-                                <video
-                                  src={thumbOrVideoSrc}
-                                  controls
-                                  preload="metadata"
-                                />
-                              )
-                            ) : (
-                              <img
-                                src={thumbOrVideoSrc}
-                                alt={item.labelBn || section.titleBn}
-                                loading="lazy"
-                              />
-                            )}
-
-                            <span
-                              className={`adm-media-type-badge ${
-                                isVideo
-                                  ? 'adm-media-type-badge--video'
-                                  : 'adm-media-type-badge--image'
-                              }`}
-                            >
-                              {isVideo ? '🎥 ভিডিও' : '🖼️ ছবি'}
-                            </span>
-
-                            {!isVideo && (
-                              <button
-                                type="button"
-                                className="adm-media-zoom-btn"
-                                onClick={() =>
-                                  setLightboxImage({
-                                    src: thumbOrVideoSrc,
-                                    caption: item.labelBn || section.titleBn,
-                                  })
-                                }
-                              >
-                                🔍 বড় করে দেখুন
-                              </button>
-                            )}
-
-                            <button
-                              type="button"
-                              className="adm-media-delete-btn"
-                              onClick={() =>
-                                handleDeleteMediaItem(section.id, item.id)
-                              }
-                            >
-                              🗑️ ডিলিট
-                            </button>
-                          </div>
-
-                          <input
-                            type="text"
-                            value={item.labelBn || ''}
-                            onChange={(e) =>
-                              handleUpdateItemCaption(
-                                section.id,
-                                item.id,
-                                e.target.value
-                              )
-                            }
-                            placeholder="ছবির সংক্ষিপ্ত ক্যাপশন (ঐচ্ছিক)"
-                            className="adm-media-caption-input"
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <p className="adm-empty-room-note">
-                    এই রুমে এখনো কোনো ছবি বা ভিডিও যোগ করা হয়নি। নিচের বাটনে চাপ দিয়ে যোগ করুন।
-                  </p>
-                )}
-
-                {/* 3. Add New Photos or Videos to This Room */}
-                <div className="adm-room-add-zone">
-                  <label className="adm-room-upload-btn">
-                    <input
-                      type="file"
-                      multiple
-                      accept="image/*,video/*"
-                      onChange={(e) => {
-                        handleMultiFileUploadToSection(section.id, e.target.files);
-                        e.target.value = '';
-                      }}
-                      hidden
-                    />
-                    {isUploadingHere
-                      ? `⏳ গুগল ড্রাইভে (Drive/${selectedUnit.id}/${section.titleBn}) আপলোড হচ্ছে...`
-                      : '📷 🎥 ফোন বা কম্পিউটার থেকে এই রুমের ছবি ও ভিডিও যোগ করুন (একাধিক সিলেক্ট করা যাবে)'}
-                  </label>
-
-                  <button
-                    type="button"
-                    className="adm-room-link-toggle-btn"
-                    onClick={() =>
-                      setOpenLinkPanelSecId(isLinkPanelOpen ? null : section.id)
-                    }
-                  >
-                    🔗 গুগল ড্রাইভের ছবি বা ভিডিওর লিংক যোগ করুন
-                  </button>
-                </div>
-
-                {isLinkPanelOpen && (
-                  <div className="adm-room-link-panel">
-                    <div className="adm-room-link-panel__types">
-                      <button
-                        type="button"
-                        className={`adm-type-pill ${
-                          newLinkType === 'image' ? 'adm-type-pill--active' : ''
-                        }`}
-                        onClick={() => setNewLinkType('image')}
-                      >
-                        🖼️ ছবি (Image)
-                      </button>
-                      <button
-                        type="button"
-                        className={`adm-type-pill ${
-                          newLinkType === 'video' ? 'adm-type-pill--active' : ''
-                        }`}
-                        onClick={() => setNewLinkType('video')}
-                      >
-                        🎥 ভিডিও (Video)
-                      </button>
-                    </div>
-
-                    <div className="adm-room-link-panel__inputs">
-                      <input
-                        type="text"
-                        value={newLinkUrl}
-                        onChange={(e) => setNewLinkUrl(e.target.value)}
-                        placeholder="গুগল ড্রাইভ শেয়ার লিংক বা File ID পেস্ট করুন..."
-                        className="adm-room-link-panel__url"
-                      />
-                      <input
-                        type="text"
-                        value={newLinkCaption}
-                        onChange={(e) => setNewLinkCaption(e.target.value)}
-                        placeholder="ক্যাপশন (ঐচ্ছিক)"
-                        className="adm-room-link-panel__caption"
-                      />
-                      <button
-                        type="button"
-                        className="adm-room-link-panel__submit"
-                        onClick={() => handleAddDriveLinkToSection(section.id)}
-                      >
-                        ➕ এই রুমে যুক্ত করুন
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </article>
-            );
-          })}
-        </div>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       {/* Lightbox Modal for Previewing Room Photos inside Admin */}
       {lightboxImage && (
-        <div
-          className="adm-modal-backdrop"
-          onClick={() => setLightboxImage(null)}
-        >
-          <div
-            className="adm-lightbox-box"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div className="adm-modal-backdrop" onClick={() => setLightboxImage(null)}>
+          <div className="adm-lightbox-box" onClick={(e) => e.stopPropagation()}>
             <button
               type="button"
               className="adm-lightbox-box__close"

@@ -2698,3 +2698,144 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* ==========================================================================
+   7. REAL GOOGLE DRIVE STATUS BAR & QUOTA NOTICE STYLES
+   ========================================================================== */
+
+.adm-toast--error {
+  background: var(--unpaid);
+}
+
+.adm-drive-status-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1.5px dashed rgba(31, 36, 33, 0.2);
+}
+
+.adm-drive-conn-pill {
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.adm-drive-conn-pill--ok {
+  background: var(--available-bg);
+  border: 1.6px solid var(--available);
+  color: #1b4332;
+}
+
+.adm-drive-conn-pill--off {
+  background: var(--unpaid-bg);
+  border: 1.6px solid var(--unpaid);
+  color: var(--unpaid);
+}
+
+.adm-drive-open-link,
+.adm-sec-drive-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border: 1.6px solid var(--terracotta);
+  border-radius: 999px;
+  background: var(--surface-white);
+  color: var(--terracotta);
+  font-family: var(--font-heading);
+  font-size: 15.5px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.adm-drive-open-link:hover,
+.adm-sec-drive-link:hover {
+  background: var(--terracotta);
+  color: #ffffff;
+}
+
+.adm-drive-sync-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.adm-sync-all-btn {
+  min-height: 56px;
+  padding: 12px 18px;
+  border: 2px solid var(--ink);
+  border-radius: 14px;
+  background: var(--surface-white);
+  color: var(--ink);
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 2px 3px 0 var(--ink);
+}
+
+.adm-sync-all-btn:hover {
+  background: var(--surface-sand);
+}
+
+.adm-quota-notice {
+  margin-top: 14px;
+  padding: 16px 18px;
+  border: 2.2px solid var(--ochre);
+  border-radius: 15px;
+  background: #fff9eb;
+  color: var(--ink);
+}
+
+.adm-quota-notice__title {
+  margin: 0 0 6px;
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 700;
+  color: #92400e;
+}
+
+.adm-quota-notice__desc {
+  margin: 0 0 12px;
+  font-size: 17.5px;
+  line-height: 1.5;
+}
+
+.adm-quota-notice__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.adm-quota-notice__open-btn,
+.adm-quota-notice__sync-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50px;
+  padding: 10px 18px;
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 2px 3px 0 var(--ink);
+}
+
+.adm-quota-notice__open-btn {
+  background: var(--terracotta);
+  color: #ffffff;
+}
+
+.adm-quota-notice__sync-btn {
+  background: var(--available);
+  color: #ffffff;
+}
