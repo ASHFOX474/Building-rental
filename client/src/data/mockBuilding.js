@@ -24,6 +24,8 @@ export const building = {
 
   location: {
     addressBn: 'জহিরুল হক মিয়ার গ্যারেজ, জান্নাত প্লাজার পাশে।',
+    conciseAddressBn:
+      'জহিরুল হক মিয়ার গ্যারেজ (জান্নাত প্লাজা ও মারকাজুল হেকমাহ মাদ্রাসার পাশে)',
     fullAddressBn:
       'জহিরুল হক মিয়ার গ্যারেজ, জান্নাত প্লাজার পাশে (আলিপুরের দিকে রাস্তা ধরে মাত্র ৩–৪ মিনিট হাঁটার দূরত্বে, মারকাজুল হেকমাহ ইন্টারন্যাশনাল মাদ্রাসার পাশে)।',
     landmarksBn: [
@@ -250,6 +252,136 @@ export const floors = [
     units: [
       { id: 'A1', widthPct: 45, status: 'occupied', rent: 11000, bedrooms: 3, washrooms: 2, balconies: 2 },
       { id: 'A2', widthPct: 55, status: 'occupied', rent: 12000, bedrooms: 3, washrooms: 2, balconies: 3 },
+    ],
+  },
+];
+
+// Default Admin-Organized Room-by-Room Media Sections for available flats.
+// When a real `driveFileId` is set from the Admin Panel, the frontend loads:
+//   https://drive.google.com/thumbnail?id=${driveFileId}&sz=w1000
+export const defaultRoomMediaSections = [
+  {
+    id: 'sec-drawing',
+    category: 'drawing',
+    titleBn: '১. ড্রয়িং ও ডাইনিং রুম',
+    items: [
+      {
+        id: 'dd-1',
+        type: 'image',
+        labelBn: 'প্রশস্ত ড্রয়িং ও ডাইনিং রুম (দেয়ালে টাইলস ফিনিশিং)',
+        driveFileId: '',
+        previewUrl:
+          'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1000&q=80',
+      },
+      {
+        id: 'dd-2',
+        type: 'image',
+        labelBn: 'ডাইনিং স্পেস ও প্রাকৃতিক আলো-বাতাস',
+        driveFileId: '',
+        previewUrl:
+          'https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?auto=format&fit=crop&w=1000&q=80',
+      },
+      {
+        id: 'dd-3',
+        type: 'image',
+        labelBn: 'ড্রয়িং রুমের মেইন এন্ট্রি ও ফ্লোর টাইলস',
+        driveFileId: '',
+        previewUrl:
+          'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1000&q=80',
+      },
+    ],
+  },
+  {
+    id: 'sec-master',
+    category: 'master',
+    titleBn: '২. মাস্টার বেডরুম ও এটাচড বাথরুম',
+    items: [
+      {
+        id: 'mb-1',
+        type: 'image',
+        labelBn: 'মাস্টার বেডরুম (দক্ষিণ-পূর্ব মুখী জানালা ও বারান্দা)',
+        driveFileId: '',
+        previewUrl:
+          'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?auto=format&fit=crop&w=1000&q=80',
+      },
+      {
+        id: 'mb-2',
+        type: 'image',
+        labelBn: 'মাস্টার বেডরুমের সাথে সংযুক্ত বারান্দা',
+        driveFileId: '',
+        previewUrl:
+          'https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?auto=format&fit=crop&w=1000&q=80',
+      },
+      {
+        id: 'mb-3',
+        type: 'image',
+        labelBn: 'এটাচড বাথরুম (হাই-কমোড ও আধুনিক ফিটিংস)',
+        driveFileId: '',
+        previewUrl:
+          'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=1000&q=80',
+      },
+    ],
+  },
+  {
+    id: 'sec-other-beds',
+    category: 'other-bedrooms',
+    titleBn: '৩. ২য় ও ৩য় বেডরুম ও বারান্দা',
+    items: [
+      {
+        id: 'ob-1',
+        type: 'image',
+        labelBn: '২য় বেডরুম (পর্যাপ্ত আলো-বাতাস ও সংযুক্ত বারান্দা)',
+        driveFileId: '',
+        previewUrl:
+          'https://images.unsplash.com/photo-1540518614846-7ede433c457?auto=format&fit=crop&w=1000&q=80',
+      },
+      {
+        id: 'ob-2',
+        type: 'image',
+        labelBn: '৩য় বেডরুম (উত্তর-পূর্ব কোণ)',
+        driveFileId: '',
+        previewUrl:
+          'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1000&q=80',
+      },
+      {
+        id: 'ob-3',
+        type: 'image',
+        labelBn: 'খোলামেলা বারান্দা ও বাইরের ভিউ',
+        driveFileId: '',
+        previewUrl:
+          'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1000&q=80',
+      },
+    ],
+  },
+  {
+    id: 'sec-kitchen-bath',
+    category: 'kitchen-bath',
+    titleBn: '৪. কিচেন ও কমন বাথরুম',
+    items: [
+      {
+        id: 'kb-1',
+        type: 'image',
+        labelBn: 'আধুনিক ও সুপরিকল্পিত কিচেন (লাইনের গ্যাস ও সিঙ্ক)',
+        driveFileId: '',
+        previewUrl:
+          'https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=1000&q=80',
+      },
+      {
+        id: 'kb-2',
+        type: 'image',
+        labelBn: 'কিচেন কেবিনেট ও দেয়ালের টাইলস',
+        driveFileId: '',
+        previewUrl:
+          'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=1000&q=80',
+      },
+      {
+        id: 'kb-3',
+        type: 'image',
+        labelBn: 'কমন বাথরুম (সার্বক্ষণিক পানির সুবিধা)',
+        driveFileId: '',
+        previewUrl:
+          'https://images.unsplash.com/photo-1620626011761-996317b8d101?auto=format&fit=crop&w=1000&q=80',
+      },
     ],
   },
 ];
