@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import FloorCompassFrame from '../../components/floormap/FloorCompassFrame.jsx';
 import FloorABlueprint from '../../components/floormap/FloorABlueprint.jsx';
@@ -130,12 +129,6 @@ export default function FloorMapPage() {
   const { building, floors } = useBuilding();
   const { floorNumber } = useParams();
   const navigate = useNavigate();
-  const [mobileZoom, setMobileZoom] = useState(false);
-
-  const orderedFloors = floors
-    .filter((f) => f.isVisible !== false)
-    .slice()
-    .sort((a, b) => a.floorNumber - b.floorNumber);
 
   const floorB = floors.find((f) => f.id === 'B') || floors[0];
   const currentFloor =
@@ -152,36 +145,12 @@ export default function FloorMapPage() {
 
   return (
     <div className="fmap-page">
-      {/* Top Bar (Back Button + Floor Switcher), Title, Alpana Divider & Dynamic Legend Pills */}
+      {/* Top Bar (Back Button), Title, Alpana Divider & Dynamic Legend Pills */}
       <header className="fmap-header">
         <div className="fmap-header__nav">
           <Link to="/" className="fmap-back-btn">
             ⬅️ হোম পেজে ফিরে যান
           </Link>
-
-          {/* Top Floor Switcher Bar */}
-          <nav className="fmap-switcher" aria-label="অন্যান্য তলার ফ্লোর ম্যাপ দেখুন">
-            {orderedFloors.map((f) => {
-              const isActive = f.id === currentFloor.id;
-              const hasOpen = f.units.some(isUnitAvailable);
-              return (
-                <button
-                  key={f.id}
-                  type="button"
-                  onClick={() => navigate(`/floor/${f.floorNumber}`)}
-                  className={`fmap-switcher__btn ${isActive ? 'fmap-switcher__btn--active' : ''}`}
-                >
-                  {f.nameBn} ({f.id})
-                  {hasOpen && (
-                    <span
-                      className="fmap-switcher__dot fmap-switcher__dot--open"
-                      title="এই তলায় ফ্ল্যাট খালি আছে (ভাড়া হবে)"
-                    />
-                  )}
-                </button>
-              );
-            })}
-          </nav>
         </div>
 
         <h1 className="fmap-header__title">
@@ -220,44 +189,9 @@ export default function FloorMapPage() {
       </header>
 
       <main className="fmap-main">
-        {/* Mobile-only View Mode Toggle (hidden on desktop > 768px) */}
-        <div
-          className="fmap-mobile-zoom-bar"
-          role="group"
-          aria-label="মোবাইল ফ্লোর ম্যাপ দেখার ধরন"
-        >
-          <button
-            type="button"
-            className={`fmap-mobile-zoom-btn ${
-              !mobileZoom ? 'fmap-mobile-zoom-btn--active' : ''
-            }`}
-            onClick={() => setMobileZoom(false)}
-            aria-pressed={!mobileZoom}
-          >
-            📱 পুরো ম্যাপ এক নজরে
-          </button>
-          <button
-            type="button"
-            className={`fmap-mobile-zoom-btn ${
-              mobileZoom ? 'fmap-mobile-zoom-btn--active' : ''
-            }`}
-            onClick={() => setMobileZoom(true)}
-            aria-pressed={mobileZoom}
-          >
-            🔍 বড় করে জুম ভিউ (সোয়াইপ করুন)
-          </button>
-        </div>
-
-        {mobileZoom && (
-          <p className="fmap-mobile-zoom-hint">
-            👈 ম্যাপের ওপর ডানে-বামে সোয়াইপ করে প্রতিটি রুমের নাম স্পষ্ট দেখুন 👉
-          </p>
-        )}
-
         <FloorCompassFrame
           surroundings={building.surroundings}
           hasAvailableUnit={floorHasAvailable}
-          mobileZoom={mobileZoom}
         >
           <ActiveBlueprint floor={currentFloor} />
         </FloorCompassFrame>

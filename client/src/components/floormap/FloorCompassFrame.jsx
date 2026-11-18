@@ -117,7 +117,6 @@ function StreetFlourish() {
 export default function FloorCompassFrame({
   surroundings,
   hasAvailableUnit = true,
-  mobileZoom = false,
   children,
 }) {
   return (
@@ -154,7 +153,7 @@ export default function FloorCompassFrame({
         </div>
 
         {/* Center — Floor Map SVG (Directly in the same box) */}
-        <div className={`fmap-box__plan ${mobileZoom ? 'fmap-box__plan--zoom' : ''}`}>
+        <div className="fmap-box__plan">
           {children}
         </div>
 

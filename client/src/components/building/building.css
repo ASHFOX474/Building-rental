@@ -327,7 +327,17 @@
 /* ---------- Responsive (<= 768px Mobile Only — Desktop Unchanged) ---------- */
 @media (max-width: 768px) {
   .bldg {
-    --row-h: 118px;
+    --row-h: auto;
+  }
+
+  .bldg__grid {
+    grid-template-rows: repeat(var(--floors), minmax(122px, auto));
+  }
+
+  .bldg__body {
+    height: auto;
+    max-height: none;
+    overflow: visible;
   }
 
   .unit {
@@ -341,7 +351,7 @@
   }
 }
 
-/* Narrow phones: no room for side margins -> callouts become crisp in-cell badges */
+/* Narrow phones: stack floors at natural proportional height (never clip/squash) */
 @media (max-width: 640px) {
   .bldg {
     --gutter: 0px;
@@ -349,13 +359,48 @@
     padding-inline: 2px;
   }
 
+  .roof {
+    width: 100%;
+    height: auto;
+    max-height: none;
+  }
+
   .bldg__grid {
-    grid-template-rows: none;
-    grid-auto-rows: minmax(122px, auto);
+    display: block;
+    position: relative;
   }
 
   .bldg__sketch {
-    margin: -3px;
+    position: absolute;
+    inset: -3px -2px;
+    margin: 0;
+  }
+
+  .bldg__body {
+    position: relative;
+    z-index: 1;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .floor {
+    flex: none;
+    min-height: 118px;
+    height: auto;
+  }
+
+  .floor:first-child {
+    border-top-left-radius: 25px;
+    border-top-right-radius: 25px;
+    overflow: hidden;
+  }
+
+  .floor:last-child {
+    border-bottom-left-radius: 25px;
+    border-bottom-right-radius: 25px;
+    overflow: hidden;
   }
 
   .callout {
@@ -363,7 +408,7 @@
   }
 
   .unit {
-    min-height: 122px;
+    min-height: 118px;
   }
 
   .unit--available {
@@ -399,6 +444,7 @@
 
   .ground {
     width: 100%;
+    height: auto;
   }
 }
 

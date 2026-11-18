@@ -81,15 +81,17 @@ export default function FlatDetailsPage() {
       .map((u) => ({ ...u, floorNumber: f.floorNumber, floorNameBn: f.nameBn }))
   );
 
-  // Room filter tab state & Fullscreen Lightbox state
+  // Room filter tab state & Fullscreen Lightbox state (supports both photos & videos)
   const [activeTabId, setActiveTabId] = useState('all');
   const [lightboxIndex, setLightboxIndex] = useState(null);
+  const [mainVideoModalOpen, setMainVideoModalOpen] = useState(false);
   const touchStartXRef = useRef(null);
 
   // Reset filter & lightbox when switching units
   useEffect(() => {
     setActiveTabId('all');
     setLightboxIndex(null);
+    setMainVideoModalOpen(false);
   }, [normalizedId]);
 
   const sections = getDefaultSectionsForUnit(matchedUnit);
@@ -99,59 +101,64 @@ export default function FlatDetailsPage() {
       ? sections
       : sections.filter((sec) => sec.id === activeTabId);
 
-  // Flattened list of all visible IMAGE items for Lightbox Next/Prev navigation
-  const flatImageList = filteredSections.flatMap((sec, secIdx) =>
-    (sec.items || [])
-      .filter((item) => item.type !== 'video')
-      .map((item) => ({
-        ...item,
-        sectionTitleBn: `${toBanglaDigits(secIdx + 1)}. ${sec.titleBn}`,
-      }))
+  // Flattened list of all visible IMAGE and VIDEO items for Lightbox Next/Prev navigation
+  const flatMediaList = filteredSections.flatMap((sec, secIdx) =>
+    (sec.items || []).map((item) => ({
+      ...item,
+      sectionTitleBn: `${toBanglaDigits(secIdx + 1)}. ${sec.titleBn}`,
+    }))
   );
 
-  const closeLightbox = useCallback(() => setLightboxIndex(null), []);
+  const closeLightbox = useCallback(() => {
+    setLightboxIndex(null);
+    setMainVideoModalOpen(false);
+  }, []);
   const showPrev = useCallback(
     (e) => {
       if (e) e.stopPropagation();
       setLightboxIndex((idx) =>
-        idx === null || flatImageList.length === 0
+        idx === null || flatMediaList.length === 0
           ? null
-          : (idx - 1 + flatImageList.length) % flatImageList.length
+          : (idx - 1 + flatMediaList.length) % flatMediaList.length
       );
     },
-    [flatImageList.length]
+    [flatMediaList.length]
   );
   const showNext = useCallback(
     (e) => {
       if (e) e.stopPropagation();
       setLightboxIndex((idx) =>
-        idx === null || flatImageList.length === 0
+        idx === null || flatMediaList.length === 0
           ? null
-          : (idx + 1) % flatImageList.length
+          : (idx + 1) % flatMediaList.length
       );
     },
-    [flatImageList.length]
+    [flatMediaList.length]
   );
 
   // Keyboard navigation for Fullscreen Lightbox
   useEffect(() => {
-    if (lightboxIndex === null) return undefined;
+    if (lightboxIndex === null && !mainVideoModalOpen) return undefined;
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') closeLightbox();
-      if (e.key === 'ArrowLeft') showPrev();
-      if (e.key === 'ArrowRight') showNext();
+      if (!mainVideoModalOpen) {
+        if (e.key === 'ArrowLeft') showPrev();
+        if (e.key === 'ArrowRight') showNext();
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [lightboxIndex, closeLightbox, showPrev, showNext]);
+  }, [lightboxIndex, mainVideoModalOpen, closeLightbox, showPrev, showNext]);
 
   const handleLightboxTouchStart = (e) => {
+    if (mainVideoModalOpen) return;
     if (e.touches && e.touches.length === 1) {
       touchStartXRef.current = e.touches[0].clientX;
     }
   };
 
   const handleLightboxTouchEnd = (e) => {
+    if (mainVideoModalOpen) return;
     if (touchStartXRef.current === null || !e.changedTouches?.length) return;
     const deltaX = e.changedTouches[0].clientX - touchStartXRef.current;
     touchStartXRef.current = null;
@@ -271,8 +278,17 @@ export default function FlatDetailsPage() {
     { icon: '📹', text: 'সিসিটিভি' },
   ];
 
-  const activeLightboxItem =
-    lightboxIndex !== null ? flatImageList[lightboxIndex] : null;
+  const activeLightboxItem = mainVideoModalOpen
+    ? {
+        id: 'main-walkthrough',
+        type: 'video',
+        driveFileId: matchedUnit.driveVideoId,
+        previewUrl: matchedUnit.mainVideoUrl,
+        sectionTitleBn: `🎥 ইউনিট ${matchedUnit.id} — পুরো ফ্ল্যাটের ভিডিও`,
+      }
+    : lightboxIndex !== null
+      ? flatMediaList[lightboxIndex]
+      : null;
 
   return (
     <div className="fd-page">
@@ -344,7 +360,16 @@ export default function FlatDetailsPage() {
               <CardAlpanaCorner pos="bl" />
               <CardAlpanaCorner pos="br" />
 
-              <h2 className="fd-card-title">🎥 পুরো ফ্ল্যাটের ভিডিও</h2>
+              <div className="fd-video-card__head">
+                <h2 className="fd-card-title">🎥 পুরো ফ্ল্যাটের ভিডিও</h2>
+                <button
+                  type="button"
+                  className="fd-video-expand-btn"
+                  onClick={() => setMainVideoModalOpen(true)}
+                >
+                  🔍 বড় পর্দায় দেখুন
+                </button>
+              </div>
 
               <div className="fd-video-frame">
                 {matchedUnit.driveVideoId ? (
@@ -411,44 +436,64 @@ export default function FlatDetailsPage() {
 
                     <div className="fd-media-grid">
                       {(section.items || []).map((item) => {
-                        if (item.type === 'video') {
-                          const videoSrc = item.driveFileId
-                            ? `https://drive.google.com/file/d/${item.driveFileId}/preview`
-                            : item.previewUrl;
+                        const globalMediaIdx = flatMediaList.findIndex(
+                          (m) => m.id === item.id
+                        );
 
+                        if (item.type === 'video') {
                           return (
-                            <div
+                            <button
                               key={item.id}
+                              type="button"
                               className="fd-media-thumb fd-media-thumb--video"
+                              onClick={() => {
+                                setMainVideoModalOpen(false);
+                                setLightboxIndex(globalMediaIdx);
+                              }}
+                              aria-label={`${section.titleBn} — ${
+                                item.labelBn || 'ভিডিও বড় পর্দায় দেখুন'
+                              }`}
                             >
                               {item.driveFileId ? (
-                                <iframe
-                                  title={item.labelBn || section.titleBn}
-                                  src={videoSrc}
-                                  allow="autoplay; fullscreen"
-                                  allowFullScreen
+                                <img
+                                  src={getMediaThumbUrl(item)}
+                                  alt={item.labelBn || section.titleBn}
+                                  loading="lazy"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                  }}
                                 />
                               ) : (
-                                <video
-                                  src={videoSrc}
-                                  controls
-                                  preload="metadata"
-                                />
+                                item.previewUrl && (
+                                  <video
+                                    src={item.previewUrl}
+                                    muted
+                                    playsInline
+                                    preload="metadata"
+                                    className="fd-media-thumb__video-preview"
+                                  />
+                                )
                               )}
                               <span className="fd-media-video-tag">🎥 ভিডিও</span>
-                            </div>
+                              <span className="fd-video-play-center" aria-hidden="true">
+                                ▶️ ভিডিও দেখুন
+                              </span>
+                              <span className="fd-media-thumb__zoom" aria-hidden="true">
+                                🔍
+                              </span>
+                            </button>
                           );
                         }
 
-                        const globalImgIdx = flatImageList.findIndex(
-                          (m) => m.id === item.id
-                        );
                         return (
                           <button
                             key={item.id}
                             type="button"
                             className="fd-media-thumb"
-                            onClick={() => setLightboxIndex(globalImgIdx)}
+                            onClick={() => {
+                              setMainVideoModalOpen(false);
+                              setLightboxIndex(globalMediaIdx);
+                            }}
                             aria-label={`${section.titleBn} — ${
                               item.labelBn || 'ছবি বড় করে দেখুন'
                             }`}
@@ -574,14 +619,14 @@ export default function FlatDetailsPage() {
       </div>
 
       {/* =====================================================================
-          FULLSCREEN LIGHTBOX MODAL
+          FULLSCREEN LIGHTBOX MODAL (Photos & Widescreen Videos)
          ===================================================================== */}
       {activeLightboxItem && (
         <div
           className="fd-lightbox"
           role="dialog"
           aria-modal="true"
-          aria-label="ছবি বড় করে দেখুন"
+          aria-label="ছবি ও ভিডিও বড় পর্দায় দেখুন"
           onClick={closeLightbox}
           onTouchStart={handleLightboxTouchStart}
           onTouchEnd={handleLightboxTouchEnd}
@@ -595,42 +640,68 @@ export default function FlatDetailsPage() {
             ✕
           </button>
 
-          <button
-            type="button"
-            className="fd-lightbox__nav fd-lightbox__nav--prev"
-            onClick={showPrev}
-            aria-label="আগের ছবি"
-          >
-            <span className="fd-lightbox__arrow-desktop" aria-hidden="true">‹</span>
-            <span className="fd-lightbox__arrow-mobile" aria-hidden="true">⬅️</span>
-          </button>
+          {!mainVideoModalOpen && flatMediaList.length > 1 && (
+            <button
+              type="button"
+              className="fd-lightbox__nav fd-lightbox__nav--prev"
+              onClick={showPrev}
+              aria-label="আগেরটি"
+            >
+              <span className="fd-lightbox__arrow-desktop" aria-hidden="true">‹</span>
+              <span className="fd-lightbox__arrow-mobile" aria-hidden="true">⬅️</span>
+            </button>
+          )}
 
           <figure
             className="fd-lightbox__figure"
             onClick={(e) => e.stopPropagation()}
           >
-            <img
-              src={getMediaFullUrl(activeLightboxItem)}
-              alt={activeLightboxItem.labelBn || activeLightboxItem.sectionTitleBn}
-              className="fd-lightbox__img"
-            />
+            {activeLightboxItem.type === 'video' ? (
+              <div className="fd-lightbox__video-box">
+                {activeLightboxItem.driveFileId ? (
+                  <iframe
+                    title={activeLightboxItem.labelBn || activeLightboxItem.sectionTitleBn}
+                    src={`https://drive.google.com/file/d/${activeLightboxItem.driveFileId}/preview`}
+                    allow="autoplay; fullscreen"
+                    allowFullScreen
+                  />
+                ) : (
+                  <video
+                    src={activeLightboxItem.previewUrl}
+                    controls
+                    autoPlay
+                    playsInline
+                  />
+                )}
+              </div>
+            ) : (
+              <img
+                src={getMediaFullUrl(activeLightboxItem)}
+                alt={activeLightboxItem.labelBn || activeLightboxItem.sectionTitleBn}
+                className="fd-lightbox__img"
+              />
+            )}
             <figcaption className="fd-lightbox__caption">
               <span>{activeLightboxItem.sectionTitleBn}</span>
-              <span className="fd-lightbox__counter">
-                {toBanglaDigits(lightboxIndex + 1)} / {toBanglaDigits(flatImageList.length)}
-              </span>
+              {!mainVideoModalOpen && (
+                <span className="fd-lightbox__counter">
+                  {toBanglaDigits(lightboxIndex + 1)} / {toBanglaDigits(flatMediaList.length)}
+                </span>
+              )}
             </figcaption>
           </figure>
 
-          <button
-            type="button"
-            className="fd-lightbox__nav fd-lightbox__nav--next"
-            onClick={showNext}
-            aria-label="পরের ছবি"
-          >
-            <span className="fd-lightbox__arrow-desktop" aria-hidden="true">›</span>
-            <span className="fd-lightbox__arrow-mobile" aria-hidden="true">➡️</span>
-          </button>
+          {!mainVideoModalOpen && flatMediaList.length > 1 && (
+            <button
+              type="button"
+              className="fd-lightbox__nav fd-lightbox__nav--next"
+              onClick={showNext}
+              aria-label="পরেরটি"
+            >
+              <span className="fd-lightbox__arrow-desktop" aria-hidden="true">›</span>
+              <span className="fd-lightbox__arrow-mobile" aria-hidden="true">➡️</span>
+            </button>
+          )}
         </div>
       )}
     </div>

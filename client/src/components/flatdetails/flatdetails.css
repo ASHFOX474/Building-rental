@@ -223,6 +223,15 @@
   background: var(--surface-white);
 }
 
+.fd-video-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  margin-bottom: 12px;
+}
+
 .fd-card-title {
   margin: 0 0 12px;
   font-size: 20px;
@@ -230,23 +239,53 @@
   color: var(--ink);
 }
 
+.fd-video-card__head .fd-card-title {
+  margin: 0;
+}
+
+.fd-video-expand-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 6px 14px;
+  border: 1.8px solid var(--ink);
+  border-radius: 999px;
+  background: var(--surface-sand);
+  color: var(--ink);
+  font-family: var(--font-heading);
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 var(--ink);
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.fd-video-expand-btn:hover {
+  background: var(--terracotta);
+  color: #ffffff;
+}
+
 .fd-video-frame {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
   border: 2px solid var(--ink);
-  border-radius: 13px;
+  border-radius: 12px;
   overflow: hidden;
-  background: #1f2421;
+  background: #000;
 }
 
 .fd-video-frame iframe,
 .fd-video-frame video {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
   border: 0;
-  object-fit: cover;
+  object-fit: contain;
+  background: #000;
 }
 
 /* Clean minimal video cover with a single play button */
@@ -391,15 +430,54 @@
   transition: transform 0.3s ease;
 }
 
+.fd-media-thumb__video-preview {
+  pointer-events: none;
+}
+
 .fd-media-thumb--video {
-  cursor: default;
-  background: #1f2421;
+  cursor: pointer;
+  background: radial-gradient(circle at center, #333834 0%, #161a17 100%);
+}
+
+.fd-media-thumb--video img,
+.fd-media-thumb--video video {
+  filter: brightness(0.76);
+}
+
+.fd-video-play-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 7px 14px;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  background: rgba(200, 90, 50, 0.94);
+  color: #ffffff;
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.fd-media-thumb--video:hover .fd-video-play-center {
+  transform: translate(-50%, -50%) scale(1.06);
+  background: var(--terracotta);
 }
 
 .fd-media-video-tag {
   position: absolute;
   top: 8px;
   left: 8px;
+  z-index: 2;
   padding: 2px 10px;
   border-radius: 999px;
   background: var(--terracotta);
@@ -418,10 +496,11 @@
   position: absolute;
   right: 8px;
   bottom: 8px;
+  z-index: 2;
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: rgba(31, 36, 33, 0.75);
+  background: rgba(31, 36, 33, 0.78);
   color: #ffffff;
   display: flex;
   align-items: center;
@@ -431,6 +510,7 @@
   transition: opacity 0.2s;
 }
 
+.fd-media-thumb--video .fd-media-thumb__zoom,
 .fd-media-thumb:hover .fd-media-thumb__zoom {
   opacity: 1;
 }
@@ -674,7 +754,7 @@
 
 .fd-lightbox__figure {
   margin: 0;
-  max-width: min(960px, 86vw);
+  width: min(960px, 86vw);
   max-height: 84vh;
   display: flex;
   flex-direction: column;
@@ -688,6 +768,28 @@
   border-radius: 14px;
   object-fit: contain;
   background: #1f2421;
+}
+
+.fd-lightbox__video-box {
+  position: relative;
+  width: 100%;
+  max-width: 960px;
+  aspect-ratio: 16 / 9;
+  border: 2.5px solid #faf7f2;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #000;
+}
+
+.fd-lightbox__video-box iframe,
+.fd-lightbox__video-box video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  object-fit: contain;
+  background: #000;
 }
 
 .fd-lightbox__caption {
@@ -782,7 +884,20 @@
 /* ---------- Responsive Layout ---------- */
 @media (max-width: 960px) {
   .fd-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .fd-col-left,
+  .fd-col-right,
+  .fd-gallery-section,
+  .fd-room-sections,
+  .fd-puthi-card {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
   }
 
   .fd-col-right {
@@ -792,13 +907,17 @@
 
 @media (max-width: 768px) {
   .fd-page {
-    padding: 12px 10px calc(92px + env(safe-area-inset-bottom, 0px));
+    width: 100%;
     max-width: 100vw;
+    box-sizing: border-box;
+    padding: 12px 10px calc(92px + env(safe-area-inset-bottom, 0px));
     overflow-x: hidden;
   }
 
   .fd-topbar {
     gap: 8px;
+    width: 100%;
+    max-width: 100%;
   }
 
   .fd-topbar__left {
@@ -841,17 +960,47 @@
     padding: 4px 10px;
   }
 
+  .fd-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .fd-col-left,
+  .fd-col-right,
+  .fd-gallery-section,
+  .fd-room-sections,
+  .fd-puthi-card,
+  .fd-room-card,
+  .fd-receipt-card,
+  .fd-video-card {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
   .fd-puthi-card {
     padding: 14px 12px;
     border-radius: 15px;
   }
 
+  .fd-video-expand-btn {
+    font-size: 12.5px;
+    padding: 5px 11px;
+    min-height: 36px;
+  }
+
   .fd-filter-tabs {
+    width: 100%;
+    max-width: 100%;
     flex-wrap: nowrap;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     padding: 2px 2px 6px;
+    box-sizing: border-box;
   }
 
   .fd-filter-tabs::-webkit-scrollbar {
@@ -866,13 +1015,22 @@
     font-size: 14px;
   }
 
+  /* Strict 1-column media stack inside each room card on mobile (no right clipping) */
   .fd-media-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    gap: 12px;
   }
 
   .fd-media-thumb__zoom {
     opacity: 1;
+  }
+
+  .fd-receipt-rent__amount,
+  .fd-inclusive-badge,
+  .fd-start-month-row,
+  .fd-location-box__address {
+    overflow-wrap: anywhere;
   }
 
   .fd-call-grid {
@@ -969,8 +1127,13 @@
   }
 
   .fd-lightbox__figure {
+    width: 100%;
     max-width: 96vw;
     max-height: 76vh;
+  }
+
+  .fd-lightbox__video-box {
+    max-height: 62vh;
   }
 
   .fd-lightbox__img {

@@ -524,12 +524,6 @@
   width: 100%;
 }
 
-/* Mobile-only zoom toggle bar & swipe hint (strictly hidden on desktop > 768px) */
-.fmap-mobile-zoom-bar,
-.fmap-mobile-zoom-hint {
-  display: none;
-}
-
 .bp-svg {
   display: block;
   width: 100%;
@@ -654,64 +648,26 @@
   }
 }
 
-/* ---------- Responsive Layout ---------- */
-@media (max-width: 900px) {
-  .fmap-box__middle {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-
-  .fmap-box__edge--left,
-  .fmap-box__edge--right {
-    flex-direction: row;
-    padding: 2px 8px;
-  }
-}
-
+/* ---------- Responsive Layout (<= 768px Mobile Only — Preserves 4-Side Compass) ---------- */
 @media (max-width: 768px) {
   .fmap-page {
-    padding: 12px 10px 30px;
+    padding: 12px 8px 28px;
     max-width: 100vw;
     overflow-x: hidden;
   }
 
   .fmap-header__nav {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
+    justify-content: flex-start;
   }
 
   .fmap-back-btn {
-    align-self: flex-start;
     min-height: 44px;
     font-size: 14px;
     padding: 6px 12px;
   }
 
-  .fmap-switcher {
-    width: 100%;
-    flex-wrap: nowrap;
-    justify-content: flex-start;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    padding: 5px;
-  }
-
-  .fmap-switcher::-webkit-scrollbar {
-    display: none;
-  }
-
-  .fmap-switcher__btn {
-    flex: 0 0 auto;
-    min-height: 42px;
-    white-space: nowrap;
-    font-size: 13.5px;
-    padding: 6px 12px;
-  }
-
   .fmap-header__title {
-    font-size: clamp(20px, 5.2vw, 25px);
+    font-size: clamp(19px, 5vw, 24px);
   }
 
   .fmap-legend {
@@ -723,74 +679,66 @@
     padding: 5px 10px;
   }
 
-  .fmap-mobile-zoom-bar {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-    margin: 0 auto 10px;
-  }
-
-  .fmap-mobile-zoom-btn {
-    min-height: 46px;
-    padding: 8px 8px;
-    border: 1.8px solid var(--ink);
-    border-radius: 12px;
-    background: var(--surface-white);
-    color: var(--ink);
-    font-family: var(--font-heading);
-    font-size: 13px;
-    font-weight: 700;
-    line-height: 1.25;
-    text-align: center;
-    cursor: pointer;
-    box-shadow: 2px 2px 0 rgba(31, 36, 33, 0.22);
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  .fmap-mobile-zoom-btn--active {
-    background: var(--terracotta);
-    color: #ffffff;
-    box-shadow: 2px 2px 0 var(--ink);
-  }
-
-  .fmap-mobile-zoom-hint {
-    display: block;
-    margin: -2px 0 10px;
-    text-align: center;
-    font-size: 12.5px;
-    font-weight: 600;
-    color: var(--terracotta);
-  }
-
   .fmap-box {
-    padding: 14px 10px;
-    border-radius: 15px;
+    padding: 12px 6px;
+    border-radius: 14px;
+    gap: 4px;
+  }
+
+  /* Keep True 4-Side Compass Frame on Mobile (Left/Right rotated cleanly along borders) */
+  .fmap-box__middle {
+    grid-template-columns: 22px minmax(0, 1fr) 28px;
+    gap: 4px;
+    align-items: stretch;
   }
 
   .fmap-box__edge {
     flex-wrap: wrap;
-    font-size: 12.5px;
-    gap: 6px;
-    line-height: 1.35;
+    font-size: 11px;
+    gap: 4px;
+    line-height: 1.28;
+  }
+
+  .fmap-box__edge--top,
+  .fmap-box__edge--bottom {
+    padding: 2px 16px;
+  }
+
+  .fmap-box__edge--left,
+  .fmap-box__edge--right {
+    position: relative;
+    padding: 0;
+    min-height: 100%;
+  }
+
+  .fmap-box__edge--left > span,
+  .fmap-box__edge--right > span {
+    position: absolute;
+    inset: 2px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    writing-mode: vertical-rl;
+    line-height: 1.18;
+    overflow: hidden;
+  }
+
+  .fmap-box__edge--left > span {
+    transform: rotate(180deg);
+    font-size: 10.5px;
+  }
+
+  .fmap-box__edge--right > span {
+    font-size: 9.5px;
+  }
+
+  .nature-motif {
+    display: none;
   }
 
   .bp-svg {
     max-height: none;
-  }
-
-  .fmap-box__plan--zoom {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    touch-action: pan-x pan-y;
-    border: 1.5px dashed rgba(200, 90, 50, 0.42);
-    border-radius: 10px;
-    background: #faf7f2;
-    padding: 4px;
-  }
-
-  .fmap-box__plan--zoom .bp-stage {
-    width: 780px;
-    min-width: 780px;
   }
 
   /* Center Occupied Toast safely inside mobile viewport so it never clips off edges */
@@ -820,13 +768,8 @@
 
 @media (max-width: 600px) {
   .alpana-corner {
-    width: 36px;
-    height: 36px;
-  }
-
-  .nature-motif--foliage,
-  .nature-motif--flourish {
-    display: none;
+    width: 32px;
+    height: 32px;
   }
 }
 
