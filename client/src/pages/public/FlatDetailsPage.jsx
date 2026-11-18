@@ -22,6 +22,14 @@ function getMediaFullUrl(item) {
   return item.previewUrl;
 }
 
+/** Resolve native HTML5 stream URL for a Drive video or local/sample video URL. */
+function getVideoStreamUrl(driveFileId, fallbackUrl = '') {
+  if (driveFileId) {
+    return `/api/drive/stream/${encodeURIComponent(driveFileId)}`;
+  }
+  return fallbackUrl || '';
+}
+
 /** Subtle L-shaped Kantajew/Alpana corner motif for Puthichitro cards. */
 function CardAlpanaCorner({ pos }) {
   return (
@@ -81,17 +89,18 @@ export default function FlatDetailsPage() {
       .map((u) => ({ ...u, floorNumber: f.floorNumber, floorNameBn: f.nameBn }))
   );
 
-  // Room filter tab state & Fullscreen Lightbox state (supports both photos & videos)
+  // Room filter tab state, Seamless Expanded Walkthrough Video & Fullscreen Lightbox state
   const [activeTabId, setActiveTabId] = useState('all');
   const [lightboxIndex, setLightboxIndex] = useState(null);
-  const [mainVideoModalOpen, setMainVideoModalOpen] = useState(false);
+  const [mainVideoExpanded, setMainVideoExpanded] = useState(false);
+  const mainVideoRef = useRef(null);
   const touchStartXRef = useRef(null);
 
-  // Reset filter & lightbox when switching units
+  // Reset filter & modals when switching units
   useEffect(() => {
     setActiveTabId('all');
     setLightboxIndex(null);
-    setMainVideoModalOpen(false);
+    setMainVideoExpanded(false);
   }, [normalizedId]);
 
   const sections = getDefaultSectionsForUnit(matchedUnit);
@@ -109,10 +118,18 @@ export default function FlatDetailsPage() {
     }))
   );
 
+  const openRoomLightbox = useCallback((idx) => {
+    if (mainVideoRef.current && !mainVideoRef.current.paused) {
+      mainVideoRef.current.pause();
+    }
+    setMainVideoExpanded(false);
+    setLightboxIndex(idx);
+  }, []);
+
   const closeLightbox = useCallback(() => {
     setLightboxIndex(null);
-    setMainVideoModalOpen(false);
   }, []);
+
   const showPrev = useCallback(
     (e) => {
       if (e) e.stopPropagation();
@@ -136,29 +153,31 @@ export default function FlatDetailsPage() {
     [flatMediaList.length]
   );
 
-  // Keyboard navigation for Fullscreen Lightbox
+  // Keyboard navigation for Fullscreen Lightbox & Expanded Walkthrough Video
   useEffect(() => {
-    if (lightboxIndex === null && !mainVideoModalOpen) return undefined;
+    if (lightboxIndex === null && !mainVideoExpanded) return undefined;
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') closeLightbox();
-      if (!mainVideoModalOpen) {
+      if (e.key === 'Escape') {
+        if (mainVideoExpanded) setMainVideoExpanded(false);
+        else closeLightbox();
+        return;
+      }
+      if (lightboxIndex !== null) {
         if (e.key === 'ArrowLeft') showPrev();
         if (e.key === 'ArrowRight') showNext();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [lightboxIndex, mainVideoModalOpen, closeLightbox, showPrev, showNext]);
+  }, [lightboxIndex, mainVideoExpanded, closeLightbox, showPrev, showNext]);
 
   const handleLightboxTouchStart = (e) => {
-    if (mainVideoModalOpen) return;
     if (e.touches && e.touches.length === 1) {
       touchStartXRef.current = e.touches[0].clientX;
     }
   };
 
   const handleLightboxTouchEnd = (e) => {
-    if (mainVideoModalOpen) return;
     if (touchStartXRef.current === null || !e.changedTouches?.length) return;
     const deltaX = e.changedTouches[0].clientX - touchStartXRef.current;
     touchStartXRef.current = null;
@@ -278,17 +297,7 @@ export default function FlatDetailsPage() {
     { icon: '📹', text: 'সিসিটিভি' },
   ];
 
-  const activeLightboxItem = mainVideoModalOpen
-    ? {
-        id: 'main-walkthrough',
-        type: 'video',
-        driveFileId: matchedUnit.driveVideoId,
-        previewUrl: matchedUnit.mainVideoUrl,
-        sectionTitleBn: `🎥 ইউনিট ${matchedUnit.id} — পুরো ফ্ল্যাটের ভিডিও`,
-      }
-    : lightboxIndex !== null
-      ? flatMediaList[lightboxIndex]
-      : null;
+  const activeLightboxItem = lightboxIndex !== null ? flatMediaList[lightboxIndex] : null;
 
   return (
     <div className="fd-page">
@@ -365,27 +374,45 @@ export default function FlatDetailsPage() {
                 <button
                   type="button"
                   className="fd-video-expand-btn"
-                  onClick={() => setMainVideoModalOpen(true)}
+                  onClick={() => {
+                    setLightboxIndex(null);
+                    setMainVideoExpanded(true);
+                  }}
                 >
                   🔍 বড় পর্দায় দেখুন
                 </button>
               </div>
 
-              <div className="fd-video-frame">
-                {matchedUnit.driveVideoId ? (
-                  <iframe
-                    title={`ইউনিট ${matchedUnit.id} পুরো ফ্ল্যাটের ভিডিও`}
-                    src={`https://drive.google.com/file/d/${matchedUnit.driveVideoId}/preview`}
-                    allow="autoplay; fullscreen"
-                    allowFullScreen
-                  />
-                ) : (
-                  <video
-                    src={matchedUnit.mainVideoUrl}
-                    controls
-                    preload="metadata"
-                  />
+              {/* Single persistent native <video> element — expands in-place with zero restart/double playback */}
+              <div
+                className={`fd-video-stage ${mainVideoExpanded ? 'fd-video-stage--expanded' : ''}`}
+                onClick={mainVideoExpanded ? () => setMainVideoExpanded(false) : undefined}
+              >
+                {mainVideoExpanded && (
+                  <button
+                    type="button"
+                    className="fd-video-stage__close"
+                    onClick={() => setMainVideoExpanded(false)}
+                  >
+                    ✕ ছোট পর্দায় ফিরুন
+                  </button>
                 )}
+
+                <div
+                  className="fd-video-frame"
+                  onClick={mainVideoExpanded ? (e) => e.stopPropagation() : undefined}
+                >
+                  <video
+                    ref={mainVideoRef}
+                    src={getVideoStreamUrl(matchedUnit.driveVideoId, matchedUnit.mainVideoUrl)}
+                    controls
+                    playsInline
+                    preload="metadata"
+                    onPlay={() => {
+                      if (lightboxIndex !== null) setLightboxIndex(null);
+                    }}
+                  />
+                </div>
               </div>
             </section>
           )}
@@ -446,10 +473,7 @@ export default function FlatDetailsPage() {
                               key={item.id}
                               type="button"
                               className="fd-media-thumb fd-media-thumb--video"
-                              onClick={() => {
-                                setMainVideoModalOpen(false);
-                                setLightboxIndex(globalMediaIdx);
-                              }}
+                              onClick={() => openRoomLightbox(globalMediaIdx)}
                               aria-label={`${section.titleBn} — ${
                                 item.labelBn || 'ভিডিও বড় পর্দায় দেখুন'
                               }`}
@@ -490,10 +514,7 @@ export default function FlatDetailsPage() {
                             key={item.id}
                             type="button"
                             className="fd-media-thumb"
-                            onClick={() => {
-                              setMainVideoModalOpen(false);
-                              setLightboxIndex(globalMediaIdx);
-                            }}
+                            onClick={() => openRoomLightbox(globalMediaIdx)}
                             aria-label={`${section.titleBn} — ${
                               item.labelBn || 'ছবি বড় করে দেখুন'
                             }`}
@@ -640,7 +661,7 @@ export default function FlatDetailsPage() {
             ✕
           </button>
 
-          {!mainVideoModalOpen && flatMediaList.length > 1 && (
+          {flatMediaList.length > 1 && (
             <button
               type="button"
               className="fd-lightbox__nav fd-lightbox__nav--prev"
@@ -658,21 +679,14 @@ export default function FlatDetailsPage() {
           >
             {activeLightboxItem.type === 'video' ? (
               <div className="fd-lightbox__video-box">
-                {activeLightboxItem.driveFileId ? (
-                  <iframe
-                    title={activeLightboxItem.labelBn || activeLightboxItem.sectionTitleBn}
-                    src={`https://drive.google.com/file/d/${activeLightboxItem.driveFileId}/preview`}
-                    allow="autoplay; fullscreen"
-                    allowFullScreen
-                  />
-                ) : (
-                  <video
-                    src={activeLightboxItem.previewUrl}
-                    controls
-                    autoPlay
-                    playsInline
-                  />
-                )}
+                <video
+                  key={activeLightboxItem.id}
+                  src={getVideoStreamUrl(activeLightboxItem.driveFileId, activeLightboxItem.previewUrl)}
+                  controls
+                  autoPlay
+                  playsInline
+                  preload="metadata"
+                />
               </div>
             ) : (
               <img
@@ -683,15 +697,13 @@ export default function FlatDetailsPage() {
             )}
             <figcaption className="fd-lightbox__caption">
               <span>{activeLightboxItem.sectionTitleBn}</span>
-              {!mainVideoModalOpen && (
-                <span className="fd-lightbox__counter">
-                  {toBanglaDigits(lightboxIndex + 1)} / {toBanglaDigits(flatMediaList.length)}
-                </span>
-              )}
+              <span className="fd-lightbox__counter">
+                {toBanglaDigits(lightboxIndex + 1)} / {toBanglaDigits(flatMediaList.length)}
+              </span>
             </figcaption>
           </figure>
 
-          {!mainVideoModalOpen && flatMediaList.length > 1 && (
+          {flatMediaList.length > 1 && (
             <button
               type="button"
               className="fd-lightbox__nav fd-lightbox__nav--next"

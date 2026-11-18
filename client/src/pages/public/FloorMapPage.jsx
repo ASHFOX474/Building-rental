@@ -130,6 +130,11 @@ export default function FloorMapPage() {
   const { floorNumber } = useParams();
   const navigate = useNavigate();
 
+  const orderedFloors = floors
+    .filter((f) => f.isVisible !== false)
+    .slice()
+    .sort((a, b) => a.floorNumber - b.floorNumber);
+
   const floorB = floors.find((f) => f.id === 'B') || floors[0];
   const currentFloor =
     floors.find((f) => String(f.floorNumber) === String(floorNumber)) || floorB;
@@ -145,12 +150,36 @@ export default function FloorMapPage() {
 
   return (
     <div className="fmap-page">
-      {/* Top Bar (Back Button), Title, Alpana Divider & Dynamic Legend Pills */}
+      {/* Top Bar (Back Button + Floor Switcher), Title, Alpana Divider & Dynamic Legend Pills */}
       <header className="fmap-header">
         <div className="fmap-header__nav">
           <Link to="/" className="fmap-back-btn">
             ⬅️ হোম পেজে ফিরে যান
           </Link>
+
+          {/* Top Floor Switcher Bar */}
+          <nav className="fmap-switcher" aria-label="অন্যান্য তলার ফ্লোর ম্যাপ দেখুন">
+            {orderedFloors.map((f) => {
+              const isActive = f.id === currentFloor.id;
+              const hasOpen = f.units.some(isUnitAvailable);
+              return (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => navigate(`/floor/${f.floorNumber}`)}
+                  className={`fmap-switcher__btn ${isActive ? 'fmap-switcher__btn--active' : ''}`}
+                >
+                  {f.nameBn} ({f.id})
+                  {hasOpen && (
+                    <span
+                      className="fmap-switcher__dot fmap-switcher__dot--open"
+                      title="এই তলায় ফ্ল্যাট খালি আছে (ভাড়া হবে)"
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </nav>
         </div>
 
         <h1 className="fmap-header__title">

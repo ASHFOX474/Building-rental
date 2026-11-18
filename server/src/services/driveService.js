@@ -556,3 +556,127 @@ export async function inspectAndPublishDriveFile(fileId) {
     type: file.mimeType?.startsWith('video/') ? 'video' : 'image',
   };
 }
+
+const STREAM_META_TTL_MS = 5 * 60 * 1000;
+const streamMetaCache = new Map();
+
+/** Parse HTTP Range header ("bytes=0-", "bytes=0-1023", "bytes=-512") against total byte size. */
+function parseByteRange(rangeHeader, totalSize) {
+  if (!rangeHeader || !totalSize) return null;
+  const match = /^bytes=(\d*)-(\d*)$/i.exec(String(rangeHeader).trim());
+  if (!match) return { invalid: true };
+
+  const [, rawStart, rawEnd] = match;
+  if (!rawStart && !rawEnd) return { invalid: true };
+
+  let start;
+  let end;
+  if (!rawStart) {
+    // Suffix byte range: bytes=-N
+    const suffixLen = Number(rawEnd);
+    if (!Number.isFinite(suffixLen) || suffixLen <= 0) return { invalid: true };
+    start = Math.max(0, totalSize - suffixLen);
+    end = totalSize - 1;
+  } else {
+    start = Number(rawStart);
+    end = rawEnd ? Math.min(Number(rawEnd), totalSize - 1) : totalSize - 1;
+  }
+
+  if (
+    !Number.isFinite(start) ||
+    !Number.isFinite(end) ||
+    start < 0 ||
+    start >= totalSize ||
+    start > end
+  ) {
+    return { invalid: true };
+  }
+
+  return { start, end, invalid: false };
+}
+
+/**
+ * Open a byte-range-capable video/media stream from Google Drive for native HTML5 <video>.
+ * Supports HTTP 206 Partial Content for smooth mobile/desktop seeking (Chrome, Safari, iOS).
+ */
+export async function openDriveVideoStream(fileId, rangeHeader = '') {
+  const drive = getDriveClient();
+
+  let meta = null;
+  const cached = streamMetaCache.get(fileId);
+  if (cached && cached.expiresAt > Date.now()) {
+    meta = cached.meta;
+  } else {
+    const metaRes = await drive.files.get({
+      fileId,
+      fields: 'id, name, mimeType, size',
+      supportsAllDrives: true,
+    });
+    meta = metaRes.data;
+    streamMetaCache.set(fileId, {
+      meta,
+      expiresAt: Date.now() + STREAM_META_TTL_MS,
+    });
+  }
+
+  const totalSize = Number(meta.size || 0);
+  const mimeType =
+    meta.mimeType && meta.mimeType !== 'application/octet-stream'
+      ? meta.mimeType
+      : 'video/mp4';
+
+  const parsedRange = parseByteRange(rangeHeader, totalSize);
+  if (parsedRange?.invalid) {
+    return { invalidRange: true, totalSize };
+  }
+
+  if (parsedRange && totalSize > 0) {
+    const { start, end } = parsedRange;
+    const mediaRes = await drive.files.get(
+      {
+        fileId,
+        alt: 'media',
+        supportsAllDrives: true,
+      },
+      {
+        responseType: 'stream',
+        headers: {
+          Range: `bytes=${start}-${end}`,
+        },
+      }
+    );
+
+    return {
+      invalidRange: false,
+      statusCode: 206,
+      start,
+      end,
+      totalSize,
+      contentLength: end - start + 1,
+      mimeType,
+      stream: mediaRes.data,
+    };
+  }
+
+  const mediaRes = await drive.files.get(
+    {
+      fileId,
+      alt: 'media',
+      supportsAllDrives: true,
+    },
+    {
+      responseType: 'stream',
+    }
+  );
+
+  return {
+    invalidRange: false,
+    statusCode: 200,
+    start: 0,
+    end: totalSize > 0 ? totalSize - 1 : 0,
+    totalSize,
+    contentLength: totalSize > 0 ? totalSize : null,
+    mimeType,
+    stream: mediaRes.data,
+  };
+}

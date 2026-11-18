@@ -9,6 +9,7 @@ import {
   uploadFiles,
   deleteItem,
   ensurePublic,
+  streamFile,
 } from '../controllers/driveController.js';
 
 const router = Router();
@@ -21,5 +22,6 @@ router.patch('/folders/:folderId', renameFolder);
 router.post('/upload', uploadMiddleware.array('files', 20), uploadFiles);
 router.delete('/files/:fileId', deleteItem);
 router.post('/ensure-public', ensurePublic);
+router.get('/stream/:fileId', streamFile);
 
 export default router;

@@ -8,6 +8,7 @@ import {
   uploadTempFileToDrive,
   deleteOrUnlinkDriveItem,
   inspectAndPublishDriveFile,
+  openDriveVideoStream,
 } from '../services/driveService.js';
 import { cleanupTempFiles } from '../middleware/upload.js';
 
@@ -182,5 +183,63 @@ export async function ensurePublic(req, res) {
     res.json({ ok: true, file });
   } catch (err) {
     sendDriveError(res, err);
+  }
+}
+
+export async function streamFile(req, res) {
+  let upstreamStream = null;
+  try {
+    const { fileId } = req.params;
+    if (!fileId) {
+      return res.status(400).json({ ok: false, messageBn: 'File ID প্রয়োজন।' });
+    }
+
+    const result = await openDriveVideoStream(fileId, req.headers.range);
+
+    if (result.invalidRange) {
+      res.setHeader('Content-Range', `bytes */${result.totalSize}`);
+      return res.status(416).end();
+    }
+
+    upstreamStream = result.stream;
+
+    res.status(result.statusCode);
+    res.setHeader('Content-Type', result.mimeType);
+    res.setHeader('Accept-Ranges', 'bytes');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    if (result.contentLength !== null && result.contentLength !== undefined) {
+      res.setHeader('Content-Length', String(result.contentLength));
+    }
+    if (result.statusCode === 206) {
+      res.setHeader(
+        'Content-Range',
+        `bytes ${result.start}-${result.end}/${result.totalSize}`
+      );
+    }
+
+    const cleanup = () => {
+      if (upstreamStream && !upstreamStream.destroyed) {
+        upstreamStream.destroy();
+      }
+    };
+
+    req.on('close', cleanup);
+    upstreamStream.on('error', (streamErr) => {
+      cleanup();
+      if (!res.headersSent) {
+        sendDriveError(res, streamErr);
+      } else if (!res.writableEnded) {
+        res.end();
+      }
+    });
+
+    upstreamStream.pipe(res);
+  } catch (err) {
+    if (upstreamStream && !upstreamStream.destroyed) {
+      upstreamStream.destroy();
+    }
+    if (!res.headersSent) {
+      sendDriveError(res, err);
+    }
   }
 }
