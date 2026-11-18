@@ -1,83 +1,74 @@
 import fs from 'node:fs';
-import http from 'node:http';
 import path from 'node:path';
-import { spawn } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SERVER_DIR = path.resolve(__dirname, '../server');
 
-function isPort4000Alive() {
-  return new Promise((resolve) => {
-    const req = http.get('http://127.0.0.1:4000/api/health', { timeout: 600 }, (res) => {
-      res.resume();
-      resolve(res.statusCode === 200);
-    });
-    req.on('error', () => resolve(false));
-    req.on('timeout', () => {
-      req.destroy();
-      resolve(false);
-    });
-  });
+/** Load server/.env into process.env (without overriding already-set variables). */
+function loadServerEnv() {
+  const envPath = path.join(SERVER_DIR, '.env');
+  if (!fs.existsSync(envPath)) return;
+  const lines = fs.readFileSync(envPath, 'utf8').split(/\r?\n/);
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eq = trimmed.indexOf('=');
+    if (eq === -1) continue;
+    const key = trimmed.slice(0, eq).trim();
+    let value = trimmed.slice(eq + 1).trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+    if (key && process.env[key] === undefined) {
+      process.env[key] = value;
+    }
+  }
 }
 
-function autoStartBackendPlugin() {
-  let child = null;
-
-  const stopChild = () => {
-    if (child && !child.killed) {
-      child.kill('SIGTERM');
-      child = null;
-    }
-  };
-
+/**
+ * Mounts the Express API (`/api/health`, `/api/drive/*` incl. `/api/drive/stream/:fileId`)
+ * directly inside the Vite dev server, on the SAME port (localhost:5173).
+ * No proxy to 127.0.0.1:4000 → no more ECONNREFUSED.
+ */
+function inProcessApiPlugin() {
   return {
-    name: 'auto-start-backend',
+    name: 'in-process-express-api',
     apply: 'serve',
     async configureServer(server) {
-      if (process.env.MANAGED_BY_ROOT_DEV === '1') return;
-      if (!fs.existsSync(path.join(SERVER_DIR, 'src/index.js'))) return;
-      if (await isPort4000Alive()) return;
-
-      const args = fs.existsSync(path.join(SERVER_DIR, '.env'))
-        ? ['--watch', '--env-file=.env', 'src/index.js']
-        : ['--watch', 'src/index.js'];
-
-      child = spawn(process.execPath, args, {
-        cwd: SERVER_DIR,
-        stdio: 'inherit',
-      });
-
-      child.on('exit', () => {
-        child = null;
-      });
-
-      server.httpServer?.once('close', stopChild);
-      process.once('exit', stopChild);
-      process.once('SIGINT', stopChild);
-      process.once('SIGTERM', stopChild);
-
-      // Give Express a moment to bind port 4000 before Vite opens
-      for (let i = 0; i < 15; i += 1) {
-        if (await isPort4000Alive()) break;
-        await new Promise((r) => setTimeout(r, 150));
+      const appModulePath = path.join(SERVER_DIR, 'src/app.js');
+      if (!fs.existsSync(appModulePath)) {
+        console.warn('[api] server/src/app.js not found — /api routes disabled');
+        return;
       }
+
+      loadServerEnv();
+
+      let app;
+      try {
+        // Runtime import via file URL so Vite does NOT bundle the server code into the config
+        // (keeps server/node_modules resolution for express/googleapis/multer).
+        const mod = await import(pathToFileURL(appModulePath).href);
+        app = mod.createApp();
+        console.log('[api] Express API mounted inside Vite at /api (same port, no proxy)');
+      } catch (err) {
+        console.error('[api] Failed to load Express API inside Vite:', err);
+        return;
+      }
+
+      server.middlewares.use((req, res, next) => {
+        if (!req.url || !req.url.startsWith('/api')) return next();
+        app(req, res, next);
+      });
     },
   };
 }
 
 export default defineConfig({
-  plugins: [react(), autoStartBackendPlugin()],
-  server: {
-    proxy: {
-      '/api': {
-        target: 'http://127.0.0.1:4000',
-        changeOrigin: true,
-        timeout: 600000,
-        proxyTimeout: 600000,
-      },
-    },
-  },
+  plugins: [react(), inProcessApiPlugin()],
 });

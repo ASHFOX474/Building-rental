@@ -30,6 +30,49 @@ function getVideoStreamUrl(driveFileId, fallbackUrl = '') {
   return fallbackUrl || '';
 }
 
+/**
+ * Native HTML5 video player (streams via /api/drive/stream/:fileId with HTTP Range).
+ * If the stream fails for ANY reason, it automatically falls back to the Google Drive
+ * preview player so the video always plays — never a broken "0:00" bar.
+ */
+function DriveVideoPlayer({ driveFileId, fallbackUrl, videoRef, autoPlay = false, title, onPlay }) {
+  const [streamFailed, setStreamFailed] = useState(false);
+
+  useEffect(() => {
+    setStreamFailed(false);
+  }, [driveFileId, fallbackUrl]);
+
+  if (driveFileId && streamFailed) {
+    return (
+      <iframe
+        className="fd-video-fallback-iframe"
+        title={title || 'ভিডিও'}
+        src={`https://drive.google.com/file/d/${driveFileId}/preview`}
+        allow="autoplay; fullscreen"
+        allowFullScreen
+      />
+    );
+  }
+
+  const src = getVideoStreamUrl(driveFileId, fallbackUrl);
+  if (!src) return null;
+
+  return (
+    <video
+      ref={videoRef}
+      src={src}
+      controls
+      playsInline
+      autoPlay={autoPlay}
+      preload="metadata"
+      onPlay={onPlay}
+      onError={() => {
+        if (driveFileId) setStreamFailed(true);
+      }}
+    />
+  );
+}
+
 /** Subtle L-shaped Kantajew/Alpana corner motif for Puthichitro cards. */
 function CardAlpanaCorner({ pos }) {
   return (
@@ -402,12 +445,11 @@ export default function FlatDetailsPage() {
                   className="fd-video-frame"
                   onClick={mainVideoExpanded ? (e) => e.stopPropagation() : undefined}
                 >
-                  <video
-                    ref={mainVideoRef}
-                    src={getVideoStreamUrl(matchedUnit.driveVideoId, matchedUnit.mainVideoUrl)}
-                    controls
-                    playsInline
-                    preload="metadata"
+                  <DriveVideoPlayer
+                    videoRef={mainVideoRef}
+                    driveFileId={matchedUnit.driveVideoId}
+                    fallbackUrl={matchedUnit.mainVideoUrl}
+                    title={`ইউনিট ${matchedUnit.id} পুরো ফ্ল্যাটের ভিডিও`}
                     onPlay={() => {
                       if (lightboxIndex !== null) setLightboxIndex(null);
                     }}
@@ -679,13 +721,12 @@ export default function FlatDetailsPage() {
           >
             {activeLightboxItem.type === 'video' ? (
               <div className="fd-lightbox__video-box">
-                <video
+                <DriveVideoPlayer
                   key={activeLightboxItem.id}
-                  src={getVideoStreamUrl(activeLightboxItem.driveFileId, activeLightboxItem.previewUrl)}
-                  controls
+                  driveFileId={activeLightboxItem.driveFileId}
+                  fallbackUrl={activeLightboxItem.previewUrl}
+                  title={activeLightboxItem.labelBn || activeLightboxItem.sectionTitleBn}
                   autoPlay
-                  playsInline
-                  preload="metadata"
                 />
               </div>
             ) : (

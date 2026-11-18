@@ -302,8 +302,11 @@
 }
 
 .fd-video-frame {
+  position: relative;
   width: 100%;
-  max-height: 70vh;
+  aspect-ratio: 16 / 9;
+  min-height: 260px;
+  max-height: 520px;
   background: #0f1412;
   border: 2px solid var(--ink);
   border-radius: 12px;
@@ -313,23 +316,24 @@
   overflow: hidden;
 }
 
-.fd-video-frame video {
+.fd-video-frame video,
+.fd-video-frame iframe {
   width: 100%;
-  height: auto;
-  max-height: 70vh;
+  height: 100%;
   object-fit: contain;
   display: block;
+  border: 0;
+  background: #0f1412;
 }
 
 .fd-video-stage--expanded .fd-video-frame {
-  max-width: 1120px;
-  max-height: calc(100vh - 104px);
+  width: min(96vw, 1120px);
+  height: min(86vh, 720px);
+  aspect-ratio: auto;
+  min-height: 0;
+  max-height: none;
   border-color: rgba(250, 247, 242, 0.45);
   box-shadow: 0 20px 54px rgba(0, 0, 0, 0.6);
-}
-
-.fd-video-stage--expanded .fd-video-frame video {
-  max-height: calc(100vh - 104px);
 }
 
 /* Clean minimal video cover with a single play button */
@@ -815,24 +819,26 @@
 }
 
 .fd-lightbox__video-box {
-  width: 100%;
-  max-width: 960px;
-  max-height: 76vh;
+  width: min(92vw, 960px);
+  height: min(78vh, 600px);
   border: 2.5px solid #faf7f2;
-  border-radius: 14px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background: #0f1412;
+  background: #000;
 }
 
-.fd-lightbox__video-box video {
+.fd-lightbox__video-box video,
+.fd-lightbox__video-box iframe {
   width: 100%;
-  height: auto;
-  max-height: 76vh;
+  height: 100%;
+  max-height: 78vh;
   object-fit: contain;
   display: block;
+  border: 0;
+  background: #000;
 }
 
 .fd-lightbox__caption {
@@ -1175,9 +1181,18 @@
     max-height: 76vh;
   }
 
-  .fd-lightbox__video-box,
-  .fd-lightbox__video-box video {
+  .fd-lightbox__video-box {
+    width: 94vw;
+    height: min(64vh, 520px);
+  }
+
+  .fd-lightbox__video-box video,
+  .fd-lightbox__video-box iframe {
     max-height: 64vh;
+  }
+
+  .fd-video-frame {
+    min-height: 220px;
   }
 
   .fd-video-stage--expanded {
@@ -1191,9 +1206,9 @@
     padding: 8px 14px;
   }
 
-  .fd-video-stage--expanded .fd-video-frame,
-  .fd-video-stage--expanded .fd-video-frame video {
-    max-height: calc(100vh - 96px);
+  .fd-video-stage--expanded .fd-video-frame {
+    width: 96vw;
+    height: calc(100vh - 100px);
   }
 
   .fd-lightbox__img {
