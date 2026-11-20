@@ -14,6 +14,7 @@ import { initDatabase } from './services/dbService.js';
  */
 export function createApp() {
   const app = express();
+  app.set('trust proxy', 1);
 
   // Trigger non-blocking automatic Neon table migration & first-time seed on startup
   initDatabase().catch((err) => {
@@ -22,6 +23,7 @@ export function createApp() {
 
   const allowedOrigins = [
     process.env.CLIENT_ORIGIN,
+    process.env.RENDER_EXTERNAL_URL,
     'http://localhost:5173',
     'http://localhost:5174',
     'http://127.0.0.1:5173',

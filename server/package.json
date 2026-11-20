@@ -3,10 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "main": "src/index.js",
+  "main": "prodServer.js",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "dev": "node --watch --env-file=.env src/index.js",
-    "start": "node --env-file=.env src/index.js"
+    "build": "node ../scripts/build.mjs",
+    "start": "node prodServer.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
