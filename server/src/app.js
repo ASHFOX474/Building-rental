@@ -2,15 +2,23 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import driveRoutes from './routes/driveRoutes.js';
+import dbRoutes from './routes/dbRoutes.js';
+import { isDbConfigured } from './config/db.js';
+import { initDatabase } from './services/dbService.js';
 
 /**
- * Build the Express API app (health + Google Drive routes).
+ * Build the Express API app (health + Neon PostgreSQL DB routes + Google Drive routes).
  * Used both by the standalone server (src/index.js, port 4000) and mounted
  * directly inside the Vite dev server as middleware (client/vite.config.js),
  * so `/api/*` works on localhost:5173 without any proxy to port 4000.
  */
 export function createApp() {
   const app = express();
+
+  // Trigger non-blocking automatic Neon table migration & first-time seed on startup
+  initDatabase().catch((err) => {
+    console.warn('[db] Startup init deferred:', err.message);
+  });
 
   const allowedOrigins = [
     process.env.CLIENT_ORIGIN,
@@ -31,10 +39,13 @@ export function createApp() {
       credentials: true,
     })
   );
-  app.use(express.json());
+  app.use(express.json({ limit: '5mb' }));
   app.use(cookieParser());
 
-  app.get('/api/health', (_req, res) => res.json({ ok: true }));
+  app.get('/api/health', (_req, res) =>
+    res.json({ ok: true, dbConfigured: isDbConfigured() })
+  );
+  app.use('/api/db', dbRoutes);
   app.use('/api/drive', driveRoutes);
 
   app.use((err, _req, res, _next) => {

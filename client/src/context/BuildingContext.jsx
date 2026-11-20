@@ -1,6 +1,12 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+} from 'react';
 import {
-  STORAGE_SCHEMA_VERSION,
   building as initialBuilding,
   floors as initialFloors,
   initialPaymentsByMonth,
@@ -11,12 +17,17 @@ import {
   syncAllUnitsFromDriveApi,
   syncUnitFromDriveApi,
 } from '../api/driveApi.js';
-
-const BUILDING_STORAGE_KEY = 'moni_lodge_building_v1';
-const FLOORS_STORAGE_KEY = 'moni_lodge_floors_v1';
-const PAYMENTS_STORAGE_KEY = 'moni_lodge_payments_v1';
-const PIN_STORAGE_KEY = 'moni_lodge_admin_pin_v1';
-const VERSION_STORAGE_KEY = 'moni_lodge_schema_version';
+import {
+  fetchDbState,
+  patchDbUnit,
+  upsertDbPayment,
+  deleteDbPayment,
+  createDbFloor,
+  patchDbFloor,
+  deleteDbFloor,
+  patchDbSettings,
+  restoreDbBackup,
+} from '../api/dbApi.js';
 
 const BANGLA_FLOOR_ORDINALS = {
   1: '১ম তলা',
@@ -31,44 +42,28 @@ const BANGLA_FLOOR_ORDINALS = {
   10: '১০ম তলা',
 };
 
+const SAVE_ERROR_MSG_BN = '⚠️ ইন্টারনেট সংযোগ চেক করুন, ডাটা সেভ হয়নি';
+
 export function getBanglaFloorOrdinal(num) {
   return BANGLA_FLOOR_ORDINALS[num] || `${toBanglaDigits(num)}তম তলা`;
 }
 
 const BuildingContext = createContext(null);
 
-function loadFromStorage(key, fallback) {
-  try {
-    const savedVersion = localStorage.getItem(VERSION_STORAGE_KEY);
-    if (savedVersion !== STORAGE_SCHEMA_VERSION) {
-      return fallback;
-    }
-    const raw = localStorage.getItem(key);
-    if (!raw) return fallback;
-    return JSON.parse(raw);
-  } catch {
-    return fallback;
-  }
-}
-
 export function BuildingProvider({ children }) {
-  const [building, setBuilding] = useState(() =>
-    loadFromStorage(BUILDING_STORAGE_KEY, initialBuilding)
-  );
-  const [floors, setFloors] = useState(() =>
-    loadFromStorage(FLOORS_STORAGE_KEY, initialFloors)
-  );
-  const [paymentsByMonth, setPaymentsByMonth] = useState(() =>
-    loadFromStorage(PAYMENTS_STORAGE_KEY, initialPaymentsByMonth)
-  );
-  const [adminPin, setAdminPinState] = useState(() => {
-    try {
-      const saved = localStorage.getItem(PIN_STORAGE_KEY);
-      return saved && /^\d{4}$/.test(saved) ? saved : '1234';
-    } catch {
-      return '1234';
-    }
+  const [building, setBuilding] = useState(initialBuilding);
+  const [floors, setFloors] = useState(initialFloors);
+  const [paymentsByMonth, setPaymentsByMonth] = useState(initialPaymentsByMonth);
+  const [adminPin, setAdminPinState] = useState('1234');
+
+  const [dbStatus, setDbStatus] = useState({
+    loading: true,
+    connected: false,
+    error: '',
   });
+
+  const [saveErrorToast, setSaveErrorToast] = useState('');
+  const saveErrorTimerRef = useRef(null);
 
   const [driveStatus, setDriveStatus] = useState({
     loading: true,
@@ -82,97 +77,49 @@ export function BuildingProvider({ children }) {
     error: '',
   });
 
+  // Always keep latest floors accessible for optimistic patch calculation
+  const floorsRef = useRef(floors);
   useEffect(() => {
-    try {
-      localStorage.setItem(VERSION_STORAGE_KEY, STORAGE_SCHEMA_VERSION);
-      localStorage.setItem(BUILDING_STORAGE_KEY, JSON.stringify(building));
-    } catch {
-      // Ignore storage quota errors
-    }
-  }, [building]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(VERSION_STORAGE_KEY, STORAGE_SCHEMA_VERSION);
-      localStorage.setItem(FLOORS_STORAGE_KEY, JSON.stringify(floors));
-    } catch {
-      // Ignore storage quota errors
-    }
+    floorsRef.current = floors;
   }, [floors]);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(VERSION_STORAGE_KEY, STORAGE_SCHEMA_VERSION);
-      localStorage.setItem(PAYMENTS_STORAGE_KEY, JSON.stringify(paymentsByMonth));
-    } catch {
-      // Ignore storage quota errors
+  // Per-unit coalesced debounce queue so rapid typing never races out-of-order PATCH calls
+  const unitPatchQueueRef = useRef({});
+  const unitPatchTimersRef = useRef({});
+
+  const showSaveError = useCallback((customMsg = SAVE_ERROR_MSG_BN) => {
+    setSaveErrorToast(customMsg);
+    if (saveErrorTimerRef.current) clearTimeout(saveErrorTimerRef.current);
+    saveErrorTimerRef.current = setTimeout(() => {
+      setSaveErrorToast('');
+    }, 5000);
+  }, []);
+
+  /** Apply a full hydrated Neon state payload into React state. */
+  const applyHydratedState = useCallback((state) => {
+    if (!state) return;
+    if (state.building) setBuilding(state.building);
+    if (Array.isArray(state.floors) && state.floors.length > 0) {
+      setFloors(state.floors);
+      floorsRef.current = state.floors;
     }
-  }, [paymentsByMonth]);
-
-  const setAdminPin = useCallback((nextPin) => {
-    const clean = String(nextPin || '').trim();
-    if (!/^\d{4}$/.test(clean)) return false;
-    setAdminPinState(clean);
-    try {
-      localStorage.setItem(PIN_STORAGE_KEY, clean);
-    } catch {
-      // ignore
+    if (state.paymentsByMonth && typeof state.paymentsByMonth === 'object') {
+      setPaymentsByMonth(state.paymentsByMonth);
     }
-    return true;
+    if (state.settings?.adminPin && /^\d{4}$/.test(state.settings.adminPin)) {
+      setAdminPinState(state.settings.adminPin);
+    }
   }, []);
 
-  /** Update public contact numbers (primary phone, secondary phone, whatsapp). */
-  const updateContactInfo = useCallback((contactChanges) => {
-    setBuilding((prev) => ({
-      ...prev,
-      contact: {
-        ...prev.contact,
-        ...contactChanges,
-      },
-    }));
-  }, []);
+  /** Refresh complete state from Neon PostgreSQL. */
+  const refreshFromDb = useCallback(async () => {
+    const state = await fetchDbState();
+    applyHydratedState(state);
+    setDbStatus({ loading: false, connected: true, error: '' });
+    return state;
+  }, [applyHydratedState]);
 
-  /** Record or update a unit's rent payment for a given 'YYYY-MM' month. */
-  const recordRentPayment = useCallback((monthKey, unitId, paymentRecord) => {
-    setPaymentsByMonth((prev) => ({
-      ...prev,
-      [monthKey]: {
-        ...(prev[monthKey] || {}),
-        [unitId]: paymentRecord,
-      },
-    }));
-  }, []);
-
-  /** Remove/reset a unit's rent payment record for a given 'YYYY-MM' month (marks it UNPAID). */
-  const clearRentPayment = useCallback((monthKey, unitId) => {
-    setPaymentsByMonth((prev) => {
-      const monthObj = { ...(prev[monthKey] || {}) };
-      delete monthObj[unitId];
-      return {
-        ...prev,
-        [monthKey]: monthObj,
-      };
-    });
-  }, []);
-
-  /** Update properties of a specific unit (e.g. status, rent, renterNameBn, mediaSections). */
-  const updateUnit = useCallback((unitId, changes) => {
-    setFloors((prevFloors) =>
-      prevFloors.map((floor) => ({
-        ...floor,
-        units: floor.units.map((unit) =>
-          unit.id === unitId
-            ? {
-                ...unit,
-                ...(typeof changes === 'function' ? changes(unit) : changes),
-              }
-            : unit
-        ),
-      }))
-    );
-  }, []);
-
-  /** Scan all floors & units from Google Drive and update matching units in state. */
+  /** Scan all floors & units from Google Drive and update matching units in state + Neon. */
   const syncAllFromDrive = useCallback(async ({ overwriteEmpty = true } = {}) => {
     try {
       const statusRes = await fetchDriveStatus();
@@ -233,157 +180,390 @@ export function BuildingProvider({ children }) {
     }
   }, []);
 
-  /** Scan a single unit folder from Google Drive and apply its live folders/files. */
-  const syncUnitFromDrive = useCallback(async (unitId, explicitFolderId = '') => {
-    const data = await syncUnitFromDriveApi(unitId, explicitFolderId);
-    updateUnit(unitId, {
-      driveFolderId: data.driveFolderId,
-      driveFolderUrl: data.driveFolderUrl,
-      driveVideoId: data.driveVideoId,
-      mainVideoFileName: data.mainVideoFileName,
-      mainVideoUrl: '',
-      mediaSections: data.mediaSections,
-    });
-    setDriveStatus((prev) => ({
-      ...prev,
-      connected: true,
-      authMode: data.authMode || prev.authMode,
-      lastSyncedAt: data.syncedAt,
-      error: '',
-    }));
-    return data;
-  }, [updateUnit]);
-
-  // Quietly connect & sync existing Google Drive media on app load
+  /** Hydrate state from Neon PostgreSQL on app load, then check Google Drive status. */
   useEffect(() => {
-    syncAllFromDrive({ overwriteEmpty: false }).catch(() => {
-      // Backend might be offline during static preview; fallback cleanly
-    });
-  }, [syncAllFromDrive]);
+    let active = true;
+
+    async function bootstrap() {
+      let hydratedFloors = null;
+      try {
+        const state = await fetchDbState();
+        if (!active) return;
+        applyHydratedState(state);
+        hydratedFloors = state.floors;
+        setDbStatus({ loading: false, connected: true, error: '' });
+      } catch (err) {
+        if (!active) return;
+        setDbStatus({
+          loading: false,
+          connected: false,
+          error: err.message || 'Neon PostgreSQL unavailable',
+        });
+      }
+
+      // Check Google Drive status; if DB has never been Drive-synced yet, auto-sync once
+      const hasAnyMappedDriveFolder = Array.isArray(hydratedFloors)
+        ? hydratedFloors.some((f) => (f.units || []).some((u) => Boolean(u.driveFolderId)))
+        : false;
+
+      if (!hasAnyMappedDriveFolder) {
+        syncAllFromDrive({ overwriteEmpty: false }).catch(() => {
+          // Drive optional during offline preview
+        });
+      } else {
+        try {
+          const statusRes = await fetchDriveStatus();
+          if (!active) return;
+          setDriveStatus((prev) => ({
+            ...prev,
+            loading: false,
+            connected: Boolean(statusRes.connected),
+            authMode: statusRes.authMode,
+            serviceAccountEmail: statusRes.serviceAccountEmail,
+            rootFolderId: statusRes.rootFolderId,
+            rootFolderName: statusRes.rootFolderName,
+            rootFolderUrl: statusRes.rootFolderUrl,
+            error: '',
+          }));
+        } catch (err) {
+          if (!active) return;
+          setDriveStatus((prev) => ({
+            ...prev,
+            loading: false,
+            connected: false,
+            error: err.message || 'Google Drive connection failed',
+          }));
+        }
+      }
+    }
+
+    bootstrap();
+
+    return () => {
+      active = false;
+      Object.values(unitPatchTimersRef.current).forEach((t) => clearTimeout(t));
+    };
+  }, [applyHydratedState, syncAllFromDrive]);
+
+  /** Update Admin 4-digit PIN (optimistic + Neon). */
+  const setAdminPin = useCallback(
+    (nextPin) => {
+      const clean = String(nextPin || '').trim();
+      if (!/^\d{4}$/.test(clean)) return false;
+      setAdminPinState(clean);
+
+      patchDbSettings({ admin_pin: clean }).catch(() => {
+        showSaveError();
+      });
+      return true;
+    },
+    [showSaveError]
+  );
+
+  /** Update public contact numbers (primary phone, secondary phone, whatsapp). */
+  const updateContactInfo = useCallback(
+    (contactChanges) => {
+      setBuilding((prev) => ({
+        ...prev,
+        contact: {
+          ...prev.contact,
+          ...contactChanges,
+        },
+      }));
+
+      patchDbSettings({
+        phone: contactChanges.phone,
+        phoneSecondary: contactChanges.phoneSecondary,
+        whatsapp: contactChanges.whatsapp,
+      }).catch(() => {
+        showSaveError();
+      });
+    },
+    [showSaveError]
+  );
+
+  /** Record or update a unit's rent payment for a given 'YYYY-MM' month. */
+  const recordRentPayment = useCallback(
+    (monthKey, unitId, paymentRecord) => {
+      setPaymentsByMonth((prev) => ({
+        ...prev,
+        [monthKey]: {
+          ...(prev[monthKey] || {}),
+          [unitId]: paymentRecord,
+        },
+      }));
+
+      const unitObj = floorsRef.current
+        .flatMap((f) => f.units || [])
+        .find((u) => u.id === unitId);
+
+      upsertDbPayment({
+        unit_code: unitId,
+        month_key: monthKey,
+        expected_amount: paymentRecord.expectedAmount ?? unitObj?.rent ?? 0,
+        paid_amount: paymentRecord.paidAmount ?? 0,
+        payment_method: paymentRecord.method || 'Cash',
+        paid_date: paymentRecord.paymentDate || '',
+        is_on_time: paymentRecord.paidOnTime !== false,
+        note: paymentRecord.note || '',
+      }).catch(() => {
+        showSaveError();
+      });
+    },
+    [showSaveError]
+  );
+
+  /** Remove/reset a unit's rent payment record for a given 'YYYY-MM' month (marks it UNPAID). */
+  const clearRentPayment = useCallback(
+    (monthKey, unitId) => {
+      setPaymentsByMonth((prev) => {
+        const monthObj = { ...(prev[monthKey] || {}) };
+        delete monthObj[unitId];
+        return {
+          ...prev,
+          [monthKey]: monthObj,
+        };
+      });
+
+      deleteDbPayment(unitId, monthKey).catch(() => {
+        showSaveError();
+      });
+    },
+    [showSaveError]
+  );
+
+  /** Update properties of a specific unit (optimistic UI + coalesced Neon PATCH). */
+  const updateUnit = useCallback(
+    (unitId, changes, { skipDbPatch = false } = {}) => {
+      const currentUnit = floorsRef.current
+        .flatMap((f) => f.units || [])
+        .find((u) => u.id === unitId);
+
+      const resolvedChanges =
+        typeof changes === 'function' ? changes(currentUnit || { id: unitId }) : changes;
+
+      if (!resolvedChanges || typeof resolvedChanges !== 'object') return;
+
+      setFloors((prevFloors) =>
+        prevFloors.map((floor) => ({
+          ...floor,
+          units: floor.units.map((unit) =>
+            unit.id === unitId
+              ? {
+                  ...unit,
+                  ...resolvedChanges,
+                }
+              : unit
+          ),
+        }))
+      );
+
+      if (skipDbPatch) return;
+
+      unitPatchQueueRef.current[unitId] = {
+        ...(unitPatchQueueRef.current[unitId] || {}),
+        ...resolvedChanges,
+      };
+
+      if (unitPatchTimersRef.current[unitId]) {
+        clearTimeout(unitPatchTimersRef.current[unitId]);
+      }
+
+      unitPatchTimersRef.current[unitId] = setTimeout(() => {
+        const queued = unitPatchQueueRef.current[unitId];
+        delete unitPatchQueueRef.current[unitId];
+        delete unitPatchTimersRef.current[unitId];
+        if (!queued) return;
+
+        patchDbUnit(unitId, queued).catch(() => {
+          showSaveError();
+        });
+      }, 220);
+    },
+    [showSaveError]
+  );
+
+  /** Scan a single unit folder from Google Drive (backend persists directly to Neon). */
+  const syncUnitFromDrive = useCallback(
+    async (unitId, explicitFolderId = '') => {
+      const data = await syncUnitFromDriveApi(unitId, explicitFolderId);
+      updateUnit(
+        unitId,
+        {
+          driveFolderId: data.driveFolderId,
+          driveFolderUrl: data.driveFolderUrl,
+          driveVideoId: data.driveVideoId,
+          mainVideoFileName: data.mainVideoFileName,
+          mainVideoUrl: '',
+          mediaSections: data.mediaSections,
+        },
+        { skipDbPatch: true }
+      );
+      setDriveStatus((prev) => ({
+        ...prev,
+        connected: true,
+        authMode: data.authMode || prev.authMode,
+        lastSyncedAt: data.syncedAt,
+        error: '',
+      }));
+      return data;
+    },
+    [updateUnit]
+  );
 
   /** Toggle whether a floor is visible on the Public Website (`isVisible`). */
-  const toggleFloorVisibility = useCallback((floorId) => {
-    setFloors((prevFloors) =>
-      prevFloors.map((floor) =>
-        floor.id === floorId
-          ? { ...floor, isVisible: floor.isVisible === false ? true : false }
-          : floor
-      )
-    );
-  }, []);
+  const toggleFloorVisibility = useCallback(
+    (floorId) => {
+      const targetFloor = floorsRef.current.find((f) => f.id === floorId);
+      const nextVisible = targetFloor ? targetFloor.isVisible === false : true;
+
+      setFloors((prevFloors) =>
+        prevFloors.map((floor) =>
+          floor.id === floorId ? { ...floor, isVisible: nextVisible } : floor
+        )
+      );
+
+      patchDbFloor(targetFloor?.dbId || floorId, { is_visible: nextVisible }).catch(() => {
+        showSaveError();
+      });
+    },
+    [showSaveError]
+  );
 
   /**
    * Dynamically add the next story (e.g., 6th Floor - Floor F with 3 symmetrical units F1, F2, F3)
-   * right at the top of the building stack.
+   * right at the top of the building stack and persist to Neon PostgreSQL.
    */
   const addNextStory = useCallback(() => {
-    let createdFloor = null;
-    setFloors((prevFloors) => {
-      const maxFloorNum = prevFloors.reduce(
-        (max, f) => Math.max(max, f.floorNumber),
-        0
-      );
-      const nextNum = maxFloorNum + 1;
-      const nextLetter = String.fromCharCode(64 + nextNum); // 6 -> 'F', 7 -> 'G'
-      const nameBn = getBanglaFloorOrdinal(nextNum);
-      const u1 = `${nextLetter}1`;
-      const u2 = `${nextLetter}2`;
-      const u3 = `${nextLetter}3`;
+    const prevFloors = floorsRef.current;
+    const maxFloorNum = prevFloors.reduce((max, f) => Math.max(max, f.floorNumber), 0);
+    const nextNum = maxFloorNum + 1;
+    const nextLetter = String.fromCharCode(64 + nextNum); // 6 -> 'F', 7 -> 'G'
+    const nameBn = getBanglaFloorOrdinal(nextNum);
+    const u1 = `${nextLetter}1`;
+    const u2 = `${nextLetter}2`;
+    const u3 = `${nextLetter}3`;
 
-      createdFloor = {
-        id: nextLetter,
-        floorNumber: nextNum,
-        nameBn,
-        titleBn: `${nameBn} (ফ্লোর ${nextLetter}: ইউনিট ${u1}, ${u2} ও ${u3})`,
-        blueprintReady: true,
-        isVisible: true,
-        legendPills: [
-          { swatch: 'green', textBn: `ইউনিট ${u1} (বাম পাশ)` },
-          { swatch: 'ochre', textBn: `ইউনিট ${u2} (মাঝখান)` },
-          { swatch: 'tenant', textBn: `ইউনিট ${u3} (ডান পাশ)` },
-          { swatch: 'stairs', textBn: 'সিঁড়ি ঘর' },
-        ],
-        units: [
-          {
-            id: u1,
-            widthPct: 38,
-            status: 'available',
-            rent: 12000,
-            availableFrom: 'january',
-            availableFromFullBn: 'জানুয়ারি ২০২৭',
-            inclusiveBills: true,
-            bedrooms: 3,
-            washrooms: 2,
-            balconies: 3,
-            renterNameBn: '',
-            renterPhone: '',
-            roomsSummaryBn: '৩টি বেডরুম • ড্রয়িং-ডাইনিং • ২টি বাথরুম • ৩টি বারান্দা • কিচেন',
-            facingBn: 'দক্ষিণ-পূর্ব মুখী (প্রচুর আলো-বাতাস)',
-          },
-          {
-            id: u2,
-            widthPct: 24,
-            status: 'occupied',
-            rent: 9500,
-            bedrooms: 2,
-            washrooms: 2,
-            balconies: 2,
-            renterNameBn: 'নতুন ভাড়াটিয়া',
-            renterPhone: '01700000000',
-          },
-          {
-            id: u3,
-            widthPct: 38,
-            status: 'occupied',
-            rent: 12000,
-            bedrooms: 3,
-            washrooms: 2,
-            balconies: 3,
-            renterNameBn: 'নতুন ভাড়াটিয়া',
-            renterPhone: '01800000000',
-          },
-        ],
-      };
+    const createdFloor = {
+      dbId: String(nextNum),
+      id: nextLetter,
+      floorNumber: nextNum,
+      nameBn,
+      titleBn: `${nameBn} (ফ্লোর ${nextLetter}: ইউনিট ${u1}, ${u2} ও ${u3})`,
+      blueprintReady: true,
+      isVisible: true,
+      templateType: 'three-unit',
+      legendPills: [
+        { swatch: 'green', textBn: `ইউনিট ${u1} (বাম পাশ)` },
+        { swatch: 'ochre', textBn: `ইউনিট ${u2} (মাঝখান)` },
+        { swatch: 'tenant', textBn: `ইউনিট ${u3} (ডান পাশ)` },
+        { swatch: 'stairs', textBn: 'সিঁড়ি ঘর' },
+      ],
+      units: [
+        {
+          id: u1,
+          widthPct: 38,
+          status: 'available',
+          rent: 12000,
+          availableFrom: 'january',
+          availableFromFullBn: 'জানুয়ারি ২০২৭',
+          inclusiveBills: true,
+          bedrooms: 3,
+          washrooms: 2,
+          balconies: 3,
+          renterNameBn: '',
+          renterPhone: '',
+          roomsSummaryBn: '৩টি বেডরুম • ড্রয়িং-ডাইনিং • ২টি বাথরুম • ৩টি বারান্দা • কিচেন',
+          facingBn: 'দক্ষিণ-পূর্ব মুখী (প্রচুর আলো-বাতাস)',
+        },
+        {
+          id: u2,
+          widthPct: 24,
+          status: 'occupied',
+          rent: 9500,
+          bedrooms: 2,
+          washrooms: 2,
+          balconies: 2,
+          renterNameBn: 'নতুন ভাড়াটিয়া',
+          renterPhone: '01700000000',
+        },
+        {
+          id: u3,
+          widthPct: 38,
+          status: 'occupied',
+          rent: 12000,
+          bedrooms: 3,
+          washrooms: 2,
+          balconies: 3,
+          renterNameBn: 'নতুন ভাড়াটিয়া',
+          renterPhone: '01800000000',
+        },
+      ],
+    };
 
-      return [createdFloor, ...prevFloors];
+    setFloors((cur) => [createdFloor, ...cur]);
+
+    createDbFloor(createdFloor).catch(() => {
+      showSaveError();
     });
+
     return createdFloor;
-  }, []);
+  }, [showSaveError]);
 
   /** Remove a dynamically added top story (floorNumber > 5). */
-  const removeFloor = useCallback((floorId) => {
-    setFloors((prevFloors) => prevFloors.filter((f) => f.id !== floorId));
-  }, []);
+  const removeFloor = useCallback(
+    (floorId) => {
+      const targetFloor = floorsRef.current.find((f) => f.id === floorId);
+      setFloors((prevFloors) => prevFloors.filter((f) => f.id !== floorId));
+
+      deleteDbFloor(targetFloor?.dbId || floorId).catch(() => {
+        showSaveError();
+      });
+    },
+    [showSaveError]
+  );
 
   /** Restore full building state & rent ledger from an uploaded JSON backup object. */
-  const restoreBackupData = useCallback((backupObj) => {
-    if (!backupObj || !Array.isArray(backupObj.floors)) {
-      return false;
-    }
-    setFloors(backupObj.floors);
-    if (backupObj.paymentsByMonth && typeof backupObj.paymentsByMonth === 'object') {
-      setPaymentsByMonth(backupObj.paymentsByMonth);
-    }
-    if (backupObj.building && typeof backupObj.building === 'object') {
-      setBuilding(backupObj.building);
-    }
-    return true;
-  }, []);
+  const restoreBackupData = useCallback(
+    (backupObj) => {
+      if (!backupObj || !Array.isArray(backupObj.floors)) {
+        return false;
+      }
+      setFloors(backupObj.floors);
+      if (backupObj.paymentsByMonth && typeof backupObj.paymentsByMonth === 'object') {
+        setPaymentsByMonth(backupObj.paymentsByMonth);
+      }
+      if (backupObj.building && typeof backupObj.building === 'object') {
+        setBuilding(backupObj.building);
+      }
+
+      restoreDbBackup(backupObj)
+        .then((hydrated) => {
+          applyHydratedState(hydrated);
+        })
+        .catch(() => {
+          showSaveError();
+        });
+
+      return true;
+    },
+    [applyHydratedState, showSaveError]
+  );
 
   const resetToDefaults = useCallback(() => {
     setBuilding(initialBuilding);
     setFloors(initialFloors);
     setPaymentsByMonth(initialPaymentsByMonth);
     setAdminPinState('1234');
-    try {
-      localStorage.removeItem(BUILDING_STORAGE_KEY);
-      localStorage.removeItem(FLOORS_STORAGE_KEY);
-      localStorage.removeItem(PAYMENTS_STORAGE_KEY);
-      localStorage.removeItem(PIN_STORAGE_KEY);
-    } catch {
-      // ignore
-    }
-  }, []);
+
+    restoreDbBackup({ resetToDefaults: true })
+      .then((hydrated) => {
+        applyHydratedState(hydrated);
+      })
+      .catch(() => {
+        showSaveError();
+      });
+  }, [applyHydratedState, showSaveError]);
 
   return (
     <BuildingContext.Provider
@@ -396,6 +576,8 @@ export function BuildingProvider({ children }) {
         recordRentPayment,
         clearRentPayment,
         updateUnit,
+        dbStatus,
+        refreshFromDb,
         driveStatus,
         syncAllFromDrive,
         syncUnitFromDrive,
@@ -409,6 +591,19 @@ export function BuildingProvider({ children }) {
       }}
     >
       {children}
+      {saveErrorToast && (
+        <div className="db-save-error-toast" role="alert" aria-live="assertive">
+          <span>{saveErrorToast}</span>
+          <button
+            type="button"
+            className="db-save-error-toast__close"
+            onClick={() => setSaveErrorToast('')}
+            aria-label="বন্ধ করুন"
+          >
+            ✕
+          </button>
+        </div>
+      )}
     </BuildingContext.Provider>
   );
 }

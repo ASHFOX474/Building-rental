@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useBuilding, getBanglaFloorOrdinal } from '../../context/BuildingContext.jsx';
 import { isUnitAvailable } from '../floormap/UnitStatusElements.jsx';
 import {
@@ -310,6 +310,13 @@ export default function BuildingSettingsTab({ onSwitchToToLetTab }) {
     building.contact.whatsapp || '8801815023898'
   );
   const [newPinInput, setNewPinInput] = useState('');
+
+  // Keep form fields synced when Neon PostgreSQL state hydrates asynchronously
+  useEffect(() => {
+    setPrimaryPhone(building.contact.phone || '01817526285');
+    setSecondaryPhone(building.contact.phoneSecondary || '');
+    setWhatsappNum(building.contact.whatsapp || '8801815023898');
+  }, [building.contact.phone, building.contact.phoneSecondary, building.contact.whatsapp]);
 
   const showToast = (msg) => {
     setToastMsg(msg);

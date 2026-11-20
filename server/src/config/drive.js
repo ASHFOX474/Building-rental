@@ -16,6 +16,24 @@ export function resolveKeyFilePath() {
     : path.resolve(SERVER_ROOT, configured);
 }
 
+/**
+ * Parse raw JSON string from process.env.GOOGLE_SERVICE_ACCOUNT_JSON (for cloud hosting
+ * such as Render/Railway where secret files are injected as environment variables).
+ */
+export function parseServiceAccountEnvCredentials() {
+  const raw = (process.env.GOOGLE_SERVICE_ACCOUNT_JSON || '').trim();
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed.private_key === 'string') {
+      parsed.private_key = parsed.private_key.replace(/\\n/g, '\n');
+    }
+    return parsed;
+  } catch (err) {
+    throw new Error(`Invalid GOOGLE_SERVICE_ACCOUNT_JSON environment variable: ${err.message}`);
+  }
+}
+
 /** Determine active authentication mode: 'oauth2' if full OAuth env vars exist, else 'service-account'. */
 export function getDriveAuthMode() {
   if (
@@ -38,7 +56,10 @@ export function getRootFolderId() {
 
 /**
  * Create an authenticated Google Drive v3 client.
- * Uses OAuth2 user credentials if configured, otherwise uses the Service Account JSON key file.
+ * Priority:
+ *  1. OAuth2 env credentials (GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET + GOOGLE_REFRESH_TOKEN)
+ *  2. GOOGLE_SERVICE_ACCOUNT_JSON env var (raw JSON string for Render/Railway deployment)
+ *  3. Local Service Account JSON key file on disk (./drive-service-account.json)
  */
 export function getDriveClient() {
   if (getDriveAuthMode() === 'oauth2') {
@@ -52,9 +73,20 @@ export function getDriveClient() {
     return google.drive({ version: 'v3', auth: oauth2Client });
   }
 
+  const envCredentials = parseServiceAccountEnvCredentials();
+  if (envCredentials) {
+    const auth = new google.auth.GoogleAuth({
+      credentials: envCredentials,
+      scopes: DRIVE_SCOPES,
+    });
+    return google.drive({ version: 'v3', auth });
+  }
+
   const keyFile = resolveKeyFilePath();
   if (!fs.existsSync(keyFile)) {
-    throw new Error(`Service Account key file not found at: ${keyFile}`);
+    throw new Error(
+      `Service Account credentials not found. Set GOOGLE_SERVICE_ACCOUNT_JSON or place key file at: ${keyFile}`
+    );
   }
 
   const auth = new google.auth.GoogleAuth({
@@ -68,6 +100,9 @@ export function getDriveClient() {
 /** Read non-sensitive service account metadata (only client_email, never private key). */
 export function getServiceAccountEmail() {
   try {
+    const envCredentials = parseServiceAccountEnvCredentials();
+    if (envCredentials?.client_email) return envCredentials.client_email;
+
     const keyFile = resolveKeyFilePath();
     if (!fs.existsSync(keyFile)) return null;
     const parsed = JSON.parse(fs.readFileSync(keyFile, 'utf8'));

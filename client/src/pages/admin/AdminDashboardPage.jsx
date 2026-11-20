@@ -8,13 +8,22 @@ import { useBuilding } from '../../context/BuildingContext.jsx';
 import '../../components/admin/admin.css';
 
 const ADMIN_AUTH_KEY = 'moni_lodge_admin_unlocked_v1';
+const REMEMBER_DEVICE_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 function isInitiallyUnlocked() {
   try {
-    return (
-      localStorage.getItem(ADMIN_AUTH_KEY) === 'true' ||
-      sessionStorage.getItem(ADMIN_AUTH_KEY) === 'true'
-    );
+    if (sessionStorage.getItem(ADMIN_AUTH_KEY) === 'true') {
+      return true;
+    }
+    const raw = localStorage.getItem(ADMIN_AUTH_KEY);
+    if (!raw) return false;
+    if (raw === 'true') return true;
+    const parsed = JSON.parse(raw);
+    if (parsed?.unlocked && (!parsed.expiresAt || Date.now() < parsed.expiresAt)) {
+      return true;
+    }
+    localStorage.removeItem(ADMIN_AUTH_KEY);
+    return false;
   } catch {
     return false;
   }
@@ -56,7 +65,13 @@ export default function AdminDashboardPage() {
     setUnlocked(true);
     try {
       if (rememberDevice) {
-        localStorage.setItem(ADMIN_AUTH_KEY, 'true');
+        localStorage.setItem(
+          ADMIN_AUTH_KEY,
+          JSON.stringify({
+            unlocked: true,
+            expiresAt: Date.now() + REMEMBER_DEVICE_TTL_MS,
+          })
+        );
       } else {
         sessionStorage.setItem(ADMIN_AUTH_KEY, 'true');
       }

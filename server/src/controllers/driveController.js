@@ -10,6 +10,12 @@ import {
   inspectAndPublishDriveFile,
   openDriveVideoStream,
 } from '../services/driveService.js';
+import {
+  persistDriveSyncAll,
+  persistDriveSyncForUnit,
+  persistDriveUpload,
+  persistDriveFileDeleted,
+} from '../services/dbService.js';
 import { cleanupTempFiles } from '../middleware/upload.js';
 
 /** Extract any Drive quota / permission reason from googleapis errors. */
@@ -50,9 +56,11 @@ export async function status(_req, res) {
   }
 }
 
-export async function syncAll(_req, res) {
+export async function syncAll(req, res) {
   try {
     const data = await syncAllUnitsFromDrive();
+    const overwriteEmpty = req.query.overwriteEmpty === 'true';
+    await persistDriveSyncAll(data.units, { overwriteEmpty });
     res.json({ ok: true, ...data });
   } catch (err) {
     sendDriveError(res, err);
@@ -64,6 +72,7 @@ export async function syncUnit(req, res) {
     const { unitId } = req.params;
     const { unitFolderId } = req.body || {};
     const data = await syncSingleUnitFromDrive(unitId, unitFolderId);
+    await persistDriveSyncForUnit(unitId, data, { overwriteEmpty: true });
     res.json({ ok: true, ...data });
   } catch (err) {
     sendDriveError(res, err);
@@ -141,6 +150,15 @@ export async function uploadFiles(req, res) {
       results.push(uploaded.item);
     }
 
+    await persistDriveUpload({
+      unitId,
+      unitFolderId: targetInfo.unitFolderId,
+      targetFolderId: targetInfo.targetFolderId,
+      roomName,
+      isMainVideo: isMain,
+      items: results,
+    });
+
     res.json({
       ok: true,
       unitFolderId: targetInfo.unitFolderId,
@@ -167,6 +185,7 @@ export async function deleteItem(req, res) {
     const { fileId } = req.params;
     const parentId = req.query.parentId || req.body?.parentId || '';
     const result = await deleteOrUnlinkDriveItem(fileId, parentId);
+    await persistDriveFileDeleted(fileId);
     res.json({ ok: true, ...result });
   } catch (err) {
     sendDriveError(res, err);

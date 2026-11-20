@@ -21,6 +21,7 @@ router.post('/units/:unitId/folders', createRoomFolder);
 router.patch('/folders/:folderId', renameFolder);
 router.post('/upload', uploadMiddleware.array('files', 20), uploadFiles);
 router.delete('/files/:fileId', deleteItem);
+router.delete('/file/:fileId', deleteItem);
 router.post('/ensure-public', ensurePublic);
 router.get('/stream/:fileId', streamFile);
 
