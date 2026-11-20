@@ -75,7 +75,7 @@ app.use(
   express.static(DIST_DIR, {
     index: false,
     setHeaders(res, filePath) {
-      if (filePath.endsWith('.html')) {
+      if (filePath.endsWith('.html') || filePath.endsWith(`${path.sep}sw.js`)) {
         res.setHeader('Cache-Control', 'no-cache');
       } else if (filePath.includes(`${path.sep}assets${path.sep}`)) {
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
@@ -86,16 +86,50 @@ app.use(
   })
 );
 
+let cachedIndexHtml = null;
+
+function readIndexHtmlTemplate() {
+  if (cachedIndexHtml !== null) return cachedIndexHtml;
+  if (!fs.existsSync(INDEX_HTML_PATH)) return null;
+  cachedIndexHtml = fs.readFileSync(INDEX_HTML_PATH, 'utf8');
+  return cachedIndexHtml;
+}
+
+function resolveRequestOrigin(req) {
+  const forwardedProto = String(req.headers['x-forwarded-proto'] || '')
+    .split(',')[0]
+    .trim();
+  const host = String(req.get('x-forwarded-host') || req.get('host') || '')
+    .split(',')[0]
+    .trim();
+  const isLocalHost =
+    host.startsWith('localhost') ||
+    host.startsWith('127.0.0.1') ||
+    host.startsWith('0.0.0.0');
+
+  // Render/HTTPS reverse proxies send x-forwarded-proto=https; default to https on non-local hosts
+  const proto = forwardedProto || (isLocalHost ? req.protocol || 'http' : 'https');
+  if (host) {
+    return `${proto}://${host}`;
+  }
+  return (process.env.RENDER_EXTERNAL_URL || 'https://localhost').replace(/\/+$/, '');
+}
+
 // 4. Catch-all SPA fallback (Express 4 & Express 5 compatible regex) for all non-`/api` routes
-//    so `/admin`, `/floor/1`, `/flat/E3`, etc. work seamlessly on direct URL load or reload.
-app.get(/^(?!\/api(?:\/|$)).*/, (_req, res) => {
-  if (!fs.existsSync(INDEX_HTML_PATH)) {
+//    Replaces `__ORIGIN__` dynamically with the live request origin (`https://<host>`)
+//    so Facebook, WhatsApp, Messenger, and Instagram scrapers receive valid absolute URLs.
+app.get(/^(?!\/api(?:\/|$)).*/, (req, res) => {
+  const template = readIndexHtmlTemplate();
+  if (!template) {
     return res.status(503).send(
       'Frontend build not found. Run "npm run build" before starting the production server.'
     );
   }
+  const origin = resolveRequestOrigin(req);
+  const html = template.replaceAll('__ORIGIN__', origin);
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.setHeader('Cache-Control', 'no-cache');
-  return res.sendFile(INDEX_HTML_PATH);
+  return res.send(html);
 });
 
 // 5. Initialize Neon PostgreSQL tables on startup and bind to 0.0.0.0:${PORT}

@@ -1,0 +1,23 @@
+{
+  "name": "মনি লজ — ফ্ল্যাট ভাড়া, নোয়াখালী",
+  "short_name": "মনি লজ",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#FAF6F0",
+  "theme_color": "#C25934",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

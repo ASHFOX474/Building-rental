@@ -69,6 +69,24 @@ function inProcessApiPlugin() {
   };
 }
 
+/**
+ * Dev-only fallback replacing `__ORIGIN__` in `index.html` with the local Vite dev URL.
+ * Production builds (`vite build`) keep `__ORIGIN__` intact so `server/prodServer.js`
+ * injects the live `https://<host>` dynamically for Facebook/WhatsApp/Instagram scrapers.
+ */
+function devOriginMetaPlugin() {
+  return {
+    name: 'dev-origin-meta-fallback',
+    apply: 'serve',
+    transformIndexHtml(html, ctx) {
+      const host = ctx?.server?.config?.server?.host;
+      const port = ctx?.server?.config?.server?.port || 5173;
+      const devHost = typeof host === 'string' && host !== '0.0.0.0' ? host : 'localhost';
+      return html.replaceAll('__ORIGIN__', `http://${devHost}:${port}`);
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react(), inProcessApiPlugin()],
+  plugins: [react(), inProcessApiPlugin(), devOriginMetaPlugin()],
 });
