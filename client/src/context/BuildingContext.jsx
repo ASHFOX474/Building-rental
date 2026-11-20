@@ -123,7 +123,7 @@ export function BuildingProvider({ children }) {
   const syncAllFromDrive = useCallback(async ({ overwriteEmpty = true } = {}) => {
     try {
       const statusRes = await fetchDriveStatus();
-      const syncRes = await syncAllUnitsFromDriveApi();
+      const syncRes = await syncAllUnitsFromDriveApi({ overwriteEmpty });
 
       setFloors((prevFloors) =>
         prevFloors.map((floor) => ({
@@ -207,7 +207,7 @@ export function BuildingProvider({ children }) {
         : false;
 
       if (!hasAnyMappedDriveFolder) {
-        syncAllFromDrive({ overwriteEmpty: false }).catch(() => {
+        syncAllFromDrive({ overwriteEmpty: true }).catch(() => {
           // Drive optional during offline preview
         });
       } else {

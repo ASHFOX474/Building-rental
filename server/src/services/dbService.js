@@ -194,6 +194,15 @@ export async function initDatabase() {
           `ALTER TABLE units ADD COLUMN IF NOT EXISTS meta JSONB DEFAULT '{}'::jsonb;`
         );
 
+        // Clean out any legacy dummy sample video URLs if a unit has no real Drive video
+        await client.query(`
+          UPDATE units
+          SET main_video = NULL, updated_at = NOW()
+          WHERE main_video IS NOT NULL
+            AND COALESCE(main_video->>'driveVideoId', '') = ''
+            AND COALESCE(main_video->>'mainVideoUrl', '') LIKE '%commondatastorage.googleapis.com%'
+        `);
+
         const floorCount = (await client.query('SELECT COUNT(*)::int AS cnt FROM floors')).rows[0].cnt;
         const unitCount = (await client.query('SELECT COUNT(*)::int AS cnt FROM units')).rows[0].cnt;
 
@@ -231,10 +240,9 @@ function rowToFrontendUnit(row) {
   const meta = row.meta && typeof row.meta === 'object' ? row.meta : {};
   const mainVideo = row.main_video && typeof row.main_video === 'object' ? row.main_video : {};
   const mediaSectionsArr = Array.isArray(row.media_sections) ? row.media_sections : [];
-  const hasRealMedia = mediaSectionsArr.length > 0 || meta.mediaCustomized === true;
 
   const status = row.is_owner ? 'owner' : row.is_to_let ? 'available' : 'occupied';
-  const unit = {
+  return {
     id: row.unit_code,
     floorId: row.floor_id,
     widthPct: meta.widthPct ?? 38,
@@ -262,13 +270,8 @@ function rowToFrontendUnit(row) {
     driveVideoId: mainVideo.driveVideoId || '',
     mainVideoUrl: mainVideo.mainVideoUrl || '',
     mainVideoFileName: mainVideo.mainVideoFileName || '',
+    mediaSections: mediaSectionsArr,
   };
-
-  if (hasRealMedia) {
-    unit.mediaSections = mediaSectionsArr;
-  }
-
-  return unit;
 }
 
 /** Hydrate the complete app state (building, floors, units, paymentsByMonth, settings) from Neon. */
@@ -1041,7 +1044,7 @@ export async function restoreFullStateInDb(backupObj = {}) {
 
 /**
  * Persist synced Google Drive media for a single unit directly into Neon PostgreSQL.
- * Safe no-op if DATABASE_URL is not configured.
+ * Always writes the exact live Drive state (even when empty with 0 photos) so reload never reverts.
  */
 export async function persistDriveSyncForUnit(unitCode, driveData, { overwriteEmpty = true } = {}) {
   if (!isDbConfigured() || !unitCode || !driveData) return null;
@@ -1051,9 +1054,8 @@ export async function persistDriveSyncForUnit(unitCode, driveData, { overwriteEm
     const existing = await query('SELECT unit_code FROM units WHERE unit_code = $1', [normalized]);
     if (existing.rows.length === 0) return null;
 
-    const hasDriveContent =
-      (Array.isArray(driveData.mediaSections) && driveData.mediaSections.length > 0) ||
-      Boolean(driveData.driveVideoId);
+    const sections = Array.isArray(driveData.mediaSections) ? driveData.mediaSections : [];
+    const hasDriveContent = sections.length > 0 || Boolean(driveData.driveVideoId);
 
     if (!overwriteEmpty && !hasDriveContent) {
       return updateUnitInDb(normalized, {
@@ -1062,13 +1064,19 @@ export async function persistDriveSyncForUnit(unitCode, driveData, { overwriteEm
       });
     }
 
+    const nextMainVideo = driveData.driveVideoId
+      ? {
+          driveVideoId: driveData.driveVideoId,
+          mainVideoFileName: driveData.mainVideoFileName || '',
+          mainVideoUrl: '',
+        }
+      : null;
+
     return updateUnitInDb(normalized, {
       driveFolderId: driveData.driveFolderId || '',
       driveFolderUrl: driveData.driveFolderUrl || '',
-      driveVideoId: driveData.driveVideoId || '',
-      mainVideoFileName: driveData.mainVideoFileName || '',
-      mainVideoUrl: '',
-      mediaSections: Array.isArray(driveData.mediaSections) ? driveData.mediaSections : [],
+      main_video: nextMainVideo,
+      media_sections: sections,
     });
   } catch (err) {
     console.error(`[db] Failed to persist Drive sync for unit ${unitCode}:`, err.message);
@@ -1077,10 +1085,64 @@ export async function persistDriveSyncForUnit(unitCode, driveData, { overwriteEm
 }
 
 /** Persist all synced units from `/api/drive/sync-all` into Neon PostgreSQL. */
-export async function persistDriveSyncAll(unitsMap = {}, { overwriteEmpty = false } = {}) {
+export async function persistDriveSyncAll(unitsMap = {}, { overwriteEmpty = true } = {}) {
   if (!isDbConfigured() || !unitsMap) return;
   for (const [unitCode, driveData] of Object.entries(unitsMap)) {
     await persistDriveSyncForUnit(unitCode, driveData, { overwriteEmpty });
+  }
+}
+
+/** Persist a newly created Drive room subfolder directly into the unit's media_sections in Neon. */
+export async function persistDriveFolderCreated(unitCode, folder, unitFolderId = '') {
+  if (!isDbConfigured() || !unitCode || !folder?.id) return;
+  try {
+    await initDatabase();
+    const normalized = String(unitCode).trim().toUpperCase();
+    const res = await query('SELECT * FROM units WHERE unit_code = $1', [normalized]);
+    if (res.rows.length === 0) return;
+    const row = res.rows[0];
+    const sections = Array.isArray(row.media_sections) ? [...row.media_sections] : [];
+    const alreadyExists = sections.some((s) => s.driveFolderId === folder.id);
+    if (!alreadyExists) {
+      sections.push({
+        id: `drive-${folder.id}`,
+        driveFolderId: folder.id,
+        category: 'custom',
+        titleBn: folder.name || 'নতুন রুম',
+        items: [],
+      });
+    }
+    await updateUnitInDb(normalized, {
+      driveFolderId: unitFolderId || row.drive_folder_id || '',
+      mediaSections: sections,
+    });
+  } catch (err) {
+    console.error(`[db] Failed to persist created folder for unit ${unitCode}:`, err.message);
+  }
+}
+
+/** Persist a renamed Drive room subfolder across any unit referencing it in Neon. */
+export async function persistDriveFolderRenamed(folderId, newName) {
+  if (!isDbConfigured() || !folderId || !newName) return;
+  try {
+    await initDatabase();
+    const unitsRes = await query('SELECT unit_code, media_sections FROM units');
+    for (const row of unitsRes.rows) {
+      const sections = Array.isArray(row.media_sections) ? row.media_sections : [];
+      let changed = false;
+      const updatedSections = sections.map((sec) => {
+        if (sec.driveFolderId === folderId) {
+          changed = true;
+          return { ...sec, titleBn: String(newName).trim() };
+        }
+        return sec;
+      });
+      if (changed) {
+        await updateUnitInDb(row.unit_code, { media_sections: updatedSections });
+      }
+    }
+  } catch (err) {
+    console.error(`[db] Failed to persist renamed folder ${folderId}:`, err.message);
   }
 }
 

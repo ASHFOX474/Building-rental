@@ -10,6 +10,7 @@ import {
   uploadFilesToDriveApi,
   deleteDriveItemApi,
   ensureDriveFilePublicApi,
+  resolveDriveImageUrl,
 } from '../../api/driveApi.js';
 
 /** Extract a clean Google Drive File ID from either a raw ID or a full Drive sharing URL. */
@@ -1028,16 +1029,21 @@ export default function ToLetMediaTab({ initialUnitId = 'E1' }) {
         {hasMainVideo && !replacingMainVideo ? (
           <div className="adm-main-video-preview-wrap">
             <div className="adm-main-video-player">
-              {selectedUnit.driveVideoId ? (
-                <iframe
-                  title={`ইউনিট ${selectedUnit.id} মেইন ভিডিও`}
-                  src={`https://drive.google.com/file/d/${selectedUnit.driveVideoId}/preview`}
-                  allow="autoplay; fullscreen"
-                  allowFullScreen
-                />
-              ) : (
-                <video src={selectedUnit.mainVideoUrl} controls preload="metadata" />
-              )}
+              <video
+                src={
+                  selectedUnit.driveVideoId
+                    ? `/api/drive/stream/${encodeURIComponent(selectedUnit.driveVideoId)}`
+                    : selectedUnit.mainVideoUrl
+                }
+                poster={
+                  selectedUnit.driveVideoId
+                    ? `/api/drive/image/${encodeURIComponent(selectedUnit.driveVideoId)}`
+                    : undefined
+                }
+                controls
+                playsInline
+                preload="metadata"
+              />
             </div>
 
             <div className="adm-main-video-actions">
@@ -1317,29 +1323,25 @@ export default function ToLetMediaTab({ initialUnitId = 'E1' }) {
                     <div className="adm-room-media-grid">
                       {section.items.map((item) => {
                         const isVideo = item.type === 'video';
-                        const thumbOrVideoSrc = item.driveFileId
-                          ? isVideo
-                            ? `https://drive.google.com/file/d/${item.driveFileId}/preview`
-                            : `https://drive.google.com/thumbnail?id=${item.driveFileId}&sz=w1000`
-                          : item.previewUrl;
+                        const imageProxyUrl = resolveDriveImageUrl(item);
+                        const videoStreamSrc = item.driveFileId
+                          ? `/api/drive/stream/${encodeURIComponent(item.driveFileId)}`
+                          : item.url || item.previewUrl;
 
                         return (
                           <div key={item.id} className="adm-media-item-card">
                             <div className="adm-media-item-card__preview">
                               {isVideo ? (
-                                item.driveFileId ? (
-                                  <iframe
-                                    title={item.labelBn || section.titleBn}
-                                    src={thumbOrVideoSrc}
-                                    allow="autoplay; fullscreen"
-                                    allowFullScreen
-                                  />
-                                ) : (
-                                  <video src={thumbOrVideoSrc} controls preload="metadata" />
-                                )
+                                <video
+                                  src={videoStreamSrc}
+                                  poster={item.driveFileId ? imageProxyUrl : undefined}
+                                  controls
+                                  playsInline
+                                  preload="metadata"
+                                />
                               ) : (
                                 <img
-                                  src={thumbOrVideoSrc}
+                                  src={imageProxyUrl}
                                   alt={item.labelBn || section.titleBn}
                                   loading="lazy"
                                 />
@@ -1361,9 +1363,7 @@ export default function ToLetMediaTab({ initialUnitId = 'E1' }) {
                                   className="adm-media-zoom-btn"
                                   onClick={() =>
                                     setLightboxImage({
-                                      src: item.driveFileId
-                                        ? `https://drive.google.com/thumbnail?id=${item.driveFileId}&sz=w1600`
-                                        : thumbOrVideoSrc,
+                                      src: imageProxyUrl,
                                       caption: item.labelBn || section.titleBn,
                                     })
                                   }

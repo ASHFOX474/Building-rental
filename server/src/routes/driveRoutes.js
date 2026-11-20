@@ -10,6 +10,7 @@ import {
   deleteItem,
   ensurePublic,
   streamFile,
+  streamImage,
 } from '../controllers/driveController.js';
 
 const router = Router();
@@ -24,5 +25,6 @@ router.delete('/files/:fileId', deleteItem);
 router.delete('/file/:fileId', deleteItem);
 router.post('/ensure-public', ensurePublic);
 router.get('/stream/:fileId', streamFile);
+router.get('/image/:fileId', streamImage);
 
 export default router;

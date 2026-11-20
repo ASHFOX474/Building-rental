@@ -75,7 +75,7 @@ export const floors = [
         washrooms: 2,
         balconies: 3,
         driveVideoId: '',
-        mainVideoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+        mainVideoUrl: '',
         driveFolderUrl: '',
         renterNameBn: '',
         renterPhone: '',
@@ -154,7 +154,7 @@ export const floors = [
         washrooms: 2,
         balconies: 3,
         driveVideoId: '',
-        mainVideoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+        mainVideoUrl: '',
         driveFolderUrl: '',
         renterNameBn: '',
         renterPhone: '',
@@ -493,73 +493,12 @@ export const defaultRoomMediaSections = [
 ];
 
 /**
- * Return the default Floor-Map-matched room media sections for any unit
- * (adapting automatically for A1, A2, 2-bedroom D2/E2, or 3+ bedroom units).
+ * Return the persisted/synced room media sections for a unit.
+ * Never injects dummy Unsplash photos — empty means 0 photos until synced or uploaded.
  */
 export function getDefaultSectionsForUnit(unit) {
   if (Array.isArray(unit?.mediaSections)) {
     return unit.mediaSections;
   }
-
-  // Ground Floor Unit A1: 1 Bedroom + Separate Drawing Room & Dining Room
-  if (unit?.id === 'A1' || unit?.hasSeparateDrawingDining) {
-    return [
-      {
-        id: 'sec-a1-drawing',
-        category: 'drawing',
-        titleBn: 'ড্রয়িং রুম (আলাদা বসার ঘর)',
-        items: defaultRoomMediaSections[0].items.slice(0, 2).map((it) => ({ ...it })),
-      },
-      {
-        id: 'sec-a1-dining',
-        category: 'dining',
-        titleBn: 'ডাইনিং রুম',
-        items: defaultRoomMediaSections[0].items.slice(1).map((it) => ({ ...it })),
-      },
-      {
-        id: 'sec-a1-bed',
-        category: 'bed-1',
-        titleBn: 'বেডরুম (উত্তর-পশ্চিম কোণ — বাথরুম ও বারান্দাসহ)',
-        items: defaultRoomMediaSections[3].items.map((it) => ({ ...it })),
-      },
-      {
-        id: 'sec-a1-kitchen-bath',
-        category: 'kitchen-bath',
-        titleBn: 'কিচেন ও কমন টয়লেট',
-        items: defaultRoomMediaSections[4].items.map((it) => ({ ...it })),
-      },
-    ];
-  }
-
-  // Ground Floor Unit A2: 2 Bedrooms (Bedroom 1 with Veranda, Bedroom 2 with Attached Bathroom)
-  if (unit?.id === 'A2') {
-    return [
-      {
-        ...defaultRoomMediaSections[0],
-        items: defaultRoomMediaSections[0].items.map((it) => ({ ...it })),
-      },
-      {
-        ...defaultRoomMediaSections[1],
-        items: defaultRoomMediaSections[1].items.map((it) => ({ ...it })),
-      },
-      {
-        id: 'sec-a2-bed-2',
-        category: 'bed-2',
-        titleBn: 'বেডরুম ২ (উত্তর-পূর্ব কোণ — এটাচড বাথরুমসহ)',
-        items: defaultRoomMediaSections[2].items.map((it) => ({ ...it })),
-      },
-      {
-        ...defaultRoomMediaSections[4],
-        items: defaultRoomMediaSections[4].items.map((it) => ({ ...it })),
-      },
-    ];
-  }
-
-  const is2Bed = unit?.bedrooms === 2;
-  return defaultRoomMediaSections
-    .filter((sec) => !(is2Bed && sec.id === 'sec-bed-3'))
-    .map((sec) => ({
-      ...sec,
-      items: sec.items.map((it) => ({ ...it })),
-    }));
+  return [];
 }

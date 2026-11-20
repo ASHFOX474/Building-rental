@@ -22,14 +22,49 @@ async function requestJson(url, options = {}) {
   return data;
 }
 
+/** Extract a Google Drive File ID from legacy thumbnail/uc/file URLs if stored in DB. */
+export function extractLegacyDriveImageId(rawUrl = '') {
+  const s = String(rawUrl || '').trim();
+  if (!s || !s.includes('drive.google.com')) return '';
+  const dMatch = s.match(/\/file\/d\/([a-zA-Z0-9_-]{10,})/);
+  if (dMatch) return dMatch[1];
+  const idMatch = s.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);
+  if (idMatch) return idMatch[1];
+  return '';
+}
+
+/**
+ * Resolve any media item (or legacy Drive image URL) to our authenticated image proxy
+ * endpoint `/api/drive/image/:fileId`, preventing Google 429 rate-limits and CORS blocks.
+ */
+export function resolveDriveImageUrl(item) {
+  if (!item) return '';
+  if (typeof item === 'string') {
+    const legacyId = extractLegacyDriveImageId(item);
+    return legacyId ? `/api/drive/image/${encodeURIComponent(legacyId)}` : item;
+  }
+
+  if (item.driveFileId) {
+    return `/api/drive/image/${encodeURIComponent(item.driveFileId)}`;
+  }
+
+  const raw = item.url || item.previewUrl || '';
+  const legacyId = extractLegacyDriveImageId(raw);
+  if (legacyId) {
+    return `/api/drive/image/${encodeURIComponent(legacyId)}`;
+  }
+  return raw;
+}
+
 /** Check backend & Google Drive API connection status. */
 export function fetchDriveStatus() {
   return requestJson('/api/drive/status');
 }
 
-/** Scan all floors & units in Google Drive and return normalized media metadata. */
-export function syncAllUnitsFromDriveApi() {
-  return requestJson('/api/drive/sync-all');
+/** Scan all floors & units in Google Drive and persist normalized media metadata to Neon. */
+export function syncAllUnitsFromDriveApi({ overwriteEmpty = true } = {}) {
+  const qs = `?overwriteEmpty=${overwriteEmpty ? 'true' : 'false'}`;
+  return requestJson(`/api/drive/sync-all${qs}`);
 }
 
 /** Scan a single unit folder (e.g. E1, B2, A1) in Google Drive. */

@@ -69,11 +69,7 @@ export const DEFAULT_FLOORS_SEED = [
         tenant_name: '',
         tenant_phone: '',
         drive_folder_id: '',
-        main_video: {
-          driveVideoId: '',
-          mainVideoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-          mainVideoFileName: '',
-        },
+        main_video: null,
         media_sections: [],
         meta: {
           unitOrder: 1,
@@ -84,7 +80,6 @@ export const DEFAULT_FLOORS_SEED = [
           balconies: 3,
           roomsSummaryBn: '৩টি বেডরুম • ড্রয়িং-ডাইনিং • ২টি বাথরুম • ৩টি বারান্দা • কিচেন',
           facingBn: 'দক্ষিণ-পূর্ব মুখী (প্রচুর আলো-বাতাস)',
-          mediaCustomized: false,
         },
       },
       {
@@ -201,11 +196,7 @@ export const DEFAULT_FLOORS_SEED = [
         tenant_name: '',
         tenant_phone: '',
         drive_folder_id: '',
-        main_video: {
-          driveVideoId: '',
-          mainVideoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
-          mainVideoFileName: '',
-        },
+        main_video: null,
         media_sections: [],
         meta: {
           unitOrder: 3,
@@ -216,7 +207,6 @@ export const DEFAULT_FLOORS_SEED = [
           balconies: 3,
           roomsSummaryBn: '৩টি বেডরুম • ড্রয়িং-ডাইনিং • ২টি বাথরুম • ৩টি বারান্দা • কিচেন',
           facingBn: 'উত্তর-পূর্ব মুখী (দুই দিকেই রাস্তা ও খোলা জায়গা)',
-          mediaCustomized: false,
         },
       },
     ],

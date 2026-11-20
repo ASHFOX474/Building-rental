@@ -9,12 +9,15 @@ import {
   deleteOrUnlinkDriveItem,
   inspectAndPublishDriveFile,
   openDriveVideoStream,
+  openDriveImageStream,
 } from '../services/driveService.js';
 import {
   persistDriveSyncAll,
   persistDriveSyncForUnit,
   persistDriveUpload,
   persistDriveFileDeleted,
+  persistDriveFolderCreated,
+  persistDriveFolderRenamed,
 } from '../services/dbService.js';
 import { cleanupTempFiles } from '../middleware/upload.js';
 
@@ -59,7 +62,7 @@ export async function status(_req, res) {
 export async function syncAll(req, res) {
   try {
     const data = await syncAllUnitsFromDrive();
-    const overwriteEmpty = req.query.overwriteEmpty === 'true';
+    const overwriteEmpty = req.query.overwriteEmpty !== 'false';
     await persistDriveSyncAll(data.units, { overwriteEmpty });
     res.json({ ok: true, ...data });
   } catch (err) {
@@ -87,6 +90,7 @@ export async function createRoomFolder(req, res) {
       return res.status(400).json({ ok: false, messageBn: 'ফোল্ডারের নাম দেওয়া প্রয়োজন।' });
     }
     const data = await createRoomSubfolder(unitId, name, unitFolderId);
+    await persistDriveFolderCreated(unitId, data.folder, data.unitFolderId);
     res.json({ ok: true, ...data });
   } catch (err) {
     sendDriveError(res, err);
@@ -101,6 +105,7 @@ export async function renameFolder(req, res) {
       return res.status(400).json({ ok: false, messageBn: 'নতুন নাম দেওয়া প্রয়োজন।' });
     }
     const folder = await renameDriveEntry(folderId, name);
+    await persistDriveFolderRenamed(folderId, name);
     res.json({ ok: true, folder });
   } catch (err) {
     sendDriveError(res, err);
@@ -259,6 +264,55 @@ export async function streamFile(req, res) {
     }
     if (!res.headersSent) {
       sendDriveError(res, err);
+    }
+  }
+}
+
+export async function streamImage(req, res) {
+  let upstreamStream = null;
+  try {
+    const { fileId } = req.params;
+    if (!fileId) {
+      return res.status(400).json({ ok: false, messageBn: 'File ID প্রয়োজন।' });
+    }
+
+    const result = await openDriveImageStream(fileId);
+    upstreamStream = result.stream;
+
+    res.status(200);
+    res.setHeader('Content-Type', result.mimeType || 'image/jpeg');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    if (result.contentLength !== null && result.contentLength !== undefined) {
+      res.setHeader('Content-Length', String(result.contentLength));
+    }
+
+    const cleanup = () => {
+      if (upstreamStream && !upstreamStream.destroyed) {
+        upstreamStream.destroy();
+      }
+    };
+
+    req.on('close', cleanup);
+    upstreamStream.on('error', (streamErr) => {
+      cleanup();
+      if (!res.headersSent) {
+        sendDriveError(res, streamErr);
+      } else if (!res.writableEnded) {
+        res.end();
+      }
+    });
+
+    upstreamStream.pipe(res);
+  } catch (err) {
+    if (upstreamStream && !upstreamStream.destroyed) {
+      upstreamStream.destroy();
+    }
+    if (!res.headersSent) {
+      const status = err?.status && Number.isInteger(err.status) ? err.status : 500;
+      res.status(status).json({
+        ok: false,
+        message: err?.message || 'Failed to load Drive image',
+      });
     }
   }
 }

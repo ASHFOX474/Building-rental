@@ -1,25 +1,20 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { defaultRoomMediaSections, getDefaultSectionsForUnit } from '../../data/mockBuilding.js';
+import { getDefaultSectionsForUnit } from '../../data/mockBuilding.js';
+import { resolveDriveImageUrl } from '../../api/driveApi.js';
 import { useBuilding } from '../../context/BuildingContext.jsx';
 import { isUnitAvailable } from '../../components/floormap/UnitStatusElements.jsx';
 import { formatTaka, monthBn, toBanglaDigits, formatPhoneBn } from '../../lib/bangla.js';
 import '../../components/flatdetails/flatdetails.css';
 
-/** Resolve a media item's thumbnail URL (Google Drive thumbnail endpoint or fallback preview). */
+/** Resolve a media item's thumbnail URL through our authenticated Drive image proxy. */
 function getMediaThumbUrl(item) {
-  if (item.driveFileId) {
-    return `https://drive.google.com/thumbnail?id=${item.driveFileId}&sz=w1000`;
-  }
-  return item.previewUrl;
+  return resolveDriveImageUrl(item);
 }
 
-/** Resolve a media item's high-res URL for the fullscreen Lightbox. */
+/** Resolve a media item's full-size URL for the fullscreen Lightbox via Drive image proxy. */
 function getMediaFullUrl(item) {
-  if (item.driveFileId) {
-    return `https://drive.google.com/thumbnail?id=${item.driveFileId}&sz=w1600`;
-  }
-  return item.previewUrl;
+  return resolveDriveImageUrl(item);
 }
 
 /** Resolve native HTML5 stream URL for a Drive video or local/sample video URL. */
@@ -461,122 +456,133 @@ export default function FlatDetailsPage() {
 
           {/* 2. Clean Room-by-Room Photo & Video Gallery */}
           <section className="fd-gallery-section" aria-label="রুম অনুযায়ী ছবি ও ভিডিও">
-            {/* Dynamic Quick Filter Tabs */}
-            <div className="fd-filter-tabs" role="tablist" aria-label="রুম ফিল্টার">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeTabId === 'all'}
-                className={`fd-filter-tab ${
-                  activeTabId === 'all' ? 'fd-filter-tab--active' : ''
-                }`}
-                onClick={() => setActiveTabId('all')}
-              >
-                সব রুম
-              </button>
-              {sections.map((sec) => (
-                <button
-                  key={sec.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={activeTabId === sec.id}
-                  className={`fd-filter-tab ${
-                    activeTabId === sec.id ? 'fd-filter-tab--active' : ''
-                  }`}
-                  onClick={() => setActiveTabId(sec.id)}
-                >
-                  {sec.titleBn.replace(/\s*\(.*\)/, '')}
-                </button>
-              ))}
-            </div>
+            {sections.length > 0 ? (
+              <>
+                {/* Dynamic Quick Filter Tabs */}
+                <div className="fd-filter-tabs" role="tablist" aria-label="রুম ফিল্টার">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={activeTabId === 'all'}
+                    className={`fd-filter-tab ${
+                      activeTabId === 'all' ? 'fd-filter-tab--active' : ''
+                    }`}
+                    onClick={() => setActiveTabId('all')}
+                  >
+                    সব রুম
+                  </button>
+                  {sections.map((sec) => (
+                    <button
+                      key={sec.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={activeTabId === sec.id}
+                      className={`fd-filter-tab ${
+                        activeTabId === sec.id ? 'fd-filter-tab--active' : ''
+                      }`}
+                      onClick={() => setActiveTabId(sec.id)}
+                    >
+                      {sec.titleBn.replace(/\s*\(.*\)/, '')}
+                    </button>
+                  ))}
+                </div>
 
-            {/* Clean Room Section Cards */}
-            <div className="fd-room-sections">
-              {filteredSections.map((section) => {
-                const originalIndex = sections.findIndex((s) => s.id === section.id);
-                const numberedTitle = /^\d|^[\u09E6-\u09EF]/.test(section.titleBn)
-                  ? section.titleBn
-                  : `${toBanglaDigits(originalIndex + 1)}. ${section.titleBn}`;
+                {/* Clean Room Section Cards */}
+                <div className="fd-room-sections">
+                  {filteredSections.map((section) => {
+                    const originalIndex = sections.findIndex((s) => s.id === section.id);
+                    const numberedTitle = /^\d|^[\u09E6-\u09EF]/.test(section.titleBn)
+                      ? section.titleBn
+                      : `${toBanglaDigits(originalIndex + 1)}. ${section.titleBn}`;
 
-                return (
-                  <article key={section.id} className="fd-puthi-card fd-room-card">
-                    <div className="fd-puthi-card__inner-rule" aria-hidden="true" />
-                    <h3 className="fd-room-card__title">{numberedTitle}</h3>
+                    return (
+                      <article key={section.id} className="fd-puthi-card fd-room-card">
+                        <div className="fd-puthi-card__inner-rule" aria-hidden="true" />
+                        <h3 className="fd-room-card__title">{numberedTitle}</h3>
 
-                    <div className="fd-media-grid">
-                      {(section.items || []).map((item) => {
-                        const globalMediaIdx = flatMediaList.findIndex(
-                          (m) => m.id === item.id
-                        );
+                        <div className="fd-media-grid">
+                          {(section.items || []).map((item) => {
+                            const globalMediaIdx = flatMediaList.findIndex(
+                              (m) => m.id === item.id
+                            );
 
-                        if (item.type === 'video') {
-                          return (
-                            <button
-                              key={item.id}
-                              type="button"
-                              className="fd-media-thumb fd-media-thumb--video"
-                              onClick={() => openRoomLightbox(globalMediaIdx)}
-                              aria-label={`${section.titleBn} — ${
-                                item.labelBn || 'ভিডিও বড় পর্দায় দেখুন'
-                              }`}
-                            >
-                              {item.driveFileId ? (
+                            if (item.type === 'video') {
+                              return (
+                                <button
+                                  key={item.id}
+                                  type="button"
+                                  className="fd-media-thumb fd-media-thumb--video"
+                                  onClick={() => openRoomLightbox(globalMediaIdx)}
+                                  aria-label={`${section.titleBn} — ${
+                                    item.labelBn || 'ভিডিও বড় পর্দায় দেখুন'
+                                  }`}
+                                >
+                                  {item.driveFileId ? (
+                                    <img
+                                      src={getMediaThumbUrl(item)}
+                                      alt={item.labelBn || section.titleBn}
+                                      loading="lazy"
+                                      onError={(e) => {
+                                        e.currentTarget.style.display = 'none';
+                                      }}
+                                    />
+                                  ) : (
+                                    item.previewUrl && (
+                                      <video
+                                        src={item.previewUrl}
+                                        muted
+                                        playsInline
+                                        preload="metadata"
+                                        className="fd-media-thumb__video-preview"
+                                      />
+                                    )
+                                  )}
+                                  <span className="fd-media-video-tag">🎥 ভিডিও</span>
+                                  <span className="fd-video-play-center" aria-hidden="true">
+                                    ▶️ ভিডিও দেখুন
+                                  </span>
+                                  <span className="fd-media-thumb__zoom" aria-hidden="true">
+                                    🔍
+                                  </span>
+                                </button>
+                              );
+                            }
+
+                            return (
+                              <button
+                                key={item.id}
+                                type="button"
+                                className="fd-media-thumb"
+                                onClick={() => openRoomLightbox(globalMediaIdx)}
+                                aria-label={`${section.titleBn} — ${
+                                  item.labelBn || 'ছবি বড় করে দেখুন'
+                                }`}
+                              >
                                 <img
                                   src={getMediaThumbUrl(item)}
                                   alt={item.labelBn || section.titleBn}
                                   loading="lazy"
-                                  onError={(e) => {
-                                    e.currentTarget.style.display = 'none';
-                                  }}
                                 />
-                              ) : (
-                                item.previewUrl && (
-                                  <video
-                                    src={item.previewUrl}
-                                    muted
-                                    playsInline
-                                    preload="metadata"
-                                    className="fd-media-thumb__video-preview"
-                                  />
-                                )
-                              )}
-                              <span className="fd-media-video-tag">🎥 ভিডিও</span>
-                              <span className="fd-video-play-center" aria-hidden="true">
-                                ▶️ ভিডিও দেখুন
-                              </span>
-                              <span className="fd-media-thumb__zoom" aria-hidden="true">
-                                🔍
-                              </span>
-                            </button>
-                          );
-                        }
-
-                        return (
-                          <button
-                            key={item.id}
-                            type="button"
-                            className="fd-media-thumb"
-                            onClick={() => openRoomLightbox(globalMediaIdx)}
-                            aria-label={`${section.titleBn} — ${
-                              item.labelBn || 'ছবি বড় করে দেখুন'
-                            }`}
-                          >
-                            <img
-                              src={getMediaThumbUrl(item)}
-                              alt={item.labelBn || section.titleBn}
-                              loading="lazy"
-                            />
-                            <span className="fd-media-thumb__zoom" aria-hidden="true">
-                              🔍
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
+                                <span className="fd-media-thumb__zoom" aria-hidden="true">
+                                  🔍
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              <div className="fd-puthi-card fd-room-card" style={{ textAlign: 'center', padding: '28px 18px' }}>
+                <div className="fd-puthi-card__inner-rule" aria-hidden="true" />
+                <p style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: 'var(--text-muted)' }}>
+                  📸 এই ফ্ল্যাটের রুমের ছবি ও ভিডিও শীঘ্রই যুক্ত করা হবে — সরাসরি দেখতে কল করুন।
+                </p>
+              </div>
+            )}
           </section>
         </div>
 

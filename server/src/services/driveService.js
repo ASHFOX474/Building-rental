@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { Readable } from 'node:stream';
 import {
   getDriveClient,
   getRootFolderId,
@@ -251,16 +252,20 @@ export async function scanUnitFolder(unitFolderId, unitId = '', driveInstance = 
         driveFolderId: subfolder.id,
         category: inferRoomCategory(subfolder.name),
         titleBn: subfolder.name,
-        items: mediaFiles.map((f) => ({
-          id: `drive-${f.id}`,
-          driveFileId: f.id,
-          driveFolderId: subfolder.id,
-          type: f.mimeType.startsWith('video/') ? 'video' : 'image',
-          labelBn: stripExtension(f.name),
-          fileName: f.name,
-          mimeType: f.mimeType,
-          previewUrl: '',
-        })),
+        items: mediaFiles.map((f) => {
+          const isVideo = f.mimeType.startsWith('video/');
+          return {
+            id: `drive-${f.id}`,
+            driveFileId: f.id,
+            driveFolderId: subfolder.id,
+            type: isVideo ? 'video' : 'image',
+            labelBn: stripExtension(f.name),
+            fileName: f.name,
+            mimeType: f.mimeType,
+            url: isVideo ? `/api/drive/stream/${f.id}` : `/api/drive/image/${f.id}`,
+            previewUrl: `/api/drive/image/${f.id}`,
+          };
+        }),
       };
     })
   );
@@ -278,16 +283,20 @@ export async function scanUnitFolder(unitFolderId, unitId = '', driveInstance = 
       driveFolderId: unitFolderId,
       category: 'custom',
       titleBn: 'অন্যান্য ছবি ও ভিডিও',
-      items: looseMedia.map((f) => ({
-        id: `drive-${f.id}`,
-        driveFileId: f.id,
-        driveFolderId: unitFolderId,
-        type: f.mimeType.startsWith('video/') ? 'video' : 'image',
-        labelBn: stripExtension(f.name),
-        fileName: f.name,
-        mimeType: f.mimeType,
-        previewUrl: '',
-      })),
+      items: looseMedia.map((f) => {
+        const isVideo = f.mimeType.startsWith('video/');
+        return {
+          id: `drive-${f.id}`,
+          driveFileId: f.id,
+          driveFolderId: unitFolderId,
+          type: isVideo ? 'video' : 'image',
+          labelBn: stripExtension(f.name),
+          fileName: f.name,
+          mimeType: f.mimeType,
+          url: isVideo ? `/api/drive/stream/${f.id}` : `/api/drive/image/${f.id}`,
+          previewUrl: `/api/drive/image/${f.id}`,
+        };
+      }),
     });
   }
 
@@ -480,6 +489,8 @@ export async function uploadTempFileToDrive({
   const file = created.data;
   await ensureFilePublic(file.id, drive);
 
+  const isVideo = Boolean(file.mimeType?.startsWith('video/'));
+
   return {
     targetFolderId,
     unitFolderId: resolved.unitFolderId,
@@ -487,11 +498,12 @@ export async function uploadTempFileToDrive({
       id: `drive-${file.id}`,
       driveFileId: file.id,
       driveFolderId: targetFolderId,
-      type: file.mimeType?.startsWith('video/') ? 'video' : 'image',
+      type: isVideo ? 'video' : 'image',
       labelBn: stripExtension(file.name),
       fileName: file.name,
       mimeType: file.mimeType,
-      previewUrl: '',
+      url: isVideo ? `/api/drive/stream/${file.id}` : `/api/drive/image/${file.id}`,
+      previewUrl: `/api/drive/image/${file.id}`,
     },
   };
 }
@@ -677,6 +689,144 @@ export async function openDriveVideoStream(fileId, rangeHeader = '') {
     totalSize,
     contentLength: totalSize > 0 ? totalSize : null,
     mimeType,
+    stream: mediaRes.data,
+  };
+}
+
+const IMAGE_META_TTL_MS = 10 * 60 * 1000;
+const imageMetaCache = new Map();
+
+const WEB_SAFE_IMAGE_MIMES = new Set([
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'image/avif',
+  'image/svg+xml',
+]);
+
+async function getDriveImageMeta(drive, fileId, { bypassCache = false } = {}) {
+  const cached = !bypassCache ? imageMetaCache.get(fileId) : null;
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.meta;
+  }
+
+  const res = await drive.files.get({
+    fileId,
+    fields: 'id, name, mimeType, size, thumbnailLink',
+    supportsAllDrives: true,
+  });
+  const meta = res.data;
+  imageMetaCache.set(fileId, {
+    meta,
+    expiresAt: Date.now() + IMAGE_META_TTL_MS,
+  });
+  return meta;
+}
+
+/**
+ * Fetch a Google Drive converted thumbnail (for iPhone .heic/.heif, non-web image formats,
+ * or video poster thumbnails) server-side so browser referer/CORS/429 blocks never happen.
+ */
+async function fetchDriveConvertedThumbnail(meta, sizePx = 1600) {
+  const candidates = [];
+  if (meta?.thumbnailLink) {
+    const highRes = meta.thumbnailLink.replace(/=s\d+([^/]*)$/, `=s${sizePx}$1`);
+    candidates.push(highRes);
+    if (highRes !== meta.thumbnailLink) {
+      candidates.push(meta.thumbnailLink);
+    }
+  }
+  if (meta?.id) {
+    candidates.push(`https://drive.google.com/thumbnail?id=${encodeURIComponent(meta.id)}&sz=w${sizePx}`);
+  }
+
+  for (const url of candidates) {
+    try {
+      const resp = await fetch(url, {
+        redirect: 'follow',
+        headers: {
+          'User-Agent': 'Mozilla/5.0',
+        },
+      });
+      const ct = resp.headers.get('content-type') || '';
+      if (resp.ok && ct.startsWith('image/') && resp.body) {
+        const len = resp.headers.get('content-length');
+        return {
+          mimeType: ct.split(';')[0].trim() || 'image/jpeg',
+          contentLength: len ? Number(len) : null,
+          stream: Readable.fromWeb(resp.body),
+        };
+      }
+    } catch {
+      // try next candidate
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Authenticated Google Drive image proxy stream for `GET /api/drive/image/:fileId`.
+ * - Web-safe images (JPEG/PNG/WebP/GIF/AVIF/SVG) stream directly from Drive API (`alt: 'media'`)
+ *   using our Service Account / OAuth credentials (no rate-limited public thumbnail URLs).
+ * - Non-web images (iPhone .heic/.heif, TIFF, BMP) and video poster thumbnails automatically
+ *   serve Google Drive's server-converted JPEG/WebP thumbnail.
+ */
+export async function openDriveImageStream(fileId) {
+  const drive = getDriveClient();
+  let meta = await getDriveImageMeta(drive, fileId);
+  const rawMime = String(meta.mimeType || '').toLowerCase();
+  const ext = path.extname(meta.name || '').toLowerCase();
+  const isHeicOrNonWeb =
+    rawMime.includes('heic') ||
+    rawMime.includes('heif') ||
+    ext === '.heic' ||
+    ext === '.heif' ||
+    (rawMime.startsWith('image/') && !WEB_SAFE_IMAGE_MIMES.has(rawMime));
+  const isVideoPoster = rawMime.startsWith('video/');
+
+  if (isHeicOrNonWeb || isVideoPoster) {
+    let thumb = await fetchDriveConvertedThumbnail(meta, isVideoPoster ? 1000 : 1600);
+    if (!thumb) {
+      // Refresh cached thumbnailLink once in case a signed URL expired
+      meta = await getDriveImageMeta(drive, fileId, { bypassCache: true });
+      thumb = await fetchDriveConvertedThumbnail(meta, isVideoPoster ? 1000 : 1600);
+    }
+    if (thumb) {
+      return thumb;
+    }
+    if (isVideoPoster) {
+      const err = new Error('Video thumbnail not available yet.');
+      err.status = 404;
+      throw err;
+    }
+  }
+
+  // Standard authenticated Drive media download stream
+  const mediaRes = await drive.files.get(
+    {
+      fileId,
+      alt: 'media',
+      supportsAllDrives: true,
+    },
+    {
+      responseType: 'stream',
+    }
+  );
+
+  const normalizedMime =
+    rawMime === 'image/jpg'
+      ? 'image/jpeg'
+      : WEB_SAFE_IMAGE_MIMES.has(rawMime)
+        ? rawMime
+        : 'image/jpeg';
+  const totalSize = Number(meta.size || 0);
+
+  return {
+    mimeType: normalizedMime,
+    contentLength: totalSize > 0 ? totalSize : null,
     stream: mediaRes.data,
   };
 }
