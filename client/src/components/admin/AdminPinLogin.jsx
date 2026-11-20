@@ -1,80 +1,59 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useBuilding } from '../../context/BuildingContext.jsx';
-import { toBanglaDigits, toAsciiDigits } from '../../lib/bangla.js';
+import { toAsciiDigits } from '../../lib/bangla.js';
 
 /**
- * Elderly-friendly ATM / bKash-style 4-Digit PIN Login Screen for /admin.
- * Supports both giant on-screen Bangla touch buttons and physical keyboard input.
+ * Elderly-friendly flexible PIN / Password Login Screen for /admin.
+ * Supports any-length numeric or alphanumeric PIN/password stored in Neon PostgreSQL.
  */
 export default function AdminPinLogin({ onUnlock }) {
-  const { adminPin } = useBuilding();
-  const activePin = adminPin || '1234';
-  const [pin, setPin] = useState('');
+  const { adminPin, dbStatus, refreshFromDb } = useBuilding();
+  const [inputVal, setInputVal] = useState('');
+  const [showSecret, setShowSecret] = useState(false);
   const [rememberDevice, setRememberDevice] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
+  const [checking, setChecking] = useState(false);
+  const [shakeKey, setShakeKey] = useState(0);
 
-  const handleDigit = useCallback(
-    (asciiDigit) => {
-      setErrorMsg('');
-      setPin((prev) => {
-        if (prev.length >= 4) return prev;
-        const next = prev + asciiDigit;
-        if (next.length === 4) {
-          if (next === activePin) {
-            setTimeout(() => onUnlock(rememberDevice), 120);
-          } else {
-            setTimeout(() => {
-              setErrorMsg(`❌ পিন সঠিক নয়! সঠিক পিন চাপুন।`);
-              setPin('');
-            }, 220);
-          }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const entered = inputVal.trim();
+    if (!entered) {
+      setErrorMsg('❌ অনুগ্রহ করে আপনার গোপন পিন বা পাসওয়ার্ড লিখুন।');
+      setShakeKey((k) => k + 1);
+      return;
+    }
+
+    setErrorMsg('');
+    let storedPin = (adminPin || '1234').trim();
+
+    // If initial Neon hydration is still in flight, wait for fresh settings before comparing
+    if (dbStatus?.loading) {
+      setChecking(true);
+      try {
+        const fresh = await refreshFromDb();
+        if (fresh?.settings?.adminPin) {
+          storedPin = String(fresh.settings.adminPin).trim();
         }
-        return next;
-      });
-    },
-    [onUnlock, rememberDevice, activePin]
-  );
-
-  const handleBackspace = useCallback(() => {
-    setErrorMsg('');
-    setPin((prev) => prev.slice(0, -1));
-  }, []);
-
-  const handleClear = useCallback(() => {
-    setErrorMsg('');
-    setPin('');
-  }, []);
-
-  // Support physical keyboard digits (0-9, ০-৯) and Backspace
-  useEffect(() => {
-    const onKeyDown = (e) => {
-      if (e.target.tagName === 'INPUT') return;
-      if (e.key === 'Backspace') {
-        e.preventDefault();
-        handleBackspace();
-        return;
+      } catch {
+        // Fallback to current in-memory value
+      } finally {
+        setChecking(false);
       }
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        handleClear();
-        return;
-      }
-      const ascii = toAsciiDigits(e.key);
-      if (/^[0-9]$/.test(ascii)) {
-        e.preventDefault();
-        handleDigit(ascii);
-      }
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [handleDigit, handleBackspace, handleClear]);
+    }
 
-  const keypadRows = [
-    ['1', '2', '3'],
-    ['4', '5', '6'],
-    ['7', '8', '9'],
-  ];
+    const matches =
+      entered === storedPin ||
+      toAsciiDigits(entered) === toAsciiDigits(storedPin);
+
+    if (matches) {
+      onUnlock(rememberDevice);
+    } else {
+      setErrorMsg('❌ পিন বা পাসওয়ার্ড সঠিক নয়! অনুগ্রহ করে আবার চেষ্টা করুন।');
+      setShakeKey((k) => k + 1);
+    }
+  };
 
   return (
     <div className="adm-login-page">
@@ -85,90 +64,72 @@ export default function AdminPinLogin({ onUnlock }) {
       </div>
 
       <section
+        key={shakeKey}
         className={`adm-puthi-card adm-pin-card ${errorMsg ? 'adm-pin-card--shake' : ''}`}
-        aria-label="বাড়িওয়ালা পিন লগইন"
+        aria-label="বাড়িওয়ালা লগইন"
       >
         <div className="adm-puthi-card__inner-rule" aria-hidden="true" />
 
         <h1 className="adm-pin-card__title">🔒 বাড়িওয়ালা অ্যাডমিন প্যানেল</h1>
         <p className="adm-pin-card__subtitle">
-          ভেতরে প্রবেশ করতে ৪ সংখ্যার গোপন পিন চাপুন
+          ভেতরে প্রবেশ করতে আপনার গোপন পিন বা পাসওয়ার্ড লিখুন
         </p>
 
-        {/* 4 Large PIN Indicator Boxes */}
-        <div
-          className="adm-pin-boxes"
-          role="status"
-          aria-label={`৪ সংখ্যার পিন: ${toBanglaDigits(pin.length)}টি সংখ্যা দেওয়া হয়েছে`}
-        >
-          {[0, 1, 2, 3].map((idx) => {
-            const filled = idx < pin.length;
-            return (
-              <div
-                key={idx}
-                className={`adm-pin-box ${filled ? 'adm-pin-box--filled' : ''}`}
-              >
-                {filled ? '●' : '○'}
-              </div>
-            );
-          })}
-        </div>
-
-        {errorMsg && (
-          <p className="adm-pin-error" role="alert">
-            {errorMsg}
-          </p>
-        )}
-
-        {/* Giant 3x4 Touch Keypad */}
-        <div className="adm-keypad" role="group" aria-label="পিন নম্বর কিপ্যাড">
-          {keypadRows.flat().map((d) => (
+        <form onSubmit={handleSubmit} className="adm-pass-form" noValidate>
+          <div className="adm-pass-input-wrap">
+            <input
+              id="admin-login-secret"
+              type={showSecret ? 'text' : 'password'}
+              value={inputVal}
+              onChange={(e) => {
+                setInputVal(e.target.value);
+                if (errorMsg) setErrorMsg('');
+              }}
+              placeholder="গোপন পিন বা পাসওয়ার্ড"
+              autoComplete="current-password"
+              autoFocus
+              aria-label="গোপন পিন বা পাসওয়ার্ড"
+              className="adm-pass-input"
+            />
             <button
-              key={d}
               type="button"
-              className="adm-key-btn"
-              onClick={() => handleDigit(d)}
+              className="adm-pass-toggle-btn"
+              onClick={() => setShowSecret((v) => !v)}
+              aria-label={showSecret ? 'পাসওয়ার্ড লুকান' : 'পাসওয়ার্ড দেখুন'}
+              aria-pressed={showSecret}
+              title={showSecret ? 'লুকান' : 'দেখুন'}
             >
-              {toBanglaDigits(d)}
+              {showSecret ? '🙈' : '👁️'}
             </button>
-          ))}
+          </div>
+
+          {errorMsg && (
+            <p className="adm-pin-error" role="alert">
+              {errorMsg}
+            </p>
+          )}
 
           <button
-            type="button"
-            className="adm-key-btn adm-key-btn--action"
-            onClick={handleBackspace}
+            type="submit"
+            className="adm-pass-submit-btn"
+            disabled={checking}
           >
-            ⌫ মুছুন
+            {checking ? '⏳ যাচাই করা হচ্ছে...' : '🔓 প্রবেশ করুন'}
           </button>
 
-          <button
-            type="button"
-            className="adm-key-btn"
-            onClick={() => handleDigit('0')}
-          >
-            ০
-          </button>
+          <label className="adm-remember-row">
+            <input
+              type="checkbox"
+              checked={rememberDevice}
+              onChange={(e) => setRememberDevice(e.target.checked)}
+            />
+            <span>এই ডিভাইসে লগইন মনে রাখুন</span>
+          </label>
+        </form>
 
-          <button
-            type="button"
-            className="adm-key-btn adm-key-btn--action"
-            onClick={handleClear}
-          >
-            ✖ সব মুছুন
-          </button>
-        </div>
-
-        {/* Remember Device Checkbox + Helper Note */}
-        <label className="adm-remember-row">
-          <input
-            type="checkbox"
-            checked={rememberDevice}
-            onChange={(e) => setRememberDevice(e.target.checked)}
-          />
-          <span>এই ডিভাইসে লগইন মনে রাখুন</span>
-        </label>
-
-        <p className="adm-pin-hint">বর্তমান পিন: {toBanglaDigits(activePin)}</p>
+        <p className="adm-pin-hint">
+          শুধুমাত্র ভবন মালিক ও পরিবারের সদস্যদের ব্যবহারের জন্য
+        </p>
       </section>
     </div>
   );

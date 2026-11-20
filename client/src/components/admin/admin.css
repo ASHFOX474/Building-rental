@@ -33,7 +33,7 @@
 }
 
 /* ==========================================================================
-   1. GIANT 4-DIGIT PIN LOGIN SCREEN
+   1. FLEXIBLE PIN / PASSWORD LOGIN SCREEN
    ========================================================================== */
 
 .adm-login-topbar {
@@ -78,89 +78,122 @@
   color: var(--text-muted);
 }
 
-/* 4 Large PIN Indicator Boxes */
-.adm-pin-boxes {
+/* Flexible Any-Length PIN/Password Form */
+.adm-pass-form {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
   gap: 14px;
-  margin-bottom: 18px;
+  width: 100%;
 }
 
-.adm-pin-box {
-  width: 64px;
-  height: 68px;
-  border: 2.5px solid var(--ink);
-  border-radius: 14px;
-  background: var(--bg-chuna);
+.adm-pass-input-wrap {
+  position: relative;
+  width: 100%;
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 32px;
-  color: var(--text-muted);
-  transition: all 0.15s;
 }
 
-.adm-pin-box--filled {
-  border-color: var(--available);
-  background: var(--available-bg);
-  color: var(--available);
-  transform: scale(1.04);
+.adm-pass-input {
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 58px;
+  border: 2.5px solid var(--ink);
+  border-radius: 15px;
+  background: var(--bg-chuna);
+  color: var(--ink);
+  font-family: var(--font-heading);
+  font-size: 22px;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: 0.04em;
+  transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s;
+}
+
+.adm-pass-input::placeholder {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: normal;
+  color: var(--text-muted);
+  opacity: 0.85;
+}
+
+.adm-pass-input:focus {
+  outline: none;
+  border-color: var(--terracotta);
+  background: var(--surface-white);
+  box-shadow: 0 0 0 3px rgba(200, 90, 50, 0.18);
+}
+
+.adm-pass-toggle-btn {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 46px;
+  height: 46px;
+  border: 1.5px solid rgba(31, 36, 33, 0.22);
+  border-radius: 11px;
+  background: var(--surface-white);
+  font-size: 21px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.14s;
+}
+
+.adm-pass-toggle-btn:hover {
+  background: var(--surface-sand);
+}
+
+.adm-pass-submit-btn {
+  width: 100%;
+  min-height: 58px;
+  padding: 12px 20px;
+  border: 2.5px solid var(--ink);
+  border-radius: 15px;
+  background: var(--available);
+  color: #ffffff;
+  font-family: var(--font-heading);
+  font-size: 22px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 3px 4px 0 var(--ink);
+  transition: transform 0.1s, background-color 0.15s;
+}
+
+.adm-pass-submit-btn:hover:not(:disabled) {
+  background: #21523c;
+}
+
+.adm-pass-submit-btn:active:not(:disabled) {
+  transform: translate(1px, 2px);
+  box-shadow: 1px 2px 0 var(--ink);
+}
+
+.adm-pass-submit-btn:disabled {
+  opacity: 0.7;
+  cursor: wait;
 }
 
 .adm-pin-error {
-  margin: 0 0 14px;
+  width: 100%;
+  margin: 0;
   padding: 10px 14px;
   border: 2px solid var(--unpaid);
   border-radius: 12px;
   background: var(--unpaid-bg);
   color: var(--unpaid);
   font-weight: 700;
-  font-size: 18px;
-}
-
-/* Giant 3x4 Touch Keypad */
-.adm-keypad {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  margin-bottom: 18px;
-}
-
-.adm-key-btn {
-  min-height: 64px;
-  border: 2px solid var(--ink);
-  border-radius: 15px;
-  background: var(--surface-white);
-  color: var(--ink);
-  font-family: var(--font-heading);
-  font-size: 28px;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 2px 3px 0 var(--ink);
-  transition: transform 0.08s, background-color 0.12s;
-  user-select: none;
-}
-
-.adm-key-btn:hover {
-  background: var(--surface-sand);
-}
-
-.adm-key-btn:active {
-  transform: translate(2px, 2px);
-  box-shadow: 0 1px 0 var(--ink);
-  background: #e5dec9;
-}
-
-.adm-key-btn--action {
-  font-size: 18px;
-  background: var(--surface-sand);
-  color: var(--terracotta);
+  font-size: 17.5px;
 }
 
 .adm-remember-row {
   display: inline-flex;
   align-items: center;
   gap: 10px;
+  margin-top: 2px;
   font-size: 18px;
   font-weight: 600;
   cursor: pointer;
@@ -173,8 +206,8 @@
 }
 
 .adm-pin-hint {
-  margin: 10px 0 0;
-  font-size: 16px;
+  margin: 14px 0 0;
+  font-size: 15.5px;
   color: var(--text-muted);
 }
 
@@ -2978,6 +3011,58 @@
   align-items: center;
 }
 
+.adm-pin-change-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+}
+
+.adm-pin-change-input {
+  width: 100%;
+  min-height: 52px;
+  padding-right: 52px;
+}
+
+.adm-pin-change-eye {
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 42px;
+  height: 42px;
+  border: 1.5px solid rgba(31, 36, 33, 0.2);
+  border-radius: 9px;
+  background: var(--surface-white);
+  font-size: 19px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.adm-pin-change-eye:hover {
+  background: var(--surface-sand);
+}
+
+.adm-pin-reveal-inline {
+  margin-left: 6px;
+  padding: 2px 10px;
+  border: 1.5px solid rgba(31, 36, 33, 0.28);
+  border-radius: 999px;
+  background: var(--bg-chuna);
+  color: var(--ink);
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.adm-pin-reveal-inline:hover {
+  background: var(--surface-sand);
+}
+
 .adm-backup-actions {
   display: flex;
   flex-direction: column;
@@ -3207,90 +3292,82 @@
     max-width: 100%;
   }
 
-  /* ---- PIN Pad Login Screen: Fit All Controls on 1 Mobile Screen ---- */
+  /* ---- Flexible PIN / Password Login Screen on Mobile ---- */
   .adm-login-page {
-    padding: 10px 10px 14px;
+    padding: 14px 12px 24px;
     min-height: 100svh;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
+    justify-content: center;
     max-width: 100vw;
     overflow-x: hidden;
   }
 
   .adm-login-topbar {
     width: 100%;
-    margin: 0 auto 8px;
+    margin: 0 auto 12px;
   }
 
   .adm-login-topbar .adm-back-btn {
-    min-height: 40px;
-    padding: 6px 12px;
-    font-size: 14.5px;
+    min-height: 44px;
+    padding: 6px 14px;
+    font-size: 15px;
   }
 
   .adm-pin-card {
     width: 100%;
-    padding: 14px 12px 12px;
+    padding: 20px 14px 18px;
   }
 
   .adm-pin-card__title {
-    font-size: 20px;
-    margin-bottom: 2px;
+    font-size: 21px;
+    margin-bottom: 4px;
   }
 
   .adm-pin-card__subtitle {
-    font-size: 14.5px;
-    margin-bottom: 10px;
+    font-size: 15.5px;
+    margin-bottom: 16px;
   }
 
-  .adm-pin-boxes {
-    gap: 10px;
-    margin-bottom: 10px;
+  .adm-pass-input {
+    min-height: 54px;
+    font-size: 22px;
+    padding: 10px 54px;
   }
 
-  .adm-pin-box {
-    width: 50px;
-    height: 50px;
-    font-size: 24px;
-    border-radius: 12px;
+  .adm-pass-input::placeholder {
+    font-size: 16px;
+  }
+
+  .adm-pass-toggle-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+  }
+
+  .adm-pass-submit-btn {
+    min-height: 54px;
+    font-size: 20px;
   }
 
   .adm-pin-error {
-    padding: 6px 10px;
-    font-size: 14.5px;
-    margin-bottom: 8px;
-  }
-
-  .adm-keypad {
-    gap: 8px;
-    margin-bottom: 10px;
-  }
-
-  .adm-key-btn {
-    min-height: 50px;
-    font-size: 22px;
-    border-radius: 12px;
-  }
-
-  .adm-key-btn--action {
-    font-size: 14px;
-    padding: 4px 2px;
+    padding: 8px 12px;
+    font-size: 15px;
   }
 
   .adm-remember-row {
-    font-size: 15px;
+    font-size: 15.5px;
     gap: 8px;
   }
 
   .adm-remember-row input {
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
   }
 
   .adm-pin-hint {
     font-size: 13.5px;
-    margin-top: 4px;
+    margin-top: 10px;
   }
 
   /* ---- Top Bar & 3-Column Sticky Tabs ---- */

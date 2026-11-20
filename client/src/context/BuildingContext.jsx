@@ -131,8 +131,11 @@ export function BuildingProvider({ children }) {
         ),
       });
     }
-    if (state.settings?.adminPin && /^\d{4}$/.test(state.settings.adminPin)) {
-      setAdminPinState(state.settings.adminPin);
+    if (
+      typeof state.settings?.adminPin === 'string' &&
+      state.settings.adminPin.trim().length >= 4
+    ) {
+      setAdminPinState(state.settings.adminPin.trim());
     }
   }, []);
 
@@ -270,11 +273,11 @@ export function BuildingProvider({ children }) {
     };
   }, [applyHydratedState, syncAllFromDrive]);
 
-  /** Update Admin 4-digit PIN (optimistic + Neon). */
+  /** Update Admin PIN/Password (any length 4–32 chars, optimistic + Neon). */
   const setAdminPin = useCallback(
     (nextPin) => {
       const clean = String(nextPin || '').trim();
-      if (!/^\d{4}$/.test(clean)) return false;
+      if (clean.length < 4 || clean.length > 32) return false;
       setAdminPinState(clean);
 
       patchDbSettings({ admin_pin: clean }).catch(() => {

@@ -47,10 +47,6 @@ export default function HomePage() {
 
       <footer className="home__footer">
         <span>© {building.name}, {building.area}</span>
-        <span className="home__footer-dot" aria-hidden="true">•</span>
-        <Link to="/admin" className="home__admin-link">
-          🔒 বাড়িওয়ালা লগইন (Admin)
-        </Link>
       </footer>
     </div>
   );

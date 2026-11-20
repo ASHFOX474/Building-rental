@@ -312,6 +312,8 @@ export default function BuildingSettingsTab({ onSwitchToToLetTab }) {
     building.contact.whatsapp || '8801815023898'
   );
   const [newPinInput, setNewPinInput] = useState('');
+  const [showNewPin, setShowNewPin] = useState(false);
+  const [showCurrentPin, setShowCurrentPin] = useState(false);
 
   // Keep form fields synced when Neon PostgreSQL state hydrates asynchronously
   useEffect(() => {
@@ -372,16 +374,19 @@ export default function BuildingSettingsTab({ onSwitchToToLetTab }) {
 
   const handleSaveNewPin = (e) => {
     e.preventDefault();
-    const asciiPin = toAsciiDigits(newPinInput).replace(/\D/g, '');
-    if (asciiPin.length !== 4) {
-      showToast('❌ গোপন পিন অবশ্যই ৪ সংখ্যার হতে হবে (যেমন: ১২৩৪)।');
+    const cleanPin = toAsciiDigits(newPinInput).trim();
+    if (cleanPin.length < 4) {
+      showToast('❌ গোপন পিন বা পাসওয়ার্ড কমপক্ষে ৪ অক্ষরের হতে হবে।');
       return;
     }
-    setAdminPin(asciiPin);
+    if (cleanPin.length > 32) {
+      showToast('❌ গোপন পিন বা পাসওয়ার্ড সর্বোচ্চ ৩২ অক্ষরের হতে পারবে।');
+      return;
+    }
+    setAdminPin(cleanPin);
     setNewPinInput('');
-    showToast(
-      `🔑 নতুন ৪ সংখ্যার গোপন পিন (${toBanglaDigits(asciiPin)}) সফলভাবে সেভ হয়েছে!`
-    );
+    setShowNewPin(false);
+    showToast('🔑 নতুন গোপন পিন / পাসওয়ার্ড সফলভাবে সেভ হয়েছে!');
   };
 
   const handleDownloadBackup = () => {
@@ -813,31 +818,48 @@ export default function BuildingSettingsTab({ onSwitchToToLetTab }) {
 
           {/* ২. গোপন পিন পরিবর্তন ও ৩. হিসাব ব্যাকআপ */}
           <div className="adm-safety-col">
-            {/* গোপন পিন পরিবর্তন */}
+            {/* গোপন পিন / পাসওয়ার্ড পরিবর্তন */}
             <form onSubmit={handleSaveNewPin} className="adm-safety-box">
               <h3 className="adm-safety-box__title">
-                🔑 অ্যাডমিন পিন পরিবর্তন করুন
+                🔑 অ্যাডমিন পিন / পাসওয়ার্ড পরিবর্তন করুন
               </h3>
               <p className="adm-safety-box__desc">
-                বর্তমান লগইন পিন: <strong>{toBanglaDigits(adminPin)}</strong>। নতুন ৪ সংখ্যার পিন দিতে নিচে লিখুন:
+                বর্তমান পিন/পাসওয়ার্ড:{' '}
+                <strong>{showCurrentPin ? adminPin : '••••••••'}</strong>{' '}
+                <button
+                  type="button"
+                  className="adm-pin-reveal-inline"
+                  onClick={() => setShowCurrentPin((v) => !v)}
+                >
+                  {showCurrentPin ? '🙈 লুকান' : '👁️ দেখুন'}
+                </button>
+                <br />
+                যেকোনো দৈর্ঘ্যের নতুন পিন বা পাসওয়ার্ড লিখুন (সংখ্যা বা অক্ষর, কমপক্ষে ৪ অক্ষর):
               </p>
 
               <div className="adm-pin-change-row">
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={4}
-                  value={toBanglaDigits(newPinInput)}
-                  onChange={(e) =>
-                    setNewPinInput(
-                      toAsciiDigits(e.target.value).replace(/\D/g, '').slice(0, 4)
-                    )
-                  }
-                  placeholder="নতুন ৪ সংখ্যার পিন"
-                  className="adm-note-row__input"
-                />
+                <div className="adm-pin-change-input-wrap">
+                  <input
+                    type={showNewPin ? 'text' : 'password'}
+                    maxLength={32}
+                    value={newPinInput}
+                    onChange={(e) => setNewPinInput(e.target.value)}
+                    placeholder="নতুন পিন বা পাসওয়ার্ড (কমপক্ষে ৪ অক্ষর)"
+                    autoComplete="new-password"
+                    className="adm-note-row__input adm-pin-change-input"
+                  />
+                  <button
+                    type="button"
+                    className="adm-pin-change-eye"
+                    onClick={() => setShowNewPin((v) => !v)}
+                    aria-label={showNewPin ? 'লুকান' : 'দেখুন'}
+                    aria-pressed={showNewPin}
+                  >
+                    {showNewPin ? '🙈' : '👁️'}
+                  </button>
+                </div>
                 <button type="submit" className="adm-unit-edit-btn">
-                  🔑 নতুন পিন সেভ করুন
+                  🔑 নতুন পিন / পাসওয়ার্ড সেভ করুন
                 </button>
               </div>
             </form>

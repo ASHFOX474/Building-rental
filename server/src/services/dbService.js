@@ -317,8 +317,8 @@ export async function getHydratedState() {
       ? settingsMap.whatsapp_number
       : DEFAULT_SETTINGS.whatsapp_number;
   const adminPin =
-    typeof settingsMap.admin_pin === 'string' && /^\d{4}$/.test(settingsMap.admin_pin)
-      ? settingsMap.admin_pin
+    typeof settingsMap.admin_pin === 'string' && settingsMap.admin_pin.trim().length >= 4
+      ? settingsMap.admin_pin.trim()
       : DEFAULT_SETTINGS.admin_pin;
   const buildingMeta =
     settingsMap.building_meta && typeof settingsMap.building_meta === 'object'
@@ -927,9 +927,10 @@ export async function updateSettingsInDb(changes = {}) {
   const pinVal = changes.admin_pin ?? changes.adminPin;
   if (pinVal !== undefined) {
     const cleanPin = String(pinVal).trim();
-    if (!/^\d{4}$/.test(cleanPin)) {
-      const err = new Error('Admin PIN must be exactly 4 digits.');
+    if (cleanPin.length < 4 || cleanPin.length > 32) {
+      const err = new Error('Admin PIN/Password must be between 4 and 32 characters.');
       err.status = 400;
+      err.messageBn = 'গোপন পিন বা পাসওয়ার্ড কমপক্ষে ৪ এবং সর্বোচ্চ ৩২ অক্ষরের হতে হবে।';
       throw err;
     }
     updates.push(['admin_pin', cleanPin]);
