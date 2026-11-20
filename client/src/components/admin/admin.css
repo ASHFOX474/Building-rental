@@ -392,6 +392,330 @@
   color: var(--text-muted);
 }
 
+/* B2. Monthly Expenses & Net Income Card ("💸 এই মাসের খরচ ও নিট হিসাব") */
+.adm-expense-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 22px;
+  border: 2.5px solid var(--ink);
+  border-top: 6px solid var(--terracotta);
+  border-radius: 18px;
+  background: var(--surface-white);
+  box-shadow: 3px 4px 0 rgba(31, 36, 33, 0.14);
+}
+
+.adm-expense-card__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.adm-expense-card__title-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.adm-expense-card__title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: clamp(20px, 2.3vw, 24px);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.adm-expense-card__month-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border: 1.5px solid rgba(31, 36, 33, 0.25);
+  border-radius: 999px;
+  background: var(--surface-sand);
+  color: var(--ink);
+  font-family: var(--font-heading);
+  font-size: 15.5px;
+  font-weight: 700;
+}
+
+.adm-expense-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 48px;
+  padding: 8px 18px;
+  border: 2px solid var(--ink);
+  border-radius: 13px;
+  background: var(--terracotta);
+  color: #ffffff;
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 2px 3px 0 var(--ink);
+  transition: transform 0.12s, background 0.15s;
+}
+
+.adm-expense-edit-btn:hover {
+  background: #a53f29;
+}
+
+.adm-expense-edit-btn:active {
+  transform: translate(1px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+
+/* 4 Expense Breakdown Boxes (Desktop: 4-column horizontal grid) */
+.adm-expense-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.adm-expense-box {
+  min-width: 0;
+  padding: 13px 14px;
+  border: 1.8px solid rgba(31, 36, 33, 0.28);
+  border-radius: 14px;
+  background: var(--bg-chuna);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.adm-expense-box--misc {
+  background: #fdf9f3;
+}
+
+.adm-expense-box__label {
+  font-family: var(--font-heading);
+  font-size: 15.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  line-height: 1.3;
+}
+
+.adm-expense-box__amount {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: clamp(20px, 2.2vw, 25px);
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.adm-expense-box__note {
+  margin-top: 2px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--terracotta);
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+/* Net Income Summary Strip (Desktop: single balanced horizontal row) */
+.adm-net-strip {
+  padding: 14px 16px;
+  border: 2px solid var(--ink);
+  border-radius: 15px;
+  background: var(--surface-sand);
+}
+
+.adm-net-strip__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.35fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+.adm-net-strip__item {
+  min-width: 0;
+  padding: 10px 14px;
+  border: 1.8px solid rgba(31, 36, 33, 0.22);
+  border-radius: 12px;
+  background: var(--surface-white);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+}
+
+.adm-net-strip__lbl {
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-muted);
+  line-height: 1.25;
+}
+
+.adm-net-strip__val {
+  font-family: var(--font-heading);
+  font-size: clamp(21px, 2.4vw, 26px);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.adm-net-strip__val--income {
+  color: var(--ink);
+}
+
+.adm-net-strip__val--expense {
+  color: #b91c1c;
+}
+
+.adm-net-strip__item--positive {
+  background: var(--available-bg);
+  border: 2.2px solid #2d6a4f;
+}
+
+.adm-net-strip__item--positive .adm-net-strip__lbl {
+  color: #1b4332;
+}
+
+.adm-net-strip__item--positive .adm-net-strip__net-amount {
+  color: #2d6a4f;
+}
+
+.adm-net-strip__item--negative {
+  background: var(--unpaid-bg);
+  border: 2.2px solid #b91c1c;
+}
+
+.adm-net-strip__item--negative .adm-net-strip__lbl {
+  color: #991b1b;
+}
+
+.adm-net-strip__item--negative .adm-net-strip__net-amount {
+  color: #b91c1c;
+}
+
+.adm-net-strip__net-amount {
+  font-family: var(--font-heading);
+  font-size: clamp(23px, 2.8vw, 30px);
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.adm-net-strip__helper {
+  margin: 10px 0 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.adm-net-strip__helper strong {
+  font-family: var(--font-heading);
+  color: var(--ink);
+}
+
+/* Expense Edit Modal Specific Styles */
+.adm-expense-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.adm-expense-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.adm-expense-field__label {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.adm-expense-input {
+  width: 100%;
+  min-height: 52px;
+  padding: 8px 14px;
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  background: var(--bg-chuna);
+  color: var(--ink);
+  font-family: var(--font-heading);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.adm-expense-input:focus,
+.adm-expense-note-input:focus {
+  outline: none;
+  border-color: var(--terracotta);
+  background: var(--surface-white);
+}
+
+.adm-expense-note-input {
+  width: 100%;
+  min-height: 50px;
+  padding: 8px 14px;
+  border: 1.8px solid var(--ink);
+  border-radius: 12px;
+  background: var(--bg-chuna);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 18px;
+}
+
+.adm-expense-total-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 16px;
+  border: 2px dashed var(--terracotta);
+  border-radius: 13px;
+  background: #fff7f4;
+}
+
+.adm-expense-total-preview__lbl {
+  font-family: var(--font-heading);
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.adm-expense-total-preview__amt {
+  font-family: var(--font-heading);
+  font-size: 26px;
+  font-weight: 700;
+  color: #b91c1c;
+}
+
+.adm-expense-default-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 2px solid rgba(45, 106, 79, 0.45);
+  border-radius: 13px;
+  background: var(--available-bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.adm-expense-default-check input {
+  width: 24px;
+  height: 24px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  accent-color: #2d6a4f;
+  cursor: pointer;
+}
+
 /* C. 1-Click Filter Pills */
 .adm-filters {
   display: flex;
@@ -3088,6 +3412,139 @@
 
   .adm-summary-card__sub {
     font-size: 14px;
+  }
+
+  /* ---- Monthly Expenses & Net Income Mobile Layout (<= 768px) ---- */
+  .adm-expense-card {
+    padding: 14px 12px;
+    gap: 12px;
+    border-radius: 15px;
+  }
+
+  .adm-expense-card__header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .adm-expense-card__title {
+    font-size: 19px;
+  }
+
+  .adm-expense-card__month-pill {
+    font-size: 13.5px;
+    padding: 3px 10px;
+  }
+
+  .adm-expense-edit-btn {
+    width: 100%;
+    min-height: 50px;
+    font-size: 17px;
+  }
+
+  .adm-expense-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .adm-expense-box {
+    padding: 10px 10px;
+    border-radius: 12px;
+    min-width: 0;
+  }
+
+  .adm-expense-box__label {
+    font-size: 13.5px;
+  }
+
+  .adm-expense-box__amount {
+    font-size: clamp(18px, 5vw, 22px);
+  }
+
+  .adm-expense-box__note {
+    font-size: 12.5px;
+  }
+
+  .adm-net-strip {
+    padding: 10px;
+    border-radius: 13px;
+  }
+
+  .adm-net-strip__row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .adm-net-strip__item {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+  }
+
+  .adm-net-strip__lbl {
+    font-size: 15px;
+  }
+
+  .adm-net-strip__val {
+    font-size: 19px;
+    white-space: nowrap;
+  }
+
+  .adm-net-strip__item--net {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 12px 10px;
+    gap: 4px;
+  }
+
+  .adm-net-strip__net-amount {
+    font-size: clamp(24px, 7vw, 30px);
+    white-space: nowrap;
+  }
+
+  .adm-net-strip__helper {
+    margin-top: 8px;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  .adm-expense-form-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .adm-expense-field__label {
+    font-size: 16.5px;
+  }
+
+  .adm-expense-input {
+    min-height: 50px;
+    font-size: 20px;
+  }
+
+  .adm-expense-note-input {
+    min-height: 50px;
+    font-size: 16.5px;
+  }
+
+  .adm-expense-total-preview {
+    padding: 10px 12px;
+  }
+
+  .adm-expense-total-preview__lbl {
+    font-size: 16.5px;
+  }
+
+  .adm-expense-total-preview__amt {
+    font-size: 22px;
+  }
+
+  .adm-expense-default-check {
+    padding: 10px 12px;
+    font-size: 15px;
   }
 
   .adm-filters {

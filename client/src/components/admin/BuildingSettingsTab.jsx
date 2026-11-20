@@ -283,6 +283,8 @@ export default function BuildingSettingsTab({ onSwitchToToLetTab }) {
     updateContactInfo,
     floors,
     paymentsByMonth,
+    expensesByMonth,
+    defaultExpenses,
     updateUnit,
     toggleFloorVisibility,
     addNextStory,
@@ -388,6 +390,8 @@ export default function BuildingSettingsTab({ onSwitchToToLetTab }) {
       building,
       floors,
       paymentsByMonth,
+      expensesByMonth,
+      defaultExpenses,
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], {
       type: 'application/json',

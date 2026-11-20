@@ -22,12 +22,19 @@ import {
   patchDbUnit,
   upsertDbPayment,
   deleteDbPayment,
+  upsertDbExpense,
   createDbFloor,
   patchDbFloor,
   deleteDbFloor,
   patchDbSettings,
   restoreDbBackup,
 } from '../api/dbApi.js';
+
+const DEFAULT_EXPENSES_INITIAL = {
+  caretaker_cost: 12200,
+  electricity_bill: 3000,
+  gas_bill: 5400,
+};
 
 const BANGLA_FLOOR_ORDINALS = {
   1: '১ম তলা',
@@ -54,6 +61,8 @@ export function BuildingProvider({ children }) {
   const [building, setBuilding] = useState(initialBuilding);
   const [floors, setFloors] = useState(initialFloors);
   const [paymentsByMonth, setPaymentsByMonth] = useState(initialPaymentsByMonth);
+  const [expensesByMonth, setExpensesByMonth] = useState({});
+  const [defaultExpenses, setDefaultExpenses] = useState(DEFAULT_EXPENSES_INITIAL);
   const [adminPin, setAdminPinState] = useState('1234');
 
   const [dbStatus, setDbStatus] = useState({
@@ -105,6 +114,22 @@ export function BuildingProvider({ children }) {
     }
     if (state.paymentsByMonth && typeof state.paymentsByMonth === 'object') {
       setPaymentsByMonth(state.paymentsByMonth);
+    }
+    if (state.expensesByMonth && typeof state.expensesByMonth === 'object') {
+      setExpensesByMonth(state.expensesByMonth);
+    }
+    if (state.defaultExpenses && typeof state.defaultExpenses === 'object') {
+      setDefaultExpenses({
+        caretaker_cost: Number(
+          state.defaultExpenses.caretaker_cost ?? DEFAULT_EXPENSES_INITIAL.caretaker_cost
+        ),
+        electricity_bill: Number(
+          state.defaultExpenses.electricity_bill ?? DEFAULT_EXPENSES_INITIAL.electricity_bill
+        ),
+        gas_bill: Number(
+          state.defaultExpenses.gas_bill ?? DEFAULT_EXPENSES_INITIAL.gas_bill
+        ),
+      });
     }
     if (state.settings?.adminPin && /^\d{4}$/.test(state.settings.adminPin)) {
       setAdminPinState(state.settings.adminPin);
@@ -332,6 +357,41 @@ export function BuildingProvider({ children }) {
     [showSaveError]
   );
 
+  /** Save monthly building expenses for a 'YYYY-MM' month (optimistic + Neon PostgreSQL). */
+  const saveMonthlyExpense = useCallback(
+    (monthKey, expenseData, updateDefaults = false) => {
+      const normalized = {
+        month_key: monthKey,
+        caretaker_cost: Math.max(0, Math.round(Number(expenseData.caretaker_cost) || 0)),
+        electricity_bill: Math.max(0, Math.round(Number(expenseData.electricity_bill) || 0)),
+        gas_bill: Math.max(0, Math.round(Number(expenseData.gas_bill) || 0)),
+        misc_cost: Math.max(0, Math.round(Number(expenseData.misc_cost) || 0)),
+        misc_note: String(expenseData.misc_note || '').trim(),
+      };
+
+      setExpensesByMonth((prev) => ({
+        ...prev,
+        [monthKey]: normalized,
+      }));
+
+      if (updateDefaults) {
+        setDefaultExpenses({
+          caretaker_cost: normalized.caretaker_cost,
+          electricity_bill: normalized.electricity_bill,
+          gas_bill: normalized.gas_bill,
+        });
+      }
+
+      upsertDbExpense({
+        ...normalized,
+        update_defaults: Boolean(updateDefaults),
+      }).catch(() => {
+        showSaveError();
+      });
+    },
+    [showSaveError]
+  );
+
   /** Update properties of a specific unit (optimistic UI + coalesced Neon PATCH). */
   const updateUnit = useCallback(
     (unitId, changes, { skipDbPatch = false } = {}) => {
@@ -533,6 +593,22 @@ export function BuildingProvider({ children }) {
       if (backupObj.paymentsByMonth && typeof backupObj.paymentsByMonth === 'object') {
         setPaymentsByMonth(backupObj.paymentsByMonth);
       }
+      if (backupObj.expensesByMonth && typeof backupObj.expensesByMonth === 'object') {
+        setExpensesByMonth(backupObj.expensesByMonth);
+      }
+      if (backupObj.defaultExpenses && typeof backupObj.defaultExpenses === 'object') {
+        setDefaultExpenses({
+          caretaker_cost: Number(
+            backupObj.defaultExpenses.caretaker_cost ?? DEFAULT_EXPENSES_INITIAL.caretaker_cost
+          ),
+          electricity_bill: Number(
+            backupObj.defaultExpenses.electricity_bill ?? DEFAULT_EXPENSES_INITIAL.electricity_bill
+          ),
+          gas_bill: Number(
+            backupObj.defaultExpenses.gas_bill ?? DEFAULT_EXPENSES_INITIAL.gas_bill
+          ),
+        });
+      }
       if (backupObj.building && typeof backupObj.building === 'object') {
         setBuilding(backupObj.building);
       }
@@ -554,6 +630,8 @@ export function BuildingProvider({ children }) {
     setBuilding(initialBuilding);
     setFloors(initialFloors);
     setPaymentsByMonth(initialPaymentsByMonth);
+    setExpensesByMonth({});
+    setDefaultExpenses(DEFAULT_EXPENSES_INITIAL);
     setAdminPinState('1234');
 
     restoreDbBackup({ resetToDefaults: true })
@@ -575,6 +653,9 @@ export function BuildingProvider({ children }) {
         paymentsByMonth,
         recordRentPayment,
         clearRentPayment,
+        expensesByMonth,
+        defaultExpenses,
+        saveMonthlyExpense,
         updateUnit,
         dbStatus,
         refreshFromDb,

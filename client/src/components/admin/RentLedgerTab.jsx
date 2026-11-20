@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useBuilding } from '../../context/BuildingContext.jsx';
 import { isUnitAvailable } from '../floormap/UnitStatusElements.jsx';
 import PaymentModal from './PaymentModal.jsx';
+import ExpenseModal from './ExpenseModal.jsx';
 import {
   formatTaka,
   toBanglaDigits,
@@ -10,6 +11,14 @@ import {
   formatIsoDateBn,
   formatPhoneBn,
 } from '../../lib/bangla.js';
+
+function formatSignedTaka(amount) {
+  const num = Number(amount) || 0;
+  if (num < 0) {
+    return `− ${formatTaka(Math.abs(num))}`;
+  }
+  return formatTaka(num);
+}
 
 const METHOD_LABELS_BN = {
   Cash: '💵 নগদ ক্যাশ',
@@ -44,7 +53,15 @@ function getUnitPaymentState(unit, record) {
  * Tab 1: "📖 ভাড়ার খাতা" (Monthly Rent & Income Ledger)
  */
 export default function RentLedgerTab({ onSwitchToToLetTab }) {
-  const { floors, paymentsByMonth, recordRentPayment, clearRentPayment } = useBuilding();
+  const {
+    floors,
+    paymentsByMonth,
+    recordRentPayment,
+    clearRentPayment,
+    expensesByMonth,
+    defaultExpenses,
+    saveMonthlyExpense,
+  } = useBuilding();
 
   // Current selected month ('YYYY-MM')
   const [selectedMonth, setSelectedMonth] = useState('2026-11');
@@ -52,6 +69,17 @@ export default function RentLedgerTab({ onSwitchToToLetTab }) {
   const [activeFilter, setActiveFilter] = useState('all');
   // Modal state: { unit, floorNameBn, existingRecord, mode } | null
   const [modalTarget, setModalTarget] = useState(null);
+  // Monthly expense editor modal state
+  const [expenseModalOpen, setExpenseModalOpen] = useState(false);
+  // Brief confirmation toast when expense is saved
+  const [ledgerToast, setLedgerToast] = useState('');
+
+  const showLedgerToast = (msg) => {
+    setLedgerToast(msg);
+    setTimeout(() => {
+      setLedgerToast((cur) => (cur === msg ? '' : cur));
+    }, 3500);
+  };
 
   const monthRecords = paymentsByMonth[selectedMonth] || {};
 
@@ -97,6 +125,38 @@ export default function RentLedgerTab({ onSwitchToToLetTab }) {
     (sum, e) => sum + e.paymentInfo.due,
     0
   );
+
+  // Monthly Expenses & Net Income Calculations (smart carry-forward from defaultExpenses)
+  const savedMonthExpense = expensesByMonth[selectedMonth] || null;
+  const activeExpense = {
+    caretaker_cost: savedMonthExpense
+      ? Number(savedMonthExpense.caretaker_cost)
+      : Number(defaultExpenses?.caretaker_cost ?? 12200),
+    electricity_bill: savedMonthExpense
+      ? Number(savedMonthExpense.electricity_bill)
+      : Number(defaultExpenses?.electricity_bill ?? 3000),
+    gas_bill: savedMonthExpense
+      ? Number(savedMonthExpense.gas_bill)
+      : Number(defaultExpenses?.gas_bill ?? 5400),
+    misc_cost: savedMonthExpense ? Number(savedMonthExpense.misc_cost || 0) : 0,
+    misc_note: savedMonthExpense ? String(savedMonthExpense.misc_note || '') : '',
+  };
+  const totalExpenses =
+    activeExpense.caretaker_cost +
+    activeExpense.electricity_bill +
+    activeExpense.gas_bill +
+    activeExpense.misc_cost;
+  const netInHand = totalCollected - totalExpenses;
+  const expectedNetIncome = totalExpected - totalExpenses;
+
+  const handleSaveExpense = (mKey, expData, updateDefs) => {
+    saveMonthlyExpense(mKey, expData, updateDefs);
+    showLedgerToast(
+      updateDefs
+        ? `✅ ${formatYearMonthBn(mKey)}-এর খরচ সেভ হয়েছে এবং পরবর্তী মাসগুলোর জন্য স্থায়ী বিল আপডেট করা হয়েছে!`
+        : `✅ ${formatYearMonthBn(mKey)}-এর খরচের হিসাব সফলভাবে সেভ হয়েছে!`
+    );
+  };
 
   const fullyPaidCount = occupiedEntries.filter(
     (e) => e.paymentInfo.state === 'ON_TIME' || e.paymentInfo.state === 'LATE'
@@ -191,6 +251,123 @@ export default function RentLedgerTab({ onSwitchToToLetTab }) {
             {toBanglaDigits(dueUnitCount)}টি ফ্ল্যাটের ভাড়া বাকি আছে
           </span>
         </article>
+      </section>
+
+      {ledgerToast && (
+        <div className="adm-toast" role="status" aria-live="polite">
+          <span>{ledgerToast}</span>
+          <button
+            type="button"
+            className="adm-toast__close"
+            onClick={() => setLedgerToast('')}
+            aria-label="বন্ধ করুন"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* =====================================================================
+          B2. MONTHLY EXPENSES & NET INCOME ("💸 এই মাসের খরচ ও নিট হিসাব")
+         ===================================================================== */}
+      <section
+        className="adm-expense-card"
+        aria-label="এই মাসের খরচ ও নিট হিসাব"
+      >
+        {/* A. Header */}
+        <div className="adm-expense-card__header">
+          <div className="adm-expense-card__title-wrap">
+            <h3 className="adm-expense-card__title">
+              💸 এই মাসের খরচ ও নিট হিসাব
+            </h3>
+            <span className="adm-expense-card__month-pill">
+              📅 {formatYearMonthBn(selectedMonth)}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            className="adm-expense-edit-btn"
+            onClick={() => setExpenseModalOpen(true)}
+          >
+            ✏️ খরচ পরিবর্তন করুন
+          </button>
+        </div>
+
+        {/* B. 4 Expense Breakdown Boxes */}
+        <div className="adm-expense-grid">
+          <div className="adm-expense-box">
+            <span className="adm-expense-box__label">👷 কেয়ারটেকারের খরচ</span>
+            <p className="adm-expense-box__amount">
+              {formatTaka(activeExpense.caretaker_cost)}
+            </p>
+          </div>
+
+          <div className="adm-expense-box">
+            <span className="adm-expense-box__label">⚡ আমাদের কারেন্ট বিল</span>
+            <p className="adm-expense-box__amount">
+              {formatTaka(activeExpense.electricity_bill)}
+            </p>
+          </div>
+
+          <div className="adm-expense-box">
+            <span className="adm-expense-box__label">🔥 গ্যাস বিল</span>
+            <p className="adm-expense-box__amount">
+              {formatTaka(activeExpense.gas_bill)}
+            </p>
+          </div>
+
+          <div className="adm-expense-box adm-expense-box--misc">
+            <span className="adm-expense-box__label">🛠️ আনুষঙ্গিক খরচ</span>
+            <p className="adm-expense-box__amount">
+              {formatTaka(activeExpense.misc_cost)}
+            </p>
+            {activeExpense.misc_note && (
+              <span className="adm-expense-box__note">
+                📝 {activeExpense.misc_note}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* C. Net Income Summary Strip */}
+        <div className="adm-net-strip">
+          <div className="adm-net-strip__row">
+            <div className="adm-net-strip__item">
+              <span className="adm-net-strip__lbl">মোট ভাড়া জমা:</span>
+              <strong className="adm-net-strip__val adm-net-strip__val--income">
+                {formatTaka(totalCollected)}
+              </strong>
+            </div>
+
+            <div className="adm-net-strip__item">
+              <span className="adm-net-strip__lbl">➖ মোট খরচ:</span>
+              <strong className="adm-net-strip__val adm-net-strip__val--expense">
+                {formatTaka(totalExpenses)}
+              </strong>
+            </div>
+
+            <div
+              className={`adm-net-strip__item adm-net-strip__item--net ${
+                netInHand >= 0
+                  ? 'adm-net-strip__item--positive'
+                  : 'adm-net-strip__item--negative'
+              }`}
+            >
+              <span className="adm-net-strip__lbl">
+                🟰 খরচ বাদে হাতে থাকল (নিট):
+              </span>
+              <strong className="adm-net-strip__net-amount">
+                {formatSignedTaka(netInHand)}
+              </strong>
+            </div>
+          </div>
+
+          <p className="adm-net-strip__helper">
+            (সব ভাড়া উঠলে সম্ভাব্য নিট আয়:{' '}
+            <strong>{formatSignedTaka(expectedNetIncome)}</strong>)
+          </p>
+        </div>
       </section>
 
       {/* =====================================================================
@@ -528,6 +705,19 @@ export default function RentLedgerTab({ onSwitchToToLetTab }) {
           onSave={recordRentPayment}
           onClear={clearRentPayment}
           onClose={() => setModalTarget(null)}
+        />
+      )}
+
+      {/* =====================================================================
+          F. MONTHLY EXPENSE EDIT MODAL ("খরচ পরিবর্তন করুন")
+         ===================================================================== */}
+      {expenseModalOpen && (
+        <ExpenseModal
+          monthKey={selectedMonth}
+          initialExpense={activeExpense}
+          defaultExpenses={defaultExpenses}
+          onSave={handleSaveExpense}
+          onClose={() => setExpenseModalOpen(false)}
         />
       )}
     </div>

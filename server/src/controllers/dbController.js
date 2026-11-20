@@ -9,6 +9,7 @@ import {
   deleteFloorInDb,
   updateSettingsInDb,
   restoreFullStateInDb,
+  upsertMonthlyExpenseInDb,
 } from '../services/dbService.js';
 
 function sendDbError(res, err) {
@@ -111,6 +112,15 @@ export async function postRestore(req, res) {
   try {
     const state = await restoreFullStateInDb(req.body || {});
     res.json({ ok: true, ...state });
+  } catch (err) {
+    sendDbError(res, err);
+  }
+}
+
+export async function putExpense(req, res) {
+  try {
+    const result = await upsertMonthlyExpenseInDb(req.body || {});
+    res.json({ ok: true, ...result });
   } catch (err) {
     sendDbError(res, err);
   }

@@ -55,6 +55,15 @@ export function deleteDbPayment(unitCode, monthKey) {
   );
 }
 
+/** Upsert monthly building expenses for a month_key (optionally updating recurring defaults). */
+export function upsertDbExpense(payload) {
+  return requestDbJson('/api/db/expenses', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
 /** Persist a newly added building floor (e.g. 6th floor 'F') and its units. */
 export function createDbFloor(floorPayload) {
   return requestDbJson('/api/db/floors', {

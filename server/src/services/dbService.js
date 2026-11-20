@@ -1,6 +1,7 @@
 import { getPool, isDbConfigured, query, withTransaction } from '../config/db.js';
 import {
   DEFAULT_BUILDING_META,
+  DEFAULT_EXPENSES,
   DEFAULT_FLOORS_SEED,
   DEFAULT_PAYMENTS_SEED,
   DEFAULT_SETTINGS,
@@ -34,6 +35,7 @@ function formatPhoneDisplay(raw = '') {
 async function seedDefaultData(client, { forceReset = false } = {}) {
   if (forceReset) {
     await client.query('DELETE FROM rent_payments');
+    await client.query('DELETE FROM monthly_expenses');
     await client.query('DELETE FROM units');
     await client.query('DELETE FROM floors');
   }
@@ -186,6 +188,18 @@ export async function initDatabase() {
           );
         `);
 
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS monthly_expenses (
+            month_key TEXT PRIMARY KEY,
+            caretaker_cost INT NOT NULL DEFAULT 12200,
+            electricity_bill INT NOT NULL DEFAULT 3000,
+            gas_bill INT NOT NULL DEFAULT 5400,
+            misc_cost INT NOT NULL DEFAULT 0,
+            misc_note TEXT DEFAULT '',
+            updated_at TIMESTAMPTZ DEFAULT NOW()
+          );
+        `);
+
         // Ensure additive metadata columns exist if tables were pre-created manually
         await client.query(
           `ALTER TABLE floors ADD COLUMN IF NOT EXISTS meta JSONB DEFAULT '{}'::jsonb;`
@@ -278,11 +292,12 @@ function rowToFrontendUnit(row) {
 export async function getHydratedState() {
   await initDatabase();
 
-  const [floorsRes, unitsRes, paymentsRes, settingsRes] = await Promise.all([
+  const [floorsRes, unitsRes, paymentsRes, settingsRes, expensesRes] = await Promise.all([
     query('SELECT * FROM floors ORDER BY sort_order DESC, code DESC'),
     query('SELECT * FROM units ORDER BY unit_code ASC'),
     query('SELECT * FROM rent_payments ORDER BY month_key DESC, unit_code ASC'),
     query('SELECT key, value FROM app_settings'),
+    query('SELECT * FROM monthly_expenses ORDER BY month_key DESC'),
   ]);
 
   const settingsMap = {};
@@ -381,18 +396,117 @@ export async function getHydratedState() {
     };
   }
 
+  const rawDefaults =
+    settingsMap.default_expenses && typeof settingsMap.default_expenses === 'object'
+      ? settingsMap.default_expenses
+      : DEFAULT_EXPENSES;
+  const defaultExpenses = {
+    caretaker_cost: Number(rawDefaults.caretaker_cost ?? DEFAULT_EXPENSES.caretaker_cost),
+    electricity_bill: Number(rawDefaults.electricity_bill ?? DEFAULT_EXPENSES.electricity_bill),
+    gas_bill: Number(rawDefaults.gas_bill ?? DEFAULT_EXPENSES.gas_bill),
+  };
+
+  const expensesByMonth = {};
+  for (const eRow of expensesRes.rows) {
+    expensesByMonth[eRow.month_key] = {
+      month_key: eRow.month_key,
+      caretaker_cost: Number(eRow.caretaker_cost ?? defaultExpenses.caretaker_cost),
+      electricity_bill: Number(eRow.electricity_bill ?? defaultExpenses.electricity_bill),
+      gas_bill: Number(eRow.gas_bill ?? defaultExpenses.gas_bill),
+      misc_cost: Number(eRow.misc_cost ?? 0),
+      misc_note: eRow.misc_note || '',
+      updated_at: eRow.updated_at,
+    };
+  }
+
   return {
     building,
     floors,
     units: flatUnits,
     paymentsByMonth,
+    expensesByMonth,
+    defaultExpenses,
     settings: {
       adminPin,
       contactPhones,
       whatsappNumber,
       buildingName,
+      defaultExpenses,
     },
   };
+}
+
+/**
+ * Upsert monthly building expenses into `monthly_expenses` for `month_key`.
+ * When `update_defaults === true`, also saves the 3 recurring bills (`caretaker_cost`,
+ * `electricity_bill`, `gas_bill` — never `misc_cost`) into `app_settings.default_expenses`
+ * so future unedited months inherit the updated defaults.
+ */
+export async function upsertMonthlyExpenseInDb(payload = {}) {
+  await initDatabase();
+
+  const monthKey = String(payload.month_key || payload.monthKey || '').trim();
+  if (!monthKey) {
+    const err = new Error('month_key is required.');
+    err.status = 400;
+    throw err;
+  }
+
+  const caretakerCost = Math.max(0, Math.round(Number(payload.caretaker_cost ?? 0) || 0));
+  const electricityBill = Math.max(0, Math.round(Number(payload.electricity_bill ?? 0) || 0));
+  const gasBill = Math.max(0, Math.round(Number(payload.gas_bill ?? 0) || 0));
+  const miscCost = Math.max(0, Math.round(Number(payload.misc_cost ?? 0) || 0));
+  const miscNote = String(payload.misc_note ?? '').trim();
+  const updateDefaults = Boolean(payload.update_defaults);
+
+  return withTransaction(async (client) => {
+    const expRes = await client.query(
+      `INSERT INTO monthly_expenses (
+         month_key, caretaker_cost, electricity_bill, gas_bill,
+         misc_cost, misc_note, updated_at
+       )
+       VALUES ($1, $2, $3, $4, $5, $6, NOW())
+       ON CONFLICT (month_key)
+       DO UPDATE SET
+         caretaker_cost = EXCLUDED.caretaker_cost,
+         electricity_bill = EXCLUDED.electricity_bill,
+         gas_bill = EXCLUDED.gas_bill,
+         misc_cost = EXCLUDED.misc_cost,
+         misc_note = EXCLUDED.misc_note,
+         updated_at = NOW()
+       RETURNING *`,
+      [monthKey, caretakerCost, electricityBill, gasBill, miscCost, miscNote]
+    );
+
+    let nextDefaults = null;
+    if (updateDefaults) {
+      nextDefaults = {
+        caretaker_cost: caretakerCost,
+        electricity_bill: electricityBill,
+        gas_bill: gasBill,
+      };
+      await client.query(
+        `INSERT INTO app_settings (key, value, updated_at)
+         VALUES ('default_expenses', $1::jsonb, NOW())
+         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+        [JSON.stringify(nextDefaults)]
+      );
+    }
+
+    const row = expRes.rows[0];
+    return {
+      expense: {
+        month_key: row.month_key,
+        caretaker_cost: Number(row.caretaker_cost),
+        electricity_bill: Number(row.electricity_bill),
+        gas_bill: Number(row.gas_bill),
+        misc_cost: Number(row.misc_cost),
+        misc_note: row.misc_note || '',
+        updated_at: row.updated_at,
+      },
+      defaultExpenses: nextDefaults,
+    };
+  });
 }
 
 /** Update any fields of a single unit in Neon PostgreSQL (accepts camelCase or snake_case). */
@@ -999,6 +1113,49 @@ export async function restoreFullStateInDb(backupObj = {}) {
           );
         }
       }
+    }
+
+    if (backupObj.expensesByMonth && typeof backupObj.expensesByMonth === 'object') {
+      await client.query('DELETE FROM monthly_expenses');
+      for (const [mKey, exp] of Object.entries(backupObj.expensesByMonth)) {
+        if (!exp || typeof exp !== 'object') continue;
+        await client.query(
+          `INSERT INTO monthly_expenses (
+             month_key, caretaker_cost, electricity_bill, gas_bill,
+             misc_cost, misc_note, updated_at
+           )
+           VALUES ($1, $2, $3, $4, $5, $6, NOW())
+           ON CONFLICT (month_key) DO UPDATE SET
+             caretaker_cost = EXCLUDED.caretaker_cost,
+             electricity_bill = EXCLUDED.electricity_bill,
+             gas_bill = EXCLUDED.gas_bill,
+             misc_cost = EXCLUDED.misc_cost,
+             misc_note = EXCLUDED.misc_note,
+             updated_at = NOW()`,
+          [
+            mKey,
+            Number(exp.caretaker_cost ?? DEFAULT_EXPENSES.caretaker_cost),
+            Number(exp.electricity_bill ?? DEFAULT_EXPENSES.electricity_bill),
+            Number(exp.gas_bill ?? DEFAULT_EXPENSES.gas_bill),
+            Number(exp.misc_cost ?? 0),
+            String(exp.misc_note || ''),
+          ]
+        );
+      }
+    }
+
+    if (backupObj.defaultExpenses && typeof backupObj.defaultExpenses === 'object') {
+      const def = {
+        caretaker_cost: Number(backupObj.defaultExpenses.caretaker_cost ?? DEFAULT_EXPENSES.caretaker_cost),
+        electricity_bill: Number(backupObj.defaultExpenses.electricity_bill ?? DEFAULT_EXPENSES.electricity_bill),
+        gas_bill: Number(backupObj.defaultExpenses.gas_bill ?? DEFAULT_EXPENSES.gas_bill),
+      };
+      await client.query(
+        `INSERT INTO app_settings (key, value, updated_at)
+         VALUES ('default_expenses', $1::jsonb, NOW())
+         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+        [JSON.stringify(def)]
+      );
     }
 
     if (backupObj.building && typeof backupObj.building === 'object') {

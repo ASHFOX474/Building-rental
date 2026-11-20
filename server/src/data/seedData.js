@@ -32,12 +32,19 @@ export const DEFAULT_BUILDING_META = {
   },
 };
 
+export const DEFAULT_EXPENSES = {
+  caretaker_cost: 12200,
+  electricity_bill: 3000,
+  gas_bill: 5400,
+};
+
 export const DEFAULT_SETTINGS = {
   admin_pin: '1234',
   contact_phones: ['01817526285', '01815023898'],
   whatsapp_number: '8801815023898',
   building_name: 'মনি লজ',
   building_meta: DEFAULT_BUILDING_META,
+  default_expenses: DEFAULT_EXPENSES,
 };
 
 export const DEFAULT_FLOORS_SEED = [
